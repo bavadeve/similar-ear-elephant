@@ -1,5 +1,5 @@
 clear results ICCresults graph
-str = 'pli10';
+str = 'pli8';
 
 a = dir([ str '_*.mat']);
 resultStr = {a.name};

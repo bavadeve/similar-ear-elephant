@@ -24,14 +24,10 @@ for i = 1:m
         case 'weighted'
             
             W(W<0) = 0;
-            %             W = W - min(squareform(W));
-            %             W = mat2gray(W);
-            %             W = weight_conversion(W, 'normalize');
-            %             W(1:n+1:end) = 0;
-            %             W(W>0) = 1./W(W>0);
-            lengths = weight_conversion(W, 'lengths');
+            lengths = weight_conversion( W, 'lengths' );
             D = distance_wei( lengths );
-            [L(i), eff(i), ~, rad(i)] = charpath( D );
+            L(i) = mean( squareform(D) );
+%             [L(i), eff(i), ~, rad(i)] = charpath( D );
             
         case 'mst'
             

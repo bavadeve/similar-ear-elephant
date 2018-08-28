@@ -41,18 +41,18 @@ for i = 1:length(subjectNames);
                 fnames = fieldnames(connectivity);
                 spctrmname = fnames(not(cellfun(@isempty, strfind(fnames, 'spctrm'))));
                 
-%                 age(noSession) = subjectdata.ageInDays;
-%                 gender = subjectdata.gender;
-                subjWs(:,:,:, noSession) =  connectivity.(spctrmname{:});
+                %                 age(noSession) = subjectdata.ageInDays;
+                %                 gender = subjectdata.gender;
+                subjWs(:,:,:,:, noSession) =  connectivity.(spctrmname{:});
                 
             end
             
             if sessionsFound == 2;
-                Ws(:,:,:,noSubject,:) = subjWs;
+%                 socialWs(:,:,:,noSubject,:) = mean(subjWs;
                 subjects{noSubject} = currSubjectName;
-%                 ages(noSubject,:) = age;
-%                 genders{noSubject} = gender;
-%                 ageDiff(noSubject) = diff(age);
+                %                 ages(noSubject,:) = age;
+                %                 genders{noSubject} = gender;
+                %                 ageDiff(noSubject) = diff(age);
             end
             
             

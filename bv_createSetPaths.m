@@ -1,0 +1,1 @@
+function bv_createSetPaths(rootPath, homePath)

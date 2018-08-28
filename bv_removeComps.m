@@ -8,6 +8,9 @@ dataStr             = ft_getopt(cfg, 'dataStr');
 compStr             = ft_getopt(cfg, 'compStr');
 automaticRemoval    = ft_getopt(cfg, 'automaticRemoval');
 saveFigure          = ft_getopt(cfg, 'saveFigure');
+blinkremoval        = ft_getopt(cfg, 'blinkremoval', 'no');
+gammaremoval        = ft_getopt(cfg, 'gammaremoval', 'no');
+
 
 if strcmpi(automaticRemoval, 'yes')
     automaticFlag = 1;
@@ -77,8 +80,8 @@ if automaticFlag
     fprintf('\t automatic component removal started ... \n')
     
     cfg = [];
-    cfg.blinkremoval = 'no';
-    cfg.gammaremoval = 'yes';
+    cfg.blinkremoval = blinkremoval;
+    cfg.gammaremoval = gammaremoval;
     
     rmComps = automaticCompRemoval(cfg, data, comp);
     

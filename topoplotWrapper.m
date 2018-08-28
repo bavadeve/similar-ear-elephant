@@ -22,12 +22,12 @@ end
 % fig = figure;
 % ft_plot_topo(chanX,chanY,dat,opt{:});
 
-evalc('chanlocs = readlocs(''/Users/Bauke/Matlab_Toolboxes/EEG/eeglab13_6_5b/plugins/dipfit2.3/standard_BESA/standard-10-5-cap385.elp'');');
+evalc('chanlocs = readlocs(''/Users/bauke/MyScripts/NBTpublic-NBTv0.5.5-public/External/EEGlab/plugins/dipfit2.3/standard_BESA/standard-10-5-cap385.elp'');');
 
 [~, order] = ismember(chans, {chanlocs.labels});
 
 fig = figure;
-[h,Zi] = topoplot(dat, chanlocs(order), 'colormap', colormap('hot'), 'plotdisk', 'on', 'style', 'both', 'conv', 'on', 'gridscale', 1000, 'electrodes','labelpoint');
+[h,Zi] = topoplot(dat, chanlocs(order), 'colormap', colormap('parula'), 'plotdisk', 'on', 'style', 'both', 'conv', 'on', 'gridscale', 1000, 'electrodes','labelpoint', 'maplimits', lim );
 
 % set(gca, 'CLim', lim)
 colorbar

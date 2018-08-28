@@ -22,7 +22,7 @@ if nargin < 2
     eval('setOptions')
     
     subjectFolderPath = [PATHS.SUBJECTS filesep currSubject];
-    try        
+    try
         [subjectdata, data] = bv_check4data(subjectFolderPath, inputStr);
     catch
         fprintf('\t previous data not found, skipping ... \n')
@@ -91,7 +91,7 @@ switch(method)
         cfg.taper       = 'hanning';
         cfg.output      = freqOutput;
         cfg.keeptrials  = 'yes';
-%         cfg.pad         = 'nextpow2';
+        %         cfg.pad         = 'nextpow2';
         cfg.tapsmofrq   = 2;
         
         evalc('freq            = ft_freqanalysis(cfg, data);');
@@ -114,7 +114,7 @@ switch(method)
         
         
     case 'pli'
-                
+        
         freqLabel = {'delta', 'theta', 'alpha1', 'alpha2', 'beta', 'gamma'};
         freqRng = {[1 3], [3 6], [6 9], [9 12], [12 25], [25, 45]};
         
@@ -134,29 +134,37 @@ switch(method)
             cfg = [];
             cfg.saveData = 'no';
             cfg.triallength = triallength;
-            dataCut = bv_cutAppendedIntoTrials(cfg, dataFilt);
+            [dataCut, finished] = bv_cutAppendedIntoTrials(cfg, dataFilt);
+            
+            if finished == 0
+                connectivity = [];
+                return
+            end
             
             fprintf('\t calculating PLI ... ')
             PLIs = PLI(dataCut.trial,1);
             PLIs = cat(3,PLIs{:});
-            W = mean(PLIs,3);
+%             W = mean(PLIs,3);
             
-            connectivity.plispctrm(:,:,iFreq) = W;
+            connectivity.plispctrm(:,:,:,iFreq) = PLIs;
             fprintf('done!\n')
         end
         
-        connectivity.dimord = 'chan_chan_freq';
+        connectivity.dimord = 'chan_chan__trl_freq';
         connectivity.freq = freqLabel;
         connectivity.freqRng = freqRng;
         connectivity.label = data.label;
-              
-        if not(isempty(subjectdata.rmChannels))
-            trueRmChannels = subjectdata.rmChannels(not(ismember(subjectdata.rmChannels, OPTIONS.PREPROC.rmChannels)));
-            connectivity = addRemovedChannels(connectivity, trueRmChannels);
+        connectivity.trialinfo = dataCut.trialinfo;
+        
+        if isfield(subjectdata, 'rmChannels')
+            if not(isempty(subjectdata.rmChannels))
+                trueRmChannels = subjectdata.rmChannels(not(ismember(subjectdata.rmChannels, OPTIONS.PREPROC.rmChannels)));
+                connectivity = addRemovedChannels(connectivity, trueRmChannels);
+            end
         end
         
-        connectivity.plispctrm = bv_setDiag(connectivity.plispctrm, 0);
-       
+%         connectivity.plispctrm = bv_setDiag(connectivity.plispctrm, 0);
+        
 end
 
 

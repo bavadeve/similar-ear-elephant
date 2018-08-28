@@ -1,4 +1,4 @@
-function data = bv_cutAppendedIntoTrials(cfg, dataOld)
+function [data, finished] = bv_cutAppendedIntoTrials(cfg, dataOld)
 
 currSubject = ft_getopt(cfg, 'currSubject');
 inputStr    = ft_getopt(cfg, 'inputStr');
@@ -28,6 +28,8 @@ trialparts2use = find(dataOld.contSecs > triallength);
 
 if isempty(trialparts2use)
     fprintf('\t \t no trials found, skipping ... \n')
+    data = [];
+    finished = 0;
     return;
 end
 
@@ -63,4 +65,5 @@ if strcmpi(saveData, 'yes')
     bv_saveData(subjectdata, data, outputStr)
     
 end
+finished = 1;
 

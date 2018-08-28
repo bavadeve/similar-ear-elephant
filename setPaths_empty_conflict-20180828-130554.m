@@ -4,11 +4,11 @@
 
 % Paths to already existing folders
 PATHS.ROOT          = % analyses folder (subject & figure folders will be created here)
-PATHS.HOME          = % path to home folder (where you can find RAWS and PRPEROC usually)
-PATHS.RAWS          = [PATHS.HOME filesep 'RAW']; % path to the directory of raw EEG files
+PATHS.RAWS          = % path to the directory of raw EEG files
+PATHS.HOME          = % folder where your raw folder is in (this is where the subfunctions directory will be)
 PATHS.SUBFUNCTIONS  = [PATHS.HOME filesep 'subfunctions'];    % path to your subfunctions directory (place the functions made specifically for your dataset here e.g. trialfun)
-PATHS.FILES         = [PATHS.HOME filesep 'files'];
-PATHS.PREPROC       = [PATHS.HOME filesep 'PREPROC']; % path to the preproc folder
+PATHS.PREPROC       = '/Users/bauke/_Research/EEG_10MndPilot_TestRetest/PREPROC';
+PATHS.FILES         = '/Users/Bauke/_Research/EEG_10MndPilot_TestRetest/Files';
 
 % Paths to folders to be created 
 PATHS.SUBJECTS      = [PATHS.ROOT filesep 'Subjects'];        % path to subject directory
