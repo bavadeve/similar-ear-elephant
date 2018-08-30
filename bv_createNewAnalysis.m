@@ -1,24 +1,96 @@
-function bv_createNewAnalysis()
+function bv_createNewAnalysis(overwrite)
 
-path2Analyses = [pwd filesep 'Analyses'];
-path2RAW = [pwd filesep 'RAW'];
-path2PREPROC = [pwd filesep 'PREPROC'];
+if nargin < 1
+    overwrite = 0;
+end
+
+PATHS.HOME = pwd;
+PATHS.ANALYSES = [PATHS.HOME filesep 'Analyses'];
+PATHS.RAW = [PATHS.HOME filesep 'RAW'];
+PATHS.PREPROC = [PATHS.HOME filesep 'PREPROC'];
 
 dateFormat = 'yyyymmdd';
 currDate = datestr(now, dateFormat);
-path2CurrAnalysis = [path2Analyses filesep currDate];
+PATHS.CURRANALYSIS = [PATHS.ANALYSES filesep currDate];
 
-if ~exist(path2Analyses, 'dir')
-    mkdir('Analyses')
-end
-if ~exist(path2RAW, 'dir')
-    mkdir('RAW')
-end
-if ~exist(path2PREPROC, 'dir')
-    mkdir('PREPROC')
-end
-if ~exist(path2CurrAnalysis, 'dir')
-    mkdir(path2CurrAnalysis)
+fprintf('\ncreating folders: \n');
+[~, msg] = mkdir(PATHS.ANALYSES);
+fprintf('\tanalysis folder: ')
+if ~isempty(msg)
+    fprintf([msg '\n'])
+else
+    fprintf('created \n');
 end
 
+[~, msg] = mkdir(PATHS.RAW);
+fprintf('\traw folder: ')
+if ~isempty(msg)
+    fprintf([msg '\n'])
+else
+    fprintf('created \n');
+end
 
+[~, msg] = mkdir(PATHS.PREPROC);
+fprintf('\tpreproc folder: ')
+if ~isempty(msg)
+    fprintf([msg '\n'])
+else
+    fprintf('created \n');
+end
+
+[~, msg] = mkdir(PATHS.CURRANALYSIS);
+fprintf('\tcurranalysis folder: ')
+if ~isempty(msg)
+    fprintf([msg '\n'])
+else
+    fprintf('created \n');
+end
+
+fprintf('creating scripts: \n')
+fprintf('\t')
+if ~overwrite && exist([PATHS.CURRANALYSIS filesep 'setPaths.m'], 'file')
+    setPathExist = true(1);
+    fprintf('setPaths.m already exists, not overwriting \n')
+else
+    setPathExist = bv_createSetPaths(PATHS.CURRANALYSIS, PATHS.HOME);
+    if setPathExist
+        fprintf('setPaths.m created \n')
+    else
+        fprintf('setPaths.m creation failed, please check  \n')
+    end
+end
+
+fprintf('\t')
+if ~overwrite && exist([PATHS.CURRANALYSIS filesep 'setOptions.m'], 'file')
+    setOptionsExist = true(1);
+    fprintf('setOptions.m already exists, not overwriting \n')
+else
+    setOptionsExist = bv_createSetOptions(PATHS.CURRANALYSIS);
+    if setOptionsExist
+        fprintf('setOptions.m created \n')
+    else
+        fprintf('setOptions.m creation failed, please check \n')
+    end
+end
+
+fprintf('\t')
+if ~overwrite && exist([PATHS.CURRANALYSIS filesep 'preprocessingData.m'], 'file')
+    preprocessExist = true(1);
+    fprintf('preprocessingData.m already exists, not overwriting \n')
+else
+    [preprocessExist, msg] = copyfile(which('preprocessingData_standard'), [PATHS.CURRANALYSIS filesep 'preprocessingData.m']);
+    if  preprocessExist
+        fprintf('preprocessingData.m created \n')
+    else
+        fprintf('preprocessingData.m not created with following warning: \n\t\t %s\n', msg)
+    end
+end
+
+fprintf('\n')
+if setPathExist && setOptionsExist && preprocessExist
+    fprintf('function finished with no problems !\n')
+else
+    fprintf('!!function finished with (several) warnings, please check \n')
+end
+
+cd(PATHS.CURRANALYSIS)
