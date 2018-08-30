@@ -24,10 +24,13 @@ subjectdata.cfgs.(outputStr) = cfg;
 
 fprintf('\t calculating component analysis ... ')
 
+trialdata = [data.trial{:}];
+trialdata(isnan(trialdata)) = [];
+
 cfg = [];
 cfg.method              = method;
 cfg.(method).extended   = 0;
-cfg.(method).pca        = rank([data.trial{:}]);
+cfg.(method).pca        = rank(trialdata);
 evalc('comp = ft_componentanalysis(cfg, data);');
 
 fprintf('done! \n')

@@ -56,7 +56,7 @@ fprintf('\t creating frequency plot ... ')
 
 output = 'pow';
 freqrange = [2 100];
-evalc('freq = bvLL_frequencyanalysis(data, freqrange, output, 1);');
+evalc('freq = bvLL_frequencyanalysis(data, freqrange, output, 0);');
 
 freqFields  = fieldnames(freq);
 field2use   = freqFields{not(cellfun(@isempty, strfind(freqFields, 'spctrm')))};
@@ -135,9 +135,12 @@ if ~isnan(rmComps)
     rmComps = unique(rmComps);
 
     rmCompIndx = rmComps;
+        
+    badPartsMatrix = [repmat(1:length(comp.trial),1,length(rmComps))', ...
+        sort(repmat(rmComps, length(comp.trial), 1))];
     
     cfg = [];
-    cfg.badPartsMatrix  = [ones(length(rmComps), 1), rmCompIndx'];
+    cfg.badPartsMatrix  = badPartsMatrix;
     cfg.horzLim         = 60;
     cfg.scroll          = 0;
     cfg.visible         = 'on';
@@ -174,12 +177,12 @@ if ~isnan(rmComps)
         
     end
     
-    badComponents = strread(num2str(rmComps),'%s');
+    badComponents = textscan(num2str(rmComps'),'%s');
     
-    fprintf(['\t removing component(s): ' repmat('%s ',1,length(badComponents)), ...
-        ' ... '], badComponents{:})
+    fprintf(['\t removing component(s): ' repmat('%s, ',1,length(badComponents{:})), ...
+        ' ... '], badComponents{:}{:})
     
-    badComponents = cellfun(@str2num, badComponents);
+    badComponents = cellfun(@str2num, badComponents{:});
     oldcfg.removedComps = badComponents;
     
     cfg             = [];
@@ -191,7 +194,7 @@ if ~isnan(rmComps)
     
     output = 'pow';
     freqrange = [2 100];
-    evalc('freq = bvLL_frequencyanalysis(data, freqrange, output, 1);');
+    evalc('freq = bvLL_frequencyanalysis(data, freqrange, output, 0);');
     
     freqFields  = fieldnames(freq);
     field2use   = freqFields{not(cellfun(@isempty, strfind(freqFields, 'spctrm')))};
@@ -202,7 +205,6 @@ if ~isnan(rmComps)
     set(fig3, 'units', 'normalized', 'Position', [0 0 xScreenLength yScreenLength])
     
     drawnow;
-    
     
     if strcmpi(saveFigure, 'yes')
         cfg = [];

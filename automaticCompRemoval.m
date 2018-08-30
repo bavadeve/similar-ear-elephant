@@ -28,7 +28,7 @@ if strcmpi(blinkremoval, 'yes')
     
     [~, sortIndx] = sort(mean(abs(R(prefrontalIndx,:))), 'descend');
     
-%     load('~/git/eeg-graphmetrics-processing/templates/blinkTopo.mat')
+    %     load('~/git/eeg-graphmetrics-processing/templates/blinkTopo.mat')
     
     i = 1;
     while 1
@@ -70,7 +70,23 @@ if strcmpi(gammaremoval, 'yes')
     cfg.pad         = 'nextpow2';
     evalc('freq = ft_freqanalysis(cfg, comp);');
     
-    gammacomps = find(isoutlier(squeeze(mean(freq.powspctrm(:,1217:2817),2))))';
+%     thetastart = find(freq.freq == 3);
+% %     thetaend = find(freq.freq == 6);
+% %     alphastart = find(freq.freq == 6);
+%     alphaend = find(freq.freq == 9);
+%     betastart = find(freq.freq == 12);
+%     betaend = find(freq.freq == 25);
+    lowgammastart = find(freq.freq == 25);
+    lowgammaend = find(freq.freq == 45);
+    highgammastart = find(freq.freq == 55);
+    highgammaend = find(freq.freq == 85);
+    
+%     meanthetaalpha = mean(log10(freq.powspctrm(:,thetastart:alphaend)),2);
+% %     meanalpha = mean(log10(freq.powspctrm(:,alphastart:alphaend)),2);
+%     meanbeta = mean(log10(freq.powspctrm(:,betastart:betaend)),2);
+    meangamma = mean(freq.powspctrm(:,[lowgammastart:lowgammaend, highgammastart:highgammaend]),2);
+ 
+    gammacomps = find(isoutlier(meangamma));
     
     if isempty(gammacomps)
         fprintf('none found! \n')
