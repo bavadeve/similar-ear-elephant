@@ -11,10 +11,6 @@ method      = ft_getopt(cfg, 'method');
 condition   = ft_getopt(cfg, 'condition', 'all');
 triallength = ft_getopt(cfg, 'triallength');
 
-if isempty(triallength)
-    error('no cfg.triallength given')
-end
-
 if nargin < 2
     disp(currSubject)
     
@@ -55,8 +51,19 @@ end
 switch(method)
     case 'wpli_debiased'
         
+        freqLabel = {'delta', 'theta', 'alpha1', 'alpha2', 'beta', 'gamma'};
+        freqRng = {[1 3], [3 6], [6 9], [9 12], [12 25], [25, 45]};
+        
+        if ~isempty(triallength)
+%             fprintf('\t redefining triallength to %1.0d seconds', triallength)
+            cfg = [];
+            cfg.saveData = 'no';
+            cfg.triallength = triallength;
+            [data, finished] = bv_cutAppendedIntoTrials(cfg, data);
+        end
+            
         fprintf('\t frequency analysis started for wpli_debiased... \n')
-        fprintf('\t \t calculation started with %s trials ... ', num2str(length(cfg.trials)))
+        fprintf('\t \t calculation started with %1.0f trials ... ', length(data.trial))
         
         cfg.method      = 'mtmfft';
         cfg.taper       = 'hanning';
@@ -72,7 +79,22 @@ switch(method)
         
         cfg             = [];
         cfg.method      = 'wpli_debiased';
-        evalc('connectivity = ft_connectivityanalysis(cfg, freq);');
+        evalc('connectivitytmp = ft_connectivityanalysis(cfg, freq);');
+        
+        connectivity.freqLabel = freqLabel;
+        connectivity.freqRng = freqRng;
+        connectivity.label = freq.label;
+                
+        for iFreq = 1:length(freqRng)
+            freqStart = find(connectivitytmp.freq == freqRng{iFreq}(1));
+            freqEnd = find(connectivitytmp.freq == freqRng{iFreq}(2));
+            W = squareform(mean(...
+                connectivitytmp.wpli_debiasedspctrm(:,freqStart:freqEnd),2));
+            connectivity.wpli_debiasedspctrm(:,:,iFreq) = W;
+        end
+            
+%         connectivity.trialinfo = data.trialinfo;
+        connectivity.dimord = 'chan_chan_freq';
         
         fprintf('done! \n')
         
@@ -81,7 +103,7 @@ switch(method)
             connectivity = addRemovedChannels(connectivity, trueRmChannels);
         end
         
-        connectivity.wpli_debiasedspctrm = bv_setDiag(connectivity.wpli_debiasedspctrm, 0);
+%         connectivity.wpli_debiasedspctrm = bv_setDiag(connectivity.wpli_debiasedspctrm, 0);
         
     case 'wpli'
         
@@ -110,7 +132,7 @@ switch(method)
             connectivity = addRemovedChannels(connectivity, trueRmChannels);
         end
         
-        connectivity.wplispctrm = bv_setDiag(connectivity.wplispctrm, 0);
+%         connectivity.wplispctrm = bv_setDiag(connectivity.wplispctrm, 0);
         
         
     case 'pli'
@@ -131,10 +153,15 @@ switch(method)
             
             evalc('dataFilt = ft_preprocessing(cfg, data);');
             
-            cfg = [];
-            cfg.saveData = 'no';
-            cfg.triallength = triallength;
-            [dataCut, finished] = bv_cutAppendedIntoTrials(cfg, dataFilt);
+            if ~isempty(triallength)
+                cfg = [];
+                cfg.saveData = 'no';
+                cfg.triallength = triallength;
+                [dataCut, finished] = bv_cutAppendedIntoTrials(cfg, dataFilt);
+            else
+                dataCut = data;
+                finished = 1;
+            end
             
             if finished == 0
                 connectivity = [];
@@ -144,9 +171,9 @@ switch(method)
             fprintf('\t calculating PLI ... ')
             PLIs = PLI(dataCut.trial,1);
             PLIs = cat(3,PLIs{:});
-%             W = mean(PLIs,3);
+            W = mean(PLIs,3);
             
-            connectivity.plispctrm(:,:,:,iFreq) = PLIs;
+            connectivity.plispctrm(:,:,iFreq) = W;
             fprintf('done!\n')
         end
         
@@ -156,13 +183,13 @@ switch(method)
         connectivity.label = data.label;
         connectivity.trialinfo = dataCut.trialinfo;
         
-        if isfield(subjectdata, 'rmChannels')
-            if not(isempty(subjectdata.rmChannels))
-                trueRmChannels = subjectdata.rmChannels(not(ismember(subjectdata.rmChannels, OPTIONS.PREPROC.rmChannels)));
-                connectivity = addRemovedChannels(connectivity, trueRmChannels);
-            end
-        end
-        
+%         if isfield(subjectdata, 'rmChannels')
+%             if not(isempty(subjectdata.rmChannels))
+%                 trueRmChannels = subjectdata.rmChannels(not(ismember(subjectdata.rmChannels, OPTIONS.PREPROC.rmChannels)));
+%                 connectivity = addRemovedChannels(connectivity, trueRmChannels);
+%             end
+%         end
+%         
 %         connectivity.plispctrm = bv_setDiag(connectivity.plispctrm, 0);
         
 end
