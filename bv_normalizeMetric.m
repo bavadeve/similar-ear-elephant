@@ -1,29 +1,24 @@
-function varargout = bv_randomizeMetric (randWs, varargin)
+function output = bv_normalizeMetric(W, metric, nRands)
 
-if ~iscell(metrics)
-    metrics = {metrics};
+if nargin < 3
+    nRands = 200;
 end
 
-k = size(randWs,4);
-n = length(metric);
+randWs = squeeze(bv_randomizeWeightedMatrices(W, nRands));
 
-for j = 1:n
-    currMetric = metrics{n};
-    for i = 1:k
-        currRandW = randWs(:,:,:,i);
-        
-        switch currMetric
-            
-            case 'CPL'
-                output{j}(:,i) = calculatePathlengthWs(randWs, 'weighted');
-                
-                
-            case 'CC'
-                output{j}(:,i) = calculatePathlengthWs(randWs, 'weighted');
-
-        end
-    end
+switch metric
     
-    varargout{j} = mean(output{j},2);
+    case 'CC'
+        C = calculateClusteringWs(W, 'weighted');
+        Crand = calculateClusteringWs(randWs, 'weighted');
+        output = mean(C./Crand);
+        
+    case 'CPL'
+        CPL = calculatePathlengthWs(W, 'weighted');
+        CPLrand = calculatePathlengthWs(randWs, 'weighted');
+        output = mean(CPL./CPLrand);
+        
+    otherwise
+        error('unknown metric')
 end
 
