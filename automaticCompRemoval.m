@@ -1,4 +1,4 @@
-function [ rmComp ] = automaticCompRemoval(cfg, data, comp)
+function [ rmComp ] = automaticCompRemoval(cfg, data, comp, freq)
 
 blinkremoval = ft_getopt(cfg, 'blinkremoval');
 gammaremoval = ft_getopt(cfg, 'gammaremoval');
@@ -61,31 +61,16 @@ if strcmpi(gammaremoval, 'yes')
     
     fprintf('\t searching for components with too high gamma ... ')
     
-    cfg = [];
-    cfg.method      = 'mtmfft';
-    cfg.taper       = 'dpss';
-    cfg.output      = 'pow';
-    cfg.tapsmofrq   = 1;
-    cfg.foilim      = [1 100];
-    cfg.pad         = 'nextpow2';
-    evalc('freq = ft_freqanalysis(cfg, comp);');
+    output = 'pow';
+    freqrange = [0.2 100];
+    evalc('freq = bvLL_frequencyanalysis(comp, freqrange, output, 0);');
     
-%     thetastart = find(freq.freq == 3);
-% %     thetaend = find(freq.freq == 6);
-% %     alphastart = find(freq.freq == 6);
-%     alphaend = find(freq.freq == 9);
-%     betastart = find(freq.freq == 12);
-%     betaend = find(freq.freq == 25);
     lowgammastart = find(freq.freq == 25);
     lowgammaend = find(freq.freq == 45);
     highgammastart = find(freq.freq == 55);
     highgammaend = find(freq.freq == 85);
-    
-%     meanthetaalpha = mean(log10(freq.powspctrm(:,thetastart:alphaend)),2);
-% %     meanalpha = mean(log10(freq.powspctrm(:,alphastart:alphaend)),2);
-%     meanbeta = mean(log10(freq.powspctrm(:,betastart:betaend)),2);
-    meangamma = mean(freq.powspctrm(:,[lowgammastart:lowgammaend, highgammastart:highgammaend]),2);
- 
+
+    meangamma = squeeze(mean(mean(freq.powspctrm(:,:,[lowgammastart:lowgammaend, highgammastart:highgammaend])),3));
     gammacomps = find(isoutlier(meangamma));
     
     if isempty(gammacomps)

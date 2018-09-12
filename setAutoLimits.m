@@ -14,4 +14,4 @@ data = dataObjs.CData;
 mindata = min(nansquareform(data));
 maxdata = max(nansquareform(data));
 
-set(gca, 'CLim', [mindata maxdata]);
+set(ax, 'CLim', [mindata maxdata]);

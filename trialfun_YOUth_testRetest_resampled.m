@@ -55,7 +55,7 @@ else
     return
 end
 
-offset = zeros(length(begsample), 1 );
+offset = (ones(length(begsample), 1 )*preTrig) .* -1;
 
 %% the last part is again common to all trial functions
 % return the trl matrix (required) and the event structure (optional)

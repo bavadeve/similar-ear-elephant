@@ -18,6 +18,8 @@ if nargin < 2
     
     subjectFolderPath = [PATHS.SUBJECTS filesep currSubject];
     [subjectdata, dataOld] = bv_check4data(subjectFolderPath, inputStr);
+else
+    saveData = 'no';
 end
 
 if ~isfield(dataOld, 'contSecs')

@@ -55,15 +55,15 @@ end
 fprintf('\t creating frequency plot ... ')
 
 output = 'pow';
-freqrange = [2 100];
-evalc('freq = bvLL_frequencyanalysis(data, freqrange, output, 0);');
+freqrange = [0.2 100];
+evalc('freq = bvLL_frequencyanalysis(data, freqrange, output, 1);');
 
 freqFields  = fieldnames(freq);
 field2use   = freqFields{not(cellfun(@isempty, strfind(freqFields, 'spctrm')))};
 
-figure; plot(freq.freq, log10(abs(squeeze(nanmean(freq.(field2use)))))', 'LineWidth', 2)
+figure; semilogy(freq.freq, squeeze(nanmean(freq.(field2use))), 'LineWidth', 2)
 legend(data.label)
-set(gca, 'YLim', [-4 Inf])
+set(gca, 'YLim', [0 Inf])
 set(gcf, 'units', 'normalized', 'Position', [0 0 xScreenLength yScreenLength])
 
 cfg = [];
@@ -135,7 +135,8 @@ if ~isnan(rmComps)
     rmComps = unique(rmComps);
 
     rmCompIndx = rmComps;
-        
+    rmComps = reshape(rmComps, length(rmComps), 1);    
+    
     badPartsMatrix = [repmat(1:length(comp.trial),1,length(rmComps))', ...
         sort(repmat(rmComps, length(comp.trial), 1))];
     
@@ -194,7 +195,7 @@ if ~isnan(rmComps)
     
     output = 'pow';
     freqrange = [2 100];
-    evalc('freq = bvLL_frequencyanalysis(data, freqrange, output, 0);');
+    evalc('freq = bvLL_frequencyanalysis(data, freqrange, output, 1);');
     
     freqFields  = fieldnames(freq);
     field2use   = freqFields{not(cellfun(@isempty, strfind(freqFields, 'spctrm')))};

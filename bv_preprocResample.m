@@ -91,6 +91,8 @@ global PATHS
 currSubject = ft_getopt(cfg, 'currSubject');
 pathsFcn    = ft_getopt(cfg, 'pathsFcn');
 trialfun    = ft_getopt(cfg, 'trialfun');
+triggervalue = ft_getopt(cfg, 'triggervalue');
+triggerlabel = ft_getopt(cfg, 'triggerlabel');
 saveData    = ft_getopt(cfg, 'saveData', 'no');
 outputStr   = ft_getopt(cfg, 'outputStr', 'preproc');
 resampleFs  = ft_getopt(cfg, 'resampleFs');
@@ -242,15 +244,8 @@ if ~isempty(trialfun)
     cfg.headerfile = hdrfile;
     cfg.trialfun = trialfun;
     cfg.Fs = resampleFs;
-    cfg.trialdef.attentiongrabber = [114 115 126];
-    cfg.trialdef.eventvalue = [129 139];
-    
-    
-    
-    %     if ~isempty(resampleFs)
-    %         cfg.oldsampledata = oldSampleInfo;
-    %     end
-    
+    cfg.trialdef.eventvalue = triggervalue;
+    cfg.trialdef.eventlabel = triggerlabel;
     
     try
         evalc('cfg = ft_definetrial(cfg)');

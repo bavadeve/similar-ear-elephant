@@ -256,4 +256,6 @@ artefactdef.goodTrials = 1:length(data.trial);
 artefactdef.goodTrials(ismember(artefactdef.goodTrials, artefactdef.badTrials)) = [];
 
 artefactdef.pBadTrialsPerChannel = ceil(((hist(artefactdef.badPartsMatrix(:,2), 1:length(data.label)))./length(data.trial)) .* 100);
+artefactdef.sampleinfo = data.sampleinfo(artefactdef.badTrials,:);
+
 fprintf('done \n')

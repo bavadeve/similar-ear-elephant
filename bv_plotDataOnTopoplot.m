@@ -1,4 +1,12 @@
-function bv_plotDataOnTopoplot(Ws, labels, propThr)
+function bv_plotDataOnTopoplot(Ws, labels, propThr, subplotlabels, weighted, color)
+
+if nargin < 4
+    subplotlabels = strsplit(num2str(1:size(Ws,3)),' ');
+end
+if nargin < 5
+    weighted = true;
+end
+
 
 addpath('~/MatlabToolboxes/Colormaps/')
 
@@ -56,20 +64,15 @@ for currW = 1:size(Ws,3)
     sqW = squareform(W);
     I = find(sqW);
     
-    norm_data = (sqW(I) - min(sqW(I))) / ( max(sqW(I)) - min(sqW(I)) );
+    norm_data = (sqW(I) - min(sqW(I))) / ( max(sqW(I)) - min(sqW(I)) ) + 0.01;
     
     sqW(I) = norm_data;
     weights = squareform(sqW);
     
-    if nansum(squareform(W))~=0
-        steps = sum(squareform(W)>0);
-        c = colormap(spring(steps));
-        
-        wMin = 1;
-        wMax = 5;
-        wRange = wMax - wMin;
-        w = wMin:wRange/steps:wMax - wRange/steps;
-        
+    if nansum(squareform(W))~=0        
+        if ~weighted
+            weights = double(weights>0).*0.1;
+        end
         
         counter = 0;
         for i = 1:size(W,1)
@@ -79,30 +82,36 @@ for currW = 1:size(Ws,3)
                 if W(i,j)==0
                     continue
                 end
-                
-                
-                cCurr = ceil(W(i,j) / (max(max(W))-min(min(W(W>0)))) * sum(squareform(W)>0));
-                
+                                
                 x = lay.pos([i j],1);
                 y = lay.pos([i j],2);
-                h(counter) = patch(x,y,weights(i,j)*[1 1],'edgecolor','flat','linewidth',(weights(i,j)+0.25)*5);
+                
+                if ~weighted
+                    h(counter) = patch(x,y, color, 'EdgeColor', color, 'LineWidth',3 ); %,'edgecolor','flat','linewidth',(weights(i,j)+0.25)*5);
+                else
+                    h(counter) = patch(x,y, weights(i,j)*[1 1], 'edgecolor','flat','linewidth', (weights(i,j)+0.25)*5);
+                end
             end
         end
         
     end
     
-    colormap plasma
+    if weighted
+        colormap(plasma)
+        colorbar
+    end
     
     scatter(lay.pos(:,1), lay.pos(:,2), 10, 'MarkerFaceColor', 'k', 'MarkerEdgeColor', 'k')
-%     labeloffset = 0.02;
-%     text(double(lay.pos(:,1))+labeloffset, double(lay.pos(:,2)), lay.label , ...
-%         'fontsize',10,'fontname','helvetica', ...
-%         'interpreter','tex','horizontalalignment','left', ...
-%         'verticalalignment','middle','color','k');
+    %     labeloffset = 0.02;
+    %     text(double(lay.pos(:,1))+labeloffset, double(lay.pos(:,2)), lay.label , ...
+    %         'fontsize',10,'fontname','helvetica', ...
+    %         'interpreter','tex','horizontalalignment','left', ...
+    %         'verticalalignment','middle','color','k');
     line(lay.outline{1}(:,1), lay.outline{1}(:,2), 'LineWidth', 3, 'color', [0.5 0.5 0.5])
     
+    title(subplotlabels{currW})
     axis equal
     axis off
     fprintf('done \n')
-    colorbar
+ 
 end

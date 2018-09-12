@@ -62,8 +62,6 @@ else
 end
 fileNames = {files.name};
 
-
-
 if ~exist(PATHS.SUBJECTS,'dir'); mkdir PATHS.SUBJECTS; end % create, if necessary, Subject folder
 
 removeIdx = 0;

@@ -71,7 +71,7 @@ else
     tmpGoodTime = data.time;
     
     for i = 1:size(badPartsMatrix,1)
-        tmpGoodData{badPartsMatrix(i,1)}(badPartsMatrix(i,2),:) = nan(1, size(data.trial{1},2));
+        tmpGoodData{badPartsMatrix(i,1)}(badPartsMatrix(i,2),:) = nan(1, size(data.trial{badPartsMatrix(i,1)},2));
     end
     
     tmp = zeros(size(data.trial{1},1), length(data.trial));

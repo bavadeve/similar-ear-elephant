@@ -45,12 +45,12 @@ end
 output = 'pow';
 oldData = data;
 
-if redefineTrial
+if strcmpi(redefineTrial, 'yes')
     fprintf('\t redefining triallength to %s seconds ... ', num2str(triallength))
     cfg = [];
     cfg.length = triallength;
     cfg.overlap = 0;
-    data = ft_redefinetrial(cfg, oldData);
+    evalc('data = ft_redefinetrial(cfg, oldData);');
     fprintf('done! \n')
 else
     fprintf('\t trials already present, no redefining necessary \n')
@@ -107,7 +107,6 @@ if strcmpi(showFigures, 'yes')
         fprintf('done! \n')
         close all
     end
-    
     % figure;
     fprintf('\t\t creating scrollplot with artefacts in red ... ')
     %     addpath('~/git/eeg-graphmetrics-processing/figures/')

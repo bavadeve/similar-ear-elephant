@@ -1,4 +1,4 @@
-function data = bv_appendCleanedData(cfg)
+function data = bv_appendCleanedData(cfg, dataOld)
 
 currSubject = ft_getopt(cfg, 'currSubject');
 inputStr    = ft_getopt(cfg, 'inputStr');
@@ -10,9 +10,15 @@ disp(currSubject)
 eval('setOptions');
 eval('setPaths');
 
-subjectFolderPath = [PATHS.SUBJECTS filesep currSubject];
-[subjectdata, dataOld] = bv_check4data(subjectFolderPath, inputStr);
-
+if nargin < 2
+    
+    subjectFolderPath = [PATHS.SUBJECTS filesep currSubject];
+    [subjectdata, dataOld] = bv_check4data(subjectFolderPath, inputStr);
+else
+    
+    saveData = 'no';
+    
+end
 fprintf('\t appending cleaned data based on data.sampleinfo ... ')
 fsample = dataOld.fsample;
 
@@ -30,7 +36,7 @@ tmptrialinfo = dataOld.trialinfo(ismember(dataOld.sampleinfo(:,1), tmptrl(:,1)))
 trl = [tmptrl zeros(length(tmptrialinfo),1) tmptrialinfo];
 
 contSecs = (diff(tmptrl, [], 2) + 1) / fsample;
-% 
+%
 cfg = [];
 cfg.trl = trl;
 evalc('data = ft_redefinetrial(cfg, dataOld);');
@@ -44,5 +50,5 @@ if strcmpi(saveData, 'yes')
     
 end
 
-    
+
 

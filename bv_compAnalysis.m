@@ -1,8 +1,8 @@
- function comp = bv_compAnalysis(cfg, data)
+function comp = bv_compAnalysis(cfg, data)
 
 method      = ft_getopt(cfg, 'method', 'runica');
-extended    = ft_getopt(cfg, 'extended', 0);
-saveData    = ft_getopt(cfg, 'saveData', 1);
+extended    = ft_getopt(cfg, 'extended', 1);
+saveData    = ft_getopt(cfg, 'saveData', 0);
 outputStr   = ft_getopt(cfg, 'outputStr', 'comp');
 inputStr    = ft_getopt(cfg, 'inputStr');
 currSubject = ft_getopt(cfg, 'currSubject');
@@ -29,9 +29,9 @@ trialdata(isnan(trialdata)) = [];
 
 cfg = [];
 cfg.method              = method;
-cfg.(method).extended   = 0;
+cfg.(method).extended   = extended;
 cfg.(method).pca        = rank(trialdata);
-evalc('comp = ft_componentanalysis(cfg, data);');
+comp = ft_componentanalysis(cfg, data);
 
 fprintf('done! \n')
 
@@ -39,18 +39,18 @@ compFilename = [currSubject '_' outputStr '.mat'];
 
 if strcmpi(saveData, 'yes')
     fprintf('\t saving comp file and Subject.mat ... ')
-
+    
     subjectdata.PATHS.COMP = [subjectdata.PATHS.SUBJECTDIR filesep compFilename];
     save(subjectdata.PATHS.COMP, 'comp')
     
-%     analysisOrder = strsplit(subjectdata.analysisOrder, '-');
-%     analysisOrder = [analysisOrder outputStr];
-%     analysisOrder = unique(analysisOrder, 'stable');
-%     subjectdata.analysisOrder = strjoin(analysisOrder, '-');
+    %     analysisOrder = strsplit(subjectdata.analysisOrder, '-');
+    %     analysisOrder = [analysisOrder outputStr];
+    %     analysisOrder = unique(analysisOrder, 'stable');
+    %     subjectdata.analysisOrder = strjoin(analysisOrder, '-');
     
+    fprintf('done! \n')
+    fprintf('\t saving Subject.mat file ... ')
+    save([subjectdata.PATHS.SUBJECTDIR filesep 'Subject.mat'], 'subjectdata')
     fprintf('done! \n')
 end
 
-fprintf('\t saving Subject.mat file ... ')
-save([subjectdata.PATHS.SUBJECTDIR filesep 'Subject.mat'], 'subjectdata')
-fprintf('done! \n')
