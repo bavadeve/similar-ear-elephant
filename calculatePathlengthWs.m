@@ -7,7 +7,7 @@ L = zeros(1, size(Ws,3));
 for i = 1:m
     W = Ws(:,:,i);
     % find removed channels
-    rmChannels = (nansum(W)==0);
+    rmChannels = sum(isnan(W)) == 31;
     if ~isempty(find(rmChannels))
         
         W(rmChannels,:) = [];
