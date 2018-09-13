@@ -11,7 +11,8 @@ end
 dataObjs = get(ax, 'Children'); %handles to low-level graphics objects in axes
 
 data = dataObjs.CData;
-mindata = min(nansquareform(data));
-maxdata = max(nansquareform(data));
+minlim = min(data(data>0));
+maxlim = max(data(data>0));
 
-set(ax, 'CLim', [mindata maxdata]);
+
+set(ax, 'CLim', [minlim maxlim]);
