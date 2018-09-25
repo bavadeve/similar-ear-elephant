@@ -1,7 +1,11 @@
-function bv_createNewAnalysis(overwrite)
+function bv_createNewAnalysis(str, overwrite)
 
-if nargin < 1
+if nargin < 2
     overwrite = 0;
+end
+
+if ~isempty(str)
+    str = ['_' str];
 end
 
 PATHS.HOME = pwd;
@@ -11,7 +15,7 @@ PATHS.PREPROC = [PATHS.HOME filesep 'PREPROC'];
 
 dateFormat = 'yyyymmdd';
 currDate = datestr(now, dateFormat);
-PATHS.CURRANALYSIS = [PATHS.ANALYSES filesep currDate];
+PATHS.CURRANALYSIS = [PATHS.ANALYSES filesep currDate str];
 
 fprintf('\ncreating folders: \n');
 [~, msg] = mkdir(PATHS.ANALYSES);
