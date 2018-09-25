@@ -11,8 +11,7 @@ end
 dataObjs = get(ax, 'Children'); %handles to low-level graphics objects in axes
 
 data = dataObjs.CData;
-minlim = min(data(data>0));
-maxlim = max(data(data>0));
-
+minlim = min(squareform(data));
+maxlim = max(squareform(data));
 
 set(ax, 'CLim', [minlim maxlim]);
