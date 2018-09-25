@@ -1,10 +1,38 @@
 function [data, finished] = bv_cutAppendedIntoTrials(cfg, dataOld)
+% Cuts appended data into trials of given triallength, using
+% ft_redefinetrial an
+% Can be used with data input:
+%  [ cutdata ] = bv_cutAppendedIntoTrials(cfg, appenddata)
+% 
+% which needs an cfg structure with the following fields:
+%   cfg.triallength = [ number ], length (in s) of the trials
+%
+% or without data-input to be used in analysis-pipeline starting with
+% bv_createSubjectFolders:
+%  [ cutdata ] = bv_cutAppendedIntoTrials(cfg)
+%
+% which needs an cfg structure with the following fields:
+%   cfg.triallength     = [ number ], length (in s) of the trials
+%   cfg.currSubject     = 'string', subjectfoldername to analyze
+%   cfg.inputStr        = 'string', string to find data to analyze (should
+%                           be named after the field in the subjectdata.PATHS 
+%                           structure (f.e. 'APPEND'))
+%   cfg.outputStr       = 'string', output string to save the file
+%                           (default: ['triallength' num2str(triallength)])
+%   cfg.saveData        = 'yes/no', check whether data needs to be saved to
+%                           subject folder
+%
+% The second options loads in data using bv_check4data and saves data using
+% bv_savedata
+%
+% See also BV_CREATESUBJECTFOLDERS, BV_CHECK4DATA, FT_REDEFINETRIAL,
+% BV_SAVEDATA
 
 currSubject = ft_getopt(cfg, 'currSubject');
 inputStr    = ft_getopt(cfg, 'inputStr');
-outputStr   = ft_getopt(cfg, 'outputStr');
-saveData    = ft_getopt(cfg, 'saveData');
 triallength = ft_getopt(cfg, 'triallength');
+outputStr   = ft_getopt(cfg, 'outputStr', ['triallength' num2str(triallength)]);
+saveData    = ft_getopt(cfg, 'saveData');
 
 if isempty(triallength)
     error('no config struct does not contain triallength')
