@@ -1,4 +1,28 @@
-function r = bv_scanwiseICC(Ws)
+function [ ICC_r, ICC_CI ] = bv_scanwiseICC( Ws, nboot )
+% calculates the ICC_r of global connectivity between two sessions.
+%
+% usages:
+%   [ ICC_r ] = bv_scanwiseICC( Ws )
+%   [ ICC_r, ICC_CI ] = bv_scanwiseICC( Ws, nboot )
+%
+% Input:
+%   Ws: connectivity matrices of two sessions with following dimensions:
+%         nNodes x nNodes x nSubjects x nSessions
+%   nboot (optional): calculates the 95% confidence interval of output ICC_r by
+%         using matlab bootstrp function with nboot being amount of datasamples
+%         drawn
+%
+% Output:
+%   ICC_r: ICC reliability value of global connectivity ('1-k')
+%   ICC_CI: 95% confidence interval if nboot input given
+%
+% See also ICC, NANSQUAREFORM, BOOTSTRP
+
+if nargin < 2
+  doboot = false;
+else
+  doboot = true;
+end
 
 sz = size(Ws);
 if sz(end) ~= 2
@@ -20,4 +44,9 @@ for iWs = 1:size(Ws,3)
     end
 end
 
-r = ICC(scAvg, '1-k');
+ICC_r = ICC(scAvg, '1-k');
+
+if doboot
+    bootstat = bootstrp(nboot,@(x) ICC(x, '1-k'), scAvg);
+    ICC_CI = prctile(bootstat, [2.5, 97.5])  
+end

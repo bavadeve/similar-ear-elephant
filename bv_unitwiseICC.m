@@ -1,4 +1,22 @@
 function r_unit = bv_unitwiseICC(Ws, pc)
+% calculates the ICC of all individual edges in a connectivity matrix over
+% sessions
+%
+% usages:
+%   [ ICC_unit ] = bv_unitwiseICC( Ws )
+%   [ ICC_unit ] = bv_unitwiseICC( Ws, pc )
+%
+% Input:
+%   Ws: undirectional connectivity matrices with the following dimensions:
+%         nNodes x nNodes x nSubjects x nSessions
+%   pc (optional): percentage threshold to only use the strongest percentage of
+%         connections (ranges from 0-100)
+%
+% Output:
+%   ICC_unit: ICC for all individual edges in connectivity matrix with
+%         size(1, (nNodes * (nNodes-1)) ./ 2)
+% See also, ICC
+%
 
 sz = size(Ws);
 if sz(end) ~= 2
@@ -22,14 +40,14 @@ end
 sqAvg = nansquareform(avg);
 Y = prctile(sqAvg, pc);
 thr = sqAvg>=Y;
-    
+
 n = size(Ws,3);
 sqWs1 = zeros(n, sum(thr));
 sqWs2 = zeros(n, sum(thr));
 for i = 1:n
     currSq1 = nansquareform(Ws(:,:,i,1));
     currSq2 = nansquareform(Ws(:,:,i,2));
-    
+
     sqWs1(i,:) = currSq1(thr);
     sqWs2(i,:) = currSq2(thr);
 end
@@ -45,6 +63,3 @@ for i = 1:m
     r_unit(i) = ICC(curr, '1-k');
     corr_unit(i) = corr(curr(:,1), curr(:,2));
 end
-
-
-

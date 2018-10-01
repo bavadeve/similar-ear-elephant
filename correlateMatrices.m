@@ -1,4 +1,9 @@
 function [R, P] = correlateMatrices(W1, W2)
+% usage:
+%   [R, P] = correlateMatrices(W1, W2)
+%
+% Calculates the pearson's R correlation between two connectivity matrices(W1 &
+% W2). Matrices have to have equal dimensions. NaNs will be ignored.
 
 if numel(W1) ~= numel(W2)
     error('different matrix sizes')
