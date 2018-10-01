@@ -24,7 +24,8 @@ function data = bv_appendfieldtripdata(cfg, dataOld)
 %                       analysis-pipeline (default: './setPaths')
 %   cfg.optionsFcn  = path to options function needed to run
 %                       analysis-pipeline (default: './setOptions')
-%   data: fieldtrip data structure, which should consist of multiple
+
+%   data: fieldtrip data structure, which should consist of multiple trials
 %
 % OUTPUTS:
 %   appenddata = data appended according to data.sampleinfo
@@ -37,13 +38,14 @@ currSubject = ft_getopt(cfg, 'currSubject');
 inputStr    = ft_getopt(cfg, 'inputStr');
 outputStr   = ft_getopt(cfg, 'outputStr');
 saveData    = ft_getopt(cfg, 'saveData');
-pathsFcn    = ft_getopt(cfg, 'pathsFcn', './setPaths')
-optionsFcn  = ft_getopt(cfg, 'optionsFcn', './setOptions')
+pathsFcn    = ft_getopt(cfg, 'pathsFcn', './setPaths');
+optionsFcn  = ft_getopt(cfg, 'optionsFcn', './setOptions');
 
-eval(optionsFcn);
-eval(pathsFcn);
+
 
 if nargin < 2
+    eval(optionsFcn);
+    eval(pathsFcn);
     subjectFolderPath = [PATHS.SUBJECTS filesep currSubject];
     [subjectdata, dataOld] = bv_check4data(subjectFolderPath, inputStr);
 else
@@ -70,7 +72,7 @@ evalc('data = ft_redefinetrial(cfg, dataOld);');
 fprintf('done! \n')
 
 if strcmpi(saveData, 'yes')
-
+    
     bv_saveData(subjectdata, data, outputStr)
-
+    
 end
