@@ -8,9 +8,9 @@ else
     WsNew = Ws;
 end
 
-Wsq = zeros(size(WsNew,3), length(squareform(WsNew(:,:,1))));
+Wsq = zeros(size(WsNew,3), length(nansquareform(WsNew(:,:,1))));
 for i = 1:size(WsNew,3)
-    Wsq(i,:) = squareform(WsNew(:,:,i));
+    Wsq(i,:) = nansquareform(WsNew(:,:,i));
 end
 
 if length(sz) > 3
