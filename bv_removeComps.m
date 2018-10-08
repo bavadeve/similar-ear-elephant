@@ -54,14 +54,13 @@ end
 
 fprintf('\t creating frequency plot ... ')
 
-output = 'pow';
-freqrange = [0.2 100];
-evalc('freq = bvLL_frequencyanalysis(data, freqrange, output, 1);');
-
+output = 'fourier';
+freqrange = [0 50];
+evalc('[freq, fd] = bvLL_frequencyanalysis(data, freqrange, output, 1);');
 freqFields  = fieldnames(freq);
 field2use   = freqFields{not(cellfun(@isempty, strfind(freqFields, 'spctrm')))};
 
-figure; semilogy(freq.freq, squeeze(nanmean(freq.(field2use))), 'LineWidth', 2)
+figure; semilogy(freq.freq, fd.powspctrm, 'LineWidth', 2)
 legend(data.label)
 set(gca, 'YLim', [0 Inf])
 set(gcf, 'units', 'normalized', 'Position', [0 0 xScreenLength yScreenLength])
@@ -193,14 +192,14 @@ if ~isnan(rmComps)
     fprintf('done! \n')
     
     
-    output = 'pow';
-    freqrange = [2 100];
-    evalc('freq = bvLL_frequencyanalysis(data, freqrange, output, 1);');
+    output = 'fourier';
+    freqrange = [0 50];
+    evalc('[freq, fd] = bvLL_frequencyanalysis(data, freqrange, output, 1);');
     
     freqFields  = fieldnames(freq);
     field2use   = freqFields{not(cellfun(@isempty, strfind(freqFields, 'spctrm')))};
     
-    fig3 = figure; plot(freq.freq, log10(abs(squeeze(nanmean(freq.(field2use)))))', 'LineWidth', 2)
+    fig3 = figure; semilogy(fd.freq, fd.powspctrm, 'LineWidth', 2)
     legend(data.label)
     set(gca, 'YLim', [-4 Inf])
     set(fig3, 'units', 'normalized', 'Position', [0 0 xScreenLength yScreenLength])
@@ -229,10 +228,10 @@ if ~isnan(rmComps)
         save(subjectdata.PATHS.COMPREMOVED, 'data')
         fprintf('done! \n')
         
-        analysisOrder = strsplit(subjectdata.analysisOrder, '-');
-        analysisOrder = [analysisOrder outputStr];
-        analysisOrder = unique(analysisOrder, 'stable');
-        subjectdata.analysisOrder = strjoin(analysisOrder, '-');
+%         analysisOrder = strsplit(subjectdata.analysisOrder, '-');
+%         analysisOrder = [analysisOrder outputStr];
+%         analysisOrder = unique(analysisOrder, 'stable');
+%         subjectdata.analysisOrder = strjoin(analysisOrder, '-');
         
         subjectdata.cfgs.(outputStr) = oldcfg;
         fprintf('\t Saving Subject.mat ... ')
@@ -251,11 +250,11 @@ else
         save(subjectdata.PATHS.COMPREMOVED, 'data')
         fprintf('done! \n')
         
-        analysisOrder = strsplit(subjectdata.analysisOrder, '-');
-        analysisOrder = [analysisOrder outputStr];
-        analysisOrder = unique(analysisOrder, 'stable');
-        subjectdata.analysisOrder = strjoin(analysisOrder, '-');
-        
+%         analysisOrder = strsplit(subjectdata.analysisOrder, '-');
+%         analysisOrder = [analysisOrder outputStr];
+%         analysisOrder = unique(analysisOrder, 'stable');
+%         subjectdata.analysisOrder = strjoin(analysisOrder, '-');
+%         
         subjectdata.cfgs.(outputStr) = oldcfg;
         
         subjectdata.cfgs.(outputStr) = oldcfg;

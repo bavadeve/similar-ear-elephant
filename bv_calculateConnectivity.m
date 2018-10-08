@@ -177,34 +177,24 @@ switch(method)
                 cfg = [];
                 cfg.saveData = 'no';
                 cfg.triallength = triallength;
-                [data] = bv_cutAppendedIntoTrials(cfg, data);
+                [dataCut, finished] = bv_cutAppendedIntoTrials(cfg, dataFilt);
             end
             
             % select data based on condition and select random trials
             cfg = [];
             if strcmpi(condition, 'all')
                 if strcmpi(ntrials, 'all')
-                    cfg.trials = 1:length(data.trial);
+                    cfg.trials = 1:length(dataFilt.trial);
                 else
-                    cfg.trials = sort(randperm(length(data.trial), ntrials));
+                    cfg.trials = sort(randperm(length(dataFilt.trial), ntrials));
                 end
             else
-                itrl = find(ismember(data.trialinfo, condition));
+                itrl = find(ismember(dataFilt.trialinfo, condition));
                 if strcmpi(ntrials, 'all')
                     cfg.trials = itrl;
                 else
                     cfg.trials = itrl(randperm(numel(itrl),ntrials));
                 end
-            end
-            
-            if ~isempty(triallength)
-                cfg = [];
-                cfg.saveData = 'no';
-                cfg.triallength = triallength;
-                [dataCut, finished] = bv_cutAppendedIntoTrials(cfg, dataFilt);
-            else
-                dataCut = data;
-                finished = 1;
             end
             
             if finished == 0
@@ -215,16 +205,16 @@ switch(method)
             fprintf('\t calculating PLI ... ')
             PLIs = PLI(dataCut.trial,1);
             PLIs = cat(3,PLIs{:});
-            W = mean(PLIs,3);
+%             W = mean(PLIs,3);
             
-            connectivity.plispctrm(:,:,iFreq) = W;
+            connectivity.plispctrm(:,:,:,iFreq) = PLIs;
             fprintf('done!\n')
         end
         
         connectivity.dimord = 'chan_chan__trl_freq';
         connectivity.freq = freqLabel;
         connectivity.freqRng = freqRng;
-        connectivity.label = data.label;
+        connectivity.label = dataCut.label;
         connectivity.trialinfo = dataCut.trialinfo;
         
 end

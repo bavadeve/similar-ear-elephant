@@ -1,9 +1,10 @@
 function [data, finished] = bv_cutAppendedIntoTrials(cfg, dataOld)
 % Cuts appended data into trials of given triallength, using
-% ft_redefinetrial an
+% ft_redefinetrial. Only cuts continuous / consecutive data. 
+%
 % Can be used with data input:
 %  [ cutdata ] = bv_cutAppendedIntoTrials(cfg, appenddata)
-% 
+%
 % which needs an cfg structure with the following fields:
 %   cfg.triallength = [ number ], length (in s) of the trials
 %
@@ -15,7 +16,7 @@ function [data, finished] = bv_cutAppendedIntoTrials(cfg, dataOld)
 %   cfg.triallength     = [ number ], length (in s) of the trials
 %   cfg.currSubject     = 'string', subjectfoldername to analyze
 %   cfg.inputStr        = 'string', string to find data to analyze (should
-%                           be named after the field in the subjectdata.PATHS 
+%                           be named after the field in the subjectdata.PATHS
 %                           structure (f.e. 'APPEND'))
 %   cfg.outputStr       = 'string', output string to save the file
 %                           (default: ['triallength' num2str(triallength)])
@@ -40,21 +41,18 @@ end
 
 if nargin < 2
     disp(currSubject)
-    
+
     eval('setOptions');
     eval('setPaths');
-    
+
     subjectFolderPath = [PATHS.SUBJECTS filesep currSubject];
     [subjectdata, dataOld] = bv_check4data(subjectFolderPath, inputStr);
 else
     saveData = 'no';
 end
 
-if ~isfield(dataOld, 'contSecs')
-    dataOld.contSecs = (diff(dataOld.sampleinfo') + 1) ./ dataOld.fsample;
-end
-
-trialparts2use = find(dataOld.contSecs > triallength);
+continuousSeconds = (diff(dataOld.sampleinfo') + 1) ./ dataOld.fsample;
+trialparts2use = find(continuousSeconds > triallength);
 
 if isempty(trialparts2use)
     fprintf('\t \t no trials found, skipping ... \n')
@@ -67,16 +65,16 @@ sampleinfo = [];
 trialinfo = [];
 for i = 1:length(trialparts2use)
     trl = trialparts2use(i);
-    nTrls = floor(dataOld.contSecs(trl) / triallength);
-    
+    nTrls = floor(continuousSeconds(trl) / triallength);
+
     for j = 1:nTrls
         currsampleinfoStart = (dataOld.sampleinfo(trl,1) + triallength*dataOld.fsample*(j-1));
         currsampleinfoEnd = dataOld.sampleinfo(trl,1) + triallength*dataOld.fsample*(j) - 1;
         currsampleinfo = [currsampleinfoStart currsampleinfoEnd];
-        
+
         sampleinfo = cat(1, sampleinfo, currsampleinfo);
         trialinfo = cat(1, trialinfo, dataOld.trialinfo(trl));
-        
+
     end
 end
 
@@ -91,9 +89,8 @@ evalc('data = ft_redefinetrial(cfg, dataOld);');
 fprintf('done! \n')
 
 if strcmpi(saveData, 'yes')
-    
+
     bv_saveData(subjectdata, data, outputStr)
-    
+
 end
 finished = 1;
-

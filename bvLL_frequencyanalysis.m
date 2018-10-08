@@ -4,7 +4,7 @@ if nargin < 4
     redefinetrial = 0;
 end
 if nargin < 3
-    output = 'powandcsd';
+    output = 'fourier';
 end
 if nargin < 2
     error('Please input data')
@@ -20,19 +20,17 @@ if redefinetrial
     data = ft_redefinetrial(cfg, data);
 end
 
-% fprintf('\t frequency analysis ... ')
 cfg = [];
 cfg.method      = 'mtmfft';
 cfg.taper       = 'dpss';
-cfg.output      = output;
 cfg.tapsmofrq   = 1;
-cfg.foilim      = [freqrange(1) freqrange(2)];
-cfg.keeptrials  = 'yes';
+cfg.output      = output;
+cfg.toi         = '50%';
+cfg.foi         = freqrange(1):0.25:freqrange(2);
+cfg.t_ftimwin   = ones(1, length(cfg.foi))*1;
 cfg.pad         ='nextpow2';
-freq = ft_freqanalysis(cfg, data);
-fd = ft_freqdescriptives(cfg, freq);
-
-% fprintf('done! \n')
-
-
+cfg.keeptrials  = 'yes';
+cfg.keeptapers  = 'yes';
+evalc('freq = ft_freqanalysis(cfg, data);');
+evalc('fd = ft_freqdescriptives(cfg, freq);');
 

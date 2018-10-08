@@ -45,6 +45,7 @@ pathsFcn = ft_getopt(cfg, 'pathsFcn','setPaths');
 inputStr = ft_getopt(cfg, 'inputStr', 'preproc');
 rawdelim = ft_getopt(cfg, 'rawdelim');
 sfolderstruct = ft_getopt(cfg, 'subjectfolderstructure');
+trialfun = ft_getopt(cfg, 'trialfun');
 
 % load in standard options and paths
 eval(optionsFcn);
@@ -66,10 +67,12 @@ if ~exist(PATHS.SUBJECTS,'dir'); mkdir PATHS.SUBJECTS; end % create, if necessar
 
 removeIdx = 0;
 for subjIndex = 1:length(fileNames)
+    include = true;
     inputnames = varargin;
     [~, cFile] = fileparts(fileNames{subjIndex});
+    a = regexp(cFile, '[A-B,0-9]', 'Match');
     
-    splitFile = strsplit(cFile, '_');
+    splitFile = {[a{:}]};
     
     inputdiff = length(splitFile) - length(inputnames);
     if inputdiff > 0
@@ -85,7 +88,7 @@ for subjIndex = 1:length(fileNames)
         subjectdata.(inputnames{i}) = splitFile{i};
     end
     
-    switch OPTIONS.dataType % find raw EEG files (can be 'bdf' or 'eeg' datatype')
+    switch OPTIONS.dataType % find EEG files to start analysis with (can be 'bdf', 'eeg' or 'mat')
         case 'eeg'
             israw = 1;
             dataFile = [PATHS.RAWS filesep cFile  '.eeg'];
@@ -109,7 +112,6 @@ for subjIndex = 1:length(fileNames)
                 error('headerfile: %s not found!', hdrFile)
             end
             
-            
         case 'mat'
             israw = 0;
             dataFile = 'unknown';
@@ -129,6 +131,24 @@ for subjIndex = 1:length(fileNames)
     
     subjectdata.subjectName = strjoin(splitFile(ismember(inputnames, sfolderstruct)), rawdelim);
     disp(subjectdata.subjectName);
+    
+    if ~isempty(trialfun)
+        fprintf('\t checking for trials based on %s ... \n', trialfun)
+        cfg = [];
+        cfg.headerfile = hdrFile;
+        cfg.dataset = dataFile;
+        cfg.trialfun = trialfun;
+        cfg.Fs= 2048;
+        try
+            evalc('cfg = ft_definetrial(cfg);');
+        catch
+            fprintf('no trials found, skipping current subject\n')
+            include = false;
+            continue
+        end
+        
+        fprintf('\t \t %1.0f trials found \n', size(cfg.trl,1))
+    end
     
     paths2SubjectFolder = [PATHS.SUBJECTS filesep subjectdata.subjectName]; % create a path to current subject folder
     if ~exist(paths2SubjectFolder,'dir')

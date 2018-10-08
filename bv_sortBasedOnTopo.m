@@ -1,5 +1,5 @@
 function [ data ] = bv_sortBasedOnTopo(data)
-% sortBasedOnTopo uses FT_PREPARE_LAYOUT to sort the data channels base on
+% sortBasedOnTopo uses FT_PREPARE_LAYOUT to sort the data channels based on
 % actual place on the brain sorted from front to back and left to right
 %
 % Use as:

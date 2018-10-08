@@ -133,7 +133,7 @@ if ~hasdata % check whether data needs to be loaded from subject.mat file
     
     % Try to load in individuals Subject.mat. If unknown --> throw error.
     try
-        load([PATHS.SUBJECTS filesep currSubject filesep 'Subject.mat'])
+        load([PATHS.SUBJECTS filesep currSubject filesep 'Subject.mat'], 'subjectdata')
     catch
         error('Subject.mat file not found')
     end
@@ -161,7 +161,7 @@ end
 subjectdata.cfgs.(outputStr) = cfg; % save used config file in subjectdata
 subjectdata.rmChannels = rmChannels'; % save possible removed channels in subjectdata
 
-fprintf('\t loading in data and rereferencing... ')
+fprintf('\t loading in data  ')
 cfg = []; % start new cfg file for loading data
 
 % only read in EEG data (without possible removed channels)
@@ -176,7 +176,7 @@ cfg.headerfile = hdrfile;
 cfg.continuous = 'yes';
 
 if strcmpi(reref, 'yes')
-    
+    fprintf('and rereferencing...');
     fprintf('\n \t \t rereferencing to %s electrode ... ', refelec)
     cfg.reref = 'yes';
     cfg.refchannel = refelec;
@@ -189,24 +189,18 @@ end
 evalc('data = ft_preprocessing(cfg);');
 fprintf('done! \n')
 
-data = bv_sortBasedOnTopo(data); % sorting data based on actual place of the electrodes. See function or more detail.
+data = bv_sortBasedOnTopo(data); % sorting data based on actual place of the electrodes. See function for more detail.
 
 
-% *** Resampling (if a resampleFs is edogiven)
+% *** Resampling (if a resampleFs is given)
 if ~isempty(resampleFs)
     
-    % important steps to take to ensure sample info can be used after
-    % resampling. 1) adding a channel to the original data that contains
-    % sample indices of the original data set (1:ntotalsamples). 2)
-    % downsampling causes this sample indices also to be downsampled.
-    % Therefore giving you he mapping between the new and the old samples
-    % (see https://mailman.science.ru.nl/pipermail/fieldtrip/2016-March/010263.html)
-    % Check BV_RESAMPLEEEGDATA for analysis
-    
+    fprintf('\t Resampling data from %s to %s ... ', num2str(data.fsample), num2str(resampleFs))
     cfg = [];
-    cfg.resampleFs = resampleFs;
+    cfg.resamplefs  = resampleFs;
+    % cfg.detrend     = 'yes';
     
-    [ data  ] = bv_resampleEEGdata( cfg , data );
+    evalc('data = ft_resampledata(cfg, data);');
     
     analysisOrd = [analysisOrd, 'res']; % managing analysis order to be saved later
     

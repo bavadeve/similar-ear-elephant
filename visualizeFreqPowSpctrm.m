@@ -20,9 +20,6 @@ function powSpectMean = visualizeFreqPowSpctrm(cfg)
 %   cfg.dataStr         [string] unique string where the data to be
 %                           analyzed's filename is ending in
 %
-%
-%
-
 % get options
 subjects                = ft_getopt(cfg, 'subjects', 'all');
 triallength             = ft_getopt(cfg, 'triallength',2);
@@ -47,32 +44,32 @@ if ~strcmp(subjects, 'all')
 end
 
 for iFolName = 1:length(subjectFolderNames)
-    
+
     try
         load([PATHS.SUBJECTS filesep subjectFolderNames{iFolName} filesep 'Subject.mat'])
     catch
         error('ERROR: no Subject.mat found for %s', subjectFolderNames{iFolName})
     end
-    
+
     cd([subjectdata.PATHS.SUBJECTDIR filesep analysisTree])
     disp(subjectdata.subjectName)
-    
+
     previousDataFile = dir('*cleaned.mat');
     try
         load(previousDataFile.name)
     catch
         error('ERROR: dataStr = %s not found', dataStr)
     end
-    
+
     fprintf('\t %s loaded \n', previousDataFile.name)
-    
+
     if length(data.trial) == 1
         fprintf('\t Continuous data detected: \n \t')
         cfg = [];
         cfg.triallength     = triallength;
         data = cutIntoEpochs(cfg, data);
     end
-    
+
     cfg = [];
     cfg.method      = 'mtmfft';
     cfg.taper       = 'hanning';
@@ -81,19 +78,19 @@ for iFolName = 1:length(subjectFolderNames)
     cfg.foilim      = freqrange;
     cfg.keeptrials  = 'yes';
     evalc('freq = ft_freqanalysis(cfg, data);');
-    
+
     powSpectPerChannel(:,:,iFolName) = squeeze(mean(freq.powspctrm,1));
     powSpectMean(iFolName,:) = squeeze(mean(mean(freq.powspctrm,1),2));
-    
+
     if strcmpi(showAll, 'yes')
         figure(1); clf; plot(freq.freq, powSpectPerChannel)
         title([subjectdata.subjectName ': Powerspectra for all channels'])
         legend(data.label)
-        
+
         figure(2); clf; plot(freq.freq, powSpectMean(iFolName,:))
         title([subjectdata.subjectName ': Average powerspectrum'])
         drawnow
-        
+
         fprintf('\t press Space to continue...\n')
         figure(1); figure(2);
         while 1
@@ -107,12 +104,12 @@ for iFolName = 1:length(subjectFolderNames)
     elseif strcmpi(showAll, 'no')
         continue
     else
-        error('cfg.showAll: %s unknown variable', showAll) 
+        error('cfg.showAll: %s unknown variable', showAll)
     end
-    
+
 end
 close all;
-figure(3); clf; 
+figure(3); clf;
 plot(freq.freq, powSpectMean)
 legend(subjectFolderNames)
 figure(4); clf;
