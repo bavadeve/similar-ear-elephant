@@ -28,6 +28,8 @@ scroll          = ft_getopt(cfg, 'scroll', 'no');
 visible         = ft_getopt(cfg, 'visible', 'on');
 channel         = ft_getopt(cfg, 'channel', 'all');
 
+mp = get(0, 'MonitorPositions');
+
 if strcmpi(scroll, 'yes')
     doScroll = true;
 else
@@ -63,7 +65,7 @@ if isempty(badPartsMatrix)
     startIndx = find(vTime==startVal);
     endIndx = find(vTime==endVal);
     
-    vertLim = max(max(trialData))./5;
+    vertLim = mean(max(trialData)).*1.5;
     
     limVector = vertLim:vertLim:vertLim*(size(trialData,1));
     limMatrix = repmat(limVector', 1, size(trialData,2));
@@ -72,6 +74,10 @@ if isempty(badPartsMatrix)
     newBadData  = nan(size(newGoodData));
     
     fig_handle = figure(fignum);
+    figure(fignum);
+    figpos = mp(size(mp,1),:);
+    figpos = [figpos(1) + figpos(3)/2, figpos(2) figpos(3)/2 figpos(4)];
+    set(gcf, 'Position', figpos);
     set(gca, 'FontSize', 20)
     plot(vTime, newGoodData, 'b')
     hold on
@@ -88,7 +94,6 @@ if isempty(badPartsMatrix)
     title(['part ' num2str(currPart) '/' num2str(nParts)])
     
     drawnow
-    figure(fignum);
     
     if doScroll
         set(gcf, 'KeyPressFcn', @scrollView);
@@ -156,6 +161,9 @@ else
     else
         fig_handle = figure(fignum);
     end
+    figpos = mp(size(mp,1),:);
+    figpos = [figpos(1) + figpos(3)/2, figpos(2) figpos(3)/2 figpos(4)];
+    set(gcf, 'Position', figpos);
     set(gca, 'FontSize', 20)
     plot(vTime(startIndx:endIndx), newGoodData(:,(startIndx:endIndx)), 'b')
     hold on

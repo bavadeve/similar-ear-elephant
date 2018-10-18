@@ -60,10 +60,13 @@ evalc('[freq, fd] = bvLL_frequencyanalysis(data, freqrange, output, 1);');
 freqFields  = fieldnames(freq);
 field2use   = freqFields{not(cellfun(@isempty, strfind(freqFields, 'spctrm')))};
 
-figure; semilogy(freq.freq, fd.powspctrm, 'LineWidth', 2)
+mp = get(0, 'MonitorPositions');
+figure;
+set(gcf, 'Position', mp(size(mp,1),:));
+semilogy(freq.freq, squeeze(mean(fd.powspctrm)), 'LineWidth', 2)
 legend(data.label)
 set(gca, 'YLim', [0 Inf])
-set(gcf, 'units', 'normalized', 'Position', [0 0 xScreenLength yScreenLength])
+% set(gcf, 'units', 'normalized', 'Position', [0 0 xScreenLength yScreenLength])
 
 cfg = [];
 cfg.fighandle   = gcf;
@@ -85,7 +88,7 @@ if automaticFlag
     rmComps = automaticCompRemoval(cfg, data, comp);
     
 else
-
+    
     fprintf('\t preparing layout...')
     cfg = [];
     cfg.channel  = data.label;
@@ -98,16 +101,16 @@ else
     
     fprintf('\t showing components ... \n')
     
-    cfg = [];
-    cfg.component = 1:length(comp.label); % specify the component(s) that should be plotted
-    cfg.layout    = 'EEG1010'; % specify the layout file that should be used for plotting
-    cfg.comment   = 'no';
-    cfg.compscale = 'local';
-    cfg.interactive = 'no';
-    figure();
-    evalc('ft_topoplotIC(cfg, comp);');
-    set(gcf, 'units', 'normalized', 'Position', [xScreenLength/2 yScreenLength xScreenLength/2 yScreenLength])
-    
+%     cfg = [];
+%     cfg.component = 1:length(comp.label); % specify the component(s) that should be plotted
+%     cfg.layout    = 'EEG1010'; % specify the layout file that should be used for plotting
+%     cfg.comment   = 'no';
+%     cfg.compscale = 'local';
+%     cfg.interactive = 'no';
+%     figure();
+%     evalc('ft_topoplotIC(cfg, comp);');
+% %     set(gcf, 'units', 'normalized', 'Position', [xScreenLength/2 yScreenLength xScreenLength/2 yScreenLength])
+%     
     cfg = [];
     cfg.badPartsMatrix  = [];
     cfg.horzLim         = 60;
@@ -132,9 +135,9 @@ end
 
 if ~isnan(rmComps)
     rmComps = unique(rmComps);
-
+    
     rmCompIndx = rmComps;
-    rmComps = reshape(rmComps, length(rmComps), 1);    
+    rmComps = reshape(rmComps, length(rmComps), 1);
     
     badPartsMatrix = [repmat(1:length(comp.trial),1,length(rmComps))', ...
         sort(repmat(rmComps, length(comp.trial), 1))];
@@ -146,17 +149,17 @@ if ~isnan(rmComps)
     cfg.visible         = 'on';
     cfg.channel         = 'all';
     fig1 = scrollPlotData(cfg, comp);
-    set(gcf, 'units', 'normalized', 'Position', [xScreenLength/2 yScreenLength xScreenLength/2 yScreenLength])
+%     set(gcf, 'units', 'normalized', 'Position', [xScreenLength/2 yScreenLength xScreenLength/2 yScreenLength])
     
-    cfg = [];
-    cfg.component = rmComps; % specify the component(s) that should be plotted
-    cfg.layout    = 'EEG1010'; % specify the layout file that should be used for plotting
-    cfg.comment   = 'no';
-    cfg.compscale = 'local';
-    cfg.interactive = 'no';
-    fig2 = figure();
-    evalc('ft_topoplotIC(cfg, comp);');
-    set(gcf, 'units', 'normalized', 'Position', [0 0 xScreenLength/2 yScreenLength])
+%     cfg = [];
+%     cfg.component = rmComps; % specify the component(s) that should be plotted
+%     cfg.layout    = 'EEG1010'; % specify the layout file that should be used for plotting
+%     cfg.comment   = 'no';
+%     cfg.compscale = 'local';
+%     cfg.interactive = 'no';
+%     fig2 = figure();
+%     evalc('ft_topoplotIC(cfg, comp);');
+%     set(gcf, 'units', 'normalized', 'Position', [0 0 xScreenLength/2 yScreenLength])
     
     
     if strcmpi(saveFigure, 'yes')
@@ -199,10 +202,12 @@ if ~isnan(rmComps)
     freqFields  = fieldnames(freq);
     field2use   = freqFields{not(cellfun(@isempty, strfind(freqFields, 'spctrm')))};
     
-    fig3 = figure; semilogy(fd.freq, fd.powspctrm, 'LineWidth', 2)
+    fig3 = figure;
+    set(gcf, 'Position', mp(size(mp,1),:));
+    semilogy(fd.freq, squeeze(mean(fd.powspctrm)), 'LineWidth', 2)
     legend(data.label)
     set(gca, 'YLim', [-4 Inf])
-    set(fig3, 'units', 'normalized', 'Position', [0 0 xScreenLength yScreenLength])
+%     set(fig3, 'units', 'normalized', 'Position', [0 0 xScreenLength yScreenLength])
     
     drawnow;
     
@@ -228,10 +233,10 @@ if ~isnan(rmComps)
         save(subjectdata.PATHS.COMPREMOVED, 'data')
         fprintf('done! \n')
         
-%         analysisOrder = strsplit(subjectdata.analysisOrder, '-');
-%         analysisOrder = [analysisOrder outputStr];
-%         analysisOrder = unique(analysisOrder, 'stable');
-%         subjectdata.analysisOrder = strjoin(analysisOrder, '-');
+        %         analysisOrder = strsplit(subjectdata.analysisOrder, '-');
+        %         analysisOrder = [analysisOrder outputStr];
+        %         analysisOrder = unique(analysisOrder, 'stable');
+        %         subjectdata.analysisOrder = strjoin(analysisOrder, '-');
         
         subjectdata.cfgs.(outputStr) = oldcfg;
         fprintf('\t Saving Subject.mat ... ')
@@ -250,11 +255,11 @@ else
         save(subjectdata.PATHS.COMPREMOVED, 'data')
         fprintf('done! \n')
         
-%         analysisOrder = strsplit(subjectdata.analysisOrder, '-');
-%         analysisOrder = [analysisOrder outputStr];
-%         analysisOrder = unique(analysisOrder, 'stable');
-%         subjectdata.analysisOrder = strjoin(analysisOrder, '-');
-%         
+        %         analysisOrder = strsplit(subjectdata.analysisOrder, '-');
+        %         analysisOrder = [analysisOrder outputStr];
+        %         analysisOrder = unique(analysisOrder, 'stable');
+        %         subjectdata.analysisOrder = strjoin(analysisOrder, '-');
+        %
         subjectdata.cfgs.(outputStr) = oldcfg;
         
         subjectdata.cfgs.(outputStr) = oldcfg;
