@@ -1,5 +1,5 @@
 clear results ICCresults graph
-str = 'pli8';
+str = 'pli3';
 
 a = dir([ str '_*.mat']);
 resultStr = {a.name};
@@ -40,8 +40,8 @@ for i = 1:length(resultStr)
                 fprintf('done! \n')
 
             case 'conMatrixCor75'
-                fprintf(['\t calculating correlation between connectivity ...
-                            matrices with only strongest connections \n'])
+                fprintf(['\t calculating correlation between connectivity ' ...
+                            'matrices with only strongest connections \n'])
                 avgW = nanmean(nanmean(Ws,3),4);
                 newWs = Ws.*(repmat(double(avgW>prctile(squareform(avgW),75)), 1,1,60,2));
                 newWs(newWs == 0) = NaN;

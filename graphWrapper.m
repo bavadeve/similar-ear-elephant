@@ -1,6 +1,6 @@
 clear all
 
-str = 'pli';
+str = 'pli5';
 
 a = dir([str '*_*'  '.mat']);
 resultStr = {a.name};
@@ -8,7 +8,7 @@ resultStr = {a.name};
 % resultStr = {
 inputData = 'weighted';
 
-graphMetrics = {'CPL','CC'};
+graphMetrics = {'CC', 'CPL'};
 
 for i = 1:length(resultStr)
     disp(resultStr{i})
