@@ -19,7 +19,6 @@ for i = 1:m
         case 'binary'
             [Ci(:,i),Q(i)] = modularity_und(W);
         case 'weighted'
-            W = threshold_proportional(W, 0.15);
             [Ci(:,i),Q(i)] = modularity_und(W);
     end
 end

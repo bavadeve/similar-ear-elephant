@@ -38,14 +38,15 @@ currSubject = ft_getopt(cfg, 'currSubject');
 inputStr    = ft_getopt(cfg, 'inputStr');
 outputStr   = ft_getopt(cfg, 'outputStr');
 saveData    = ft_getopt(cfg, 'saveData');
-pathsFcn    = ft_getopt(cfg, 'pathsFcn', './setPaths');
-optionsFcn  = ft_getopt(cfg, 'optionsFcn', './setOptions');
+pathsFcn    = ft_getopt(cfg, 'pathsFcn', 'setPaths');
+optionsFcn  = ft_getopt(cfg, 'optionsFcn', 'setOptions');
 
 
 
 if nargin < 2
     eval(optionsFcn);
     eval(pathsFcn);
+    disp(currSubject)
     subjectFolderPath = [PATHS.SUBJECTS filesep currSubject];
     [subjectdata, dataOld] = bv_check4data(subjectFolderPath, inputStr);
 else
@@ -53,7 +54,6 @@ else
 end
 
 %%%% calculating own trl for appending data %%%%
-disp(currSubject)
 fprintf('\t appending cleaned data based on data.sampleinfo ... ')
 fsample = dataOld.fsample;
 triallength = size(dataOld.trial{1},2) ./ 512;

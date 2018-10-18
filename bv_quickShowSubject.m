@@ -43,7 +43,8 @@ if israw
     
     cfg.channel = 'EEG';
     cfg.viewmode = 'vertical';
-%     cfg.blocksize = 60;
+    cfg.blocksize = 8;
+    cfg.continuous = 'yes';
     cfg.ylim = [-150 150];
     fprintf('\t showing %s data \n', upper(filestr))
     evalc('ft_databrowser(cfg)');
@@ -52,9 +53,8 @@ else
     
     [~, data] = bv_check4data(subjectFolderPath, upper(filestr));
     cfg.viewmode = 'vertical';
-    if length(data.trial) == 1
-        cfg.blocksize = 60;
-    end
+    cfg.blocksize = 8;
+    cfg.continuous = 'yes';
     
     cfg.ylim = [-150 150];
     fprintf('\t showing %s data \n', upper(filestr))
