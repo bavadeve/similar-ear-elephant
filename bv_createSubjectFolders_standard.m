@@ -163,6 +163,8 @@ for subjIndex = 1:length(fileNames)
     
     subjectdata.date = date;
     
+    [subjectdata.testdate , subjectdata.testtime] = bv_readOutDateAndTimeBdf(dataFile)
+    
     fprintf('\t saving Subject.mat...')
     save([subjectdata.PATHS.SUBJECTDIR filesep 'Subject'],'subjectdata'); % save individual subjectdata structure to individual folder
     fprintf('done \n')
