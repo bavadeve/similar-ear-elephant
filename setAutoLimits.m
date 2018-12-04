@@ -13,7 +13,7 @@ if nargin < 1
     end
 end
 
-dataObjs = get(ax, 'Children'); %handles to low-level graphics objects in axes
+dataObjs = get(ax, 'Children'); % handle to low-level graphics objects in axes
 
 data = dataObjs.CData;
 minlim = min(nansquareform(data));
