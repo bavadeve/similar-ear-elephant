@@ -61,16 +61,16 @@ if strcmpi(gammaremoval, 'yes')
     
     fprintf('\t searching for components with too high gamma ... ')
     
-    output = 'pow';
+    output = 'fourier';
     freqrange = [0.2 100];
-    evalc('freq = bvLL_frequencyanalysis(comp, freqrange, output, 0);');
+    evalc('[freq, fd] = bvLL_frequencyanalysis(comp, freqrange, output, 0);');
     
-    lowgammastart = find(freq.freq == 25);
-    lowgammaend = find(freq.freq == 45);
-    highgammastart = find(freq.freq == 55);
-    highgammaend = find(freq.freq == 85);
+    lowgammastart = find(fd.freq == 25);
+    lowgammaend = find(fd.freq == 45);
+    highgammastart = find(fd.freq == 55);
+    highgammaend = find(fd.freq == 85);
 
-    meangamma = squeeze(mean(mean(freq.powspctrm(:,:,[lowgammastart:lowgammaend, highgammastart:highgammaend])),3));
+    meangamma = squeeze(nanmean(nanmean(fd.powspctrm(:,:,[lowgammastart:lowgammaend, highgammastart:highgammaend])),3));
     gammacomps = find(isoutlier(meangamma));
     
     if isempty(gammacomps)
