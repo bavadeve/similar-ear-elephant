@@ -30,7 +30,7 @@ cfg = [];
 cfg.method              = method;
 cfg.(method).extended   = extended;
 cfg.(method).pca        = rank(trialdata);
-evalc('comp = ft_componentanalysis(cfg, data);');
+comp = ft_componentanalysis(cfg, data);
 
 fprintf('done! \n')
 
