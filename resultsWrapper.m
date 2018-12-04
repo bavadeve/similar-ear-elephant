@@ -1,9 +1,8 @@
-clear results ICCresults graph
-str = 'pli3';
+clear all
+str = 'pli5';
 
 a = dir([ str '_*.mat']);
 resultStr = {a.name};
-
 
 method = {'all'};
 
@@ -121,12 +120,12 @@ for i = 1:length(resultStr)
                     results = rmfield(results, 'globConn');
                 end
 
-
                 for iWs = 1:size(Ws,3)
                     for jWs = 1:size(Ws,4)
                         results.globConn(iWs, jWs) = nanmean(squareform(Ws(:,:,iWs, jWs)));
                     end
                 end
+                
                 fprintf('done! \n')
 
                 fprintf('\t saving to %s ... ', resultStr{i})
@@ -136,7 +135,7 @@ for i = 1:length(resultStr)
             case 'globCoV'
                 fprintf('\t calculating CoV on global connectivity ... ')
                 results.cov = calculateCoV(results.globConn(:,1));
-                bootstat = bootstrp(1000,@calculateCoV, results.globConn(:,1));
+                bootstat = bootstrp(10000,@calculateCoV, results.globConn(:,1));
 
                 results.cov_CI(1) = prctile(bootstat, 2.5);
                 results.cov_CI(2)  = prctile(bootstat, 97.5);
@@ -153,7 +152,7 @@ for i = 1:length(resultStr)
                 fprintf('done! \n')
 
                 fprintf('\t bootstrapping to calculate CI ... ')
-                bootstat = bootstrp(1000,@(x) ICC(x, '1-k'), results.globConn);
+                bootstat = bootstrp(10000,@(x) ICC(x, '1-k'), results.globConn);
 
                 results.globICC_CI(1)  = prctile(bootstat, 2.5);
                 results.globICC_CI(2)  = prctile(bootstat, 97.5);
