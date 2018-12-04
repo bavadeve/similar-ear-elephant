@@ -4,7 +4,7 @@ inputStr    = ft_getopt(cfg, 'inputStr');
 outputStr   = ft_getopt(cfg, 'outputStr', 'comparePower');
 optionsFcn  = ft_getopt(cfg, 'optionsFcn', 'setOptions');
 pathsFcn    = ft_getopt(cfg, 'pathsFcn', 'setPaths');
-saveFigures = ft_getopt(cfg, 'saveFigures', 'yes');
+saveFigures = ft_getopt(cfg, 'saveFigures', 'no');
 channel    = ft_getopt(cfg, 'channel', 'all');
 
 eval(optionsFcn)
