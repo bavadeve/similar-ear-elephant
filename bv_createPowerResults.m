@@ -25,8 +25,7 @@ allNames = nFolders(any(cat(1,(out{:})),1));
 sessionString = {'A', 'B'};
 
 noSubject = 0;
-tmp = 'POWER';
-evalc('[~, data] = bv_check4data([PATHS.SUBJECTS filesep nFolders{1}], tmp);');
+evalc('[~, data] = bv_check4data([PATHS.SUBJECTS filesep nFolders{1}], ''POWER'');');
 
 fnames = fieldnames(data);
 
@@ -43,7 +42,7 @@ for j = 1:length(sessionString)
         cfg.subjects = currSubjects;
         cfg.fields = fnames{i};
         cfg.structFileName = 'power';
-        cfg.structVarFname = 'data';
+        cfg.structVarFname = 'powerdata';
         cfg.optionsFcn = 'setOptions';
         cfg.pathsFcn = 'setPaths';
         
