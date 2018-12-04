@@ -11,8 +11,8 @@ folders = dir([PATHS.SUBJECTS filesep '*' OPTIONS.sDirString '*']);
 nFolders = {folders.name};
 subjectNames = cellfun(@(v) v(1:5), nFolders, 'Un', 0);
 subjectNames = unique(subjectNames);
-
 noSubject = 0;
+
 for i = 1:length(subjectNames);
     currSubjectName = subjectNames{i};
     disp(currSubjectName)
@@ -40,19 +40,15 @@ for i = 1:length(subjectNames);
                 end
                 fnames = fieldnames(connectivity);
                 spctrmname = fnames(not(cellfun(@isempty, strfind(fnames, 'spctrm'))));
-                
-                %                 age(noSession) = subjectdata.ageInDays;
-                %                 gender = subjectdata.gender;
-                subjWs(:,:,:,:, noSession) =  connectivity.(spctrmname{:});
+                subjWs(:,:,:, noSession) =  connectivity.(spctrmname{:});
+                subjtrials(noSession) = length(connectivity.trialinfo);
                 
             end
             
             if sessionsFound == 2;
-%                 socialWs(:,:,:,noSubject,:) = mean(subjWs;
+                Ws(:,:,:,noSubject,:) = subjWs;
                 subjects{noSubject} = currSubjectName;
-                %                 ages(noSubject,:) = age;
-                %                 genders{noSubject} = gender;
-                %                 ageDiff(noSubject) = diff(age);
+                ntrls(noSubject,:) = subjtrials;
             end
             
             
@@ -63,29 +59,24 @@ for i = 1:length(subjectNames);
     end
     
 end
-
 dims = 'chan_chan_freq_subj_ses';
 chans = connectivity.label;
 % subjects = subjectNames;
 freq = connectivity.freq;
 date = datetime('now');
-
 wpliflag = 0;
 if sum(strfind(lower(inputStr), 'wpli'))
     wpliflag = 1;
 end
-
 if wpliflag
     fprintf('saving results file ... ')
     save([PATHS.RESULTS filesep lower(inputStr) '.mat'],'-v7.3', 'Ws', ...
-        'dims', 'subjects', 'freq','chans', 'date')
+        'dims', 'subjects', 'freq','chans', 'date', 'ntrls')
     fprintf('done! \n')
 else
     freqRng = connectivity.freqRng;
     fprintf('saving results file ... ')
     save([PATHS.RESULTS filesep lower(inputStr) '.mat'],'-v7.3', 'Ws', ...
-        'dims', 'subjects', 'freq', 'freqRng', 'chans', 'date')
+        'dims', 'subjects', 'freq', 'freqRng', 'chans', 'date', 'ntrls')
     fprintf('done! \n')
 end
-
-
