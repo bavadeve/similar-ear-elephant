@@ -165,18 +165,21 @@ fprintf('\t loading in data  ')
 cfg = []; % start new cfg file for loading data
 
 % only read in EEG data (without possible removed channels)
-if ~isempty(subjectdata.channels2remove)
-    cfg.layout = 'biosemi32.lay';
-    cfg.method = 'triangulation';
-    evalc('neighbours = ft_prepare_neighbours(cfg);');
-    
-    cfg = [];
-    cfg.channel = cat(2,'EEG', strcat('-',subjectdata.channels2remove'));
-
+if isfield(subjectdata, 'channels2remove')
+    if ~isempty(subjectdata.channels2remove)
+        cfg.layout = 'biosemi32.lay';
+        cfg.method = 'triangulation';
+        evalc('neighbours = ft_prepare_neighbours(cfg);');
+        
+        cfg = [];
+        cfg.channel = cat(2,'EEG', strcat('-',subjectdata.channels2remove'));
+        
+    else
+        cfg.channel = {EEG'};
+    end
 else
-    cfg.channel = cat(2,'EEG');
+    cfg.channel = {'EEG'};
 end
-
 cfg.dataset = dataset;
 cfg.headerfile = hdrfile;
 cfg.continuous = 'yes';
@@ -194,18 +197,19 @@ end
 evalc('data = ft_preprocessing(cfg);');
 fprintf('done! \n')
 
-if ~isempty(subjectdata.channels2remove)
-    fprintf(['\t the following channels will be interpolated ... ', ...
-        repmat('%s, ',1, length(subjectdata.channels2remove))], subjectdata.channels2remove{:})
-    cfg = [];
-    cfg.missingchannel = subjectdata.channels2remove';
-    cfg.method = 'weighted';
-    cfg.neighbours = neighbours;
-    cfg.layout = 'biosemi32.lay';
-    evalc('data = ft_channelrepair(cfg, data);');
-    fprintf('done! \n')
+if isfield(subjectdata, 'channels2remove')
+    if ~isempty(subjectdata.channels2remove)
+        fprintf(['\t the following channels will be interpolated ... ', ...
+            repmat('%s, ',1, length(subjectdata.channels2remove))], subjectdata.channels2remove{:})
+        cfg = [];
+        cfg.missingchannel = subjectdata.channels2remove';
+        cfg.method = 'weighted';
+        cfg.neighbours = neighbours;
+        cfg.layout = 'biosemi32.lay';
+        evalc('data = ft_channelrepair(cfg, data);');
+        fprintf('done! \n')
+    end
 end
-
 data = bv_sortBasedOnTopo(data); % sorting data based on actual place of the electrodes. See function for more detail.
 
 % *** Resampling (if a resampleFs is given)
