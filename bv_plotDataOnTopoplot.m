@@ -7,7 +7,6 @@ if nargin < 5
     weighted = true;
 end
 
-
 addpath('~/MatlabToolboxes/Colormaps/')
 
 if nargin < 1
@@ -102,11 +101,6 @@ for currW = 1:size(Ws,3)
     end
     
     scatter(lay.pos(:,1), lay.pos(:,2), 10, 'MarkerFaceColor', 'k', 'MarkerEdgeColor', 'k')
-    %     labeloffset = 0.02;
-    %     text(double(lay.pos(:,1))+labeloffset, double(lay.pos(:,2)), lay.label , ...
-    %         'fontsize',10,'fontname','helvetica', ...
-    %         'interpreter','tex','horizontalalignment','left', ...
-    %         'verticalalignment','middle','color','k');
     line(lay.outline{1}(:,1), lay.outline{1}(:,2), 'LineWidth', 3, 'color', [0.5 0.5 0.5])
     
     title(subplotlabels{currW})
