@@ -43,7 +43,6 @@ else
         error('Subject names not found')
     end
 end
-% output = cell(length(subjectsVect),1);
 
 counter = 0;
 
@@ -98,6 +97,5 @@ for iSubject = 1:length(subjectsVect)
     end
     clear outputVar
 end
-
 names = names(subjectsVect);
 
