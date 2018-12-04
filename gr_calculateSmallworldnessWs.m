@@ -1,4 +1,22 @@
 function [Ss, gamma, lambda] = gr_calculateSmallworldnessWs(Ws, edgeType, randWs, Cs, Ls)
+% Function to calculate small-worldness index on multiple adjecency
+% matrices. 
+%
+%  usage:
+%   [Ss, gamma, lambda] = gr_calculateSmallworldnessWs(Ws, edgeType, randWs, Cs, Ls)
+%
+% with the following necessary inputs:
+%  Ws:          adjacency matrix with dim(chan x chan x subject)
+%  edgeType:    'weighted', 'binary', 'mst'
+%
+% and the following options inputs:
+%  randWs:      randomized Ws based on input Ws with dim (chan x chan x subject x nrandomizations)
+%  Cs:          earlier calculated clustering coefficients for all Ws 
+%  CPL:         earlier calculated characteristic path lengths for all Ws 
+%
+% If options inputs are not given, they will be calculated in the function,
+% which makes the function take longer.
+
 
 doRandomize = 0;
 if ~exist('randWs', 'var') 
@@ -22,15 +40,22 @@ elseif isempty(Ls)
 end
 
 if doRandomize 
-    evalc('randWs = bv_randomizeWeightedMatrices(Ws, 100);');
+    switch edgeType
+        case 'weighted'
+            evalc('randWs = gr_randomizeWeightedMatrices(Ws, 20);');
+        case {'binary', 'mst'}
+            evalc('randWs = bv_randomizeBinaryMatrices(Ws, 20);');
+        otherwise
+            error('unknown edgeType')
+    end
 end
 
 if doCalcCs
-    Cs = calculateClusteringWs(Ws, edgeType);
+    Cs = gr_calculateClusteringWs(Ws, edgeType);
 end
 
 if doCalcLs
-    Ls = calculatePathlengthWs(Ws, edgeType);
+    Ls = gr_calculatePathlengthWs(Ws, edgeType);
 end
 
 n = size(Ws,1);
@@ -44,8 +69,8 @@ for i = 1:k
     counter = counter + 1;
     lng = printPercDone(k, counter);
     currRandW = randWs(:,:,:,i);
-    randCs(:,i) = calculateClusteringWs(currRandW, edgeType);
-    randLs(:,i) = calculatePathlengthWs(currRandW, edgeType);
+    randCs(:,i) = gr_calculateClusteringWs(currRandW, edgeType);
+    randLs(:,i) = gr_calculatePathlengthWs(currRandW, edgeType);
     fprintf(repmat('\b', 1, lng))
 end
 
