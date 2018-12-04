@@ -1,4 +1,5 @@
 function varargout = gr_calculateMetrics(Ws, edgeType, graphMetric)
+% wrapper function to calculate graph metrics
 
 n = size(Ws,4);
 m = size(Ws,5);
@@ -17,26 +18,20 @@ for iGrph = 1:length(graphMetric)
             
             switch grMetric
                 case 'CC'
-                    lng = printPercDone(n*m, counter);
-                    varargout{iGrph}(:,i,j) = calculateClusteringWs(currWs, edgeType);
-                    fprintf(repmat('\b', 1, lng))
-
+                    varargout{iGrph}(:,i,j) = ...
+                        gr_calculateClusteringWs(currWs, edgeType);
                     
                 case 'CPL'
-                    lng = printPercDone(n*m, counter);
-                    varargout{iGrph}(:,i,j) = calculatePathlengthWs(currWs, edgeType);
-                    fprintf(repmat('\b', 1, lng))
+                    varargout{iGrph}(:,i,j) = ...
+                        gr_calculatePathlengthWs(currWs, edgeType);
                     
                 case 'S'
-%                     lng = printPercDone(n*m, i);
-                    
                     [varargout{iGrph}(:,i,j), CWnrm(:,i,j), CPLnrm(:,i,j)] = ...
-                        gr_calculateSmallworldnessWs(currWs, edgeType);            
-%                     fprintf(repmat('\b', 1, lng))
+                        gr_calculateSmallworldnessWs(currWs, edgeType);          
+                    
                 case 'Q'
-                    lng = printPercDone(n*m, counter);
-                    [varargout{iGrph}(:,i,j) varargout{iGrph+1}(:,i,j)] = gr_calculateQModularity(currWs, edgeType);
-                    fprintf(repmat('\b', 1, lng))
+                    [varargout{iGrph}(:,i,j), varargout{iGrph+1}(:,i,j)] = ...
+                        gr_calculateQModularity(currWs, edgeType);
             end
         end
     end
