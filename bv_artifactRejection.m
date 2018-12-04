@@ -47,7 +47,7 @@ cutOutputData   = ft_getopt(cfg, 'cutOutputData');
 zScoreLim       = ft_getopt(cfg, 'zScoreLim');
 vMaxLim         = ft_getopt(cfg, 'vMaxLim');
 
-
+mp = get(0, 'MonitorPositions');
 if isempty(triallength)
     redefineTrial = false;
 else
@@ -93,7 +93,7 @@ fprintf('\t\t frequency calculation ... ')
 freqrange = [0 100];
 evalc('[freq, fd] = bvLL_frequencyanalysis(data, freqrange, output);');
 
-freqFields  = fieldnames(freq);
+freqFields  = fieldnames(fd);
 field2use   = freqFields{not(cellfun(@isempty, strfind(freqFields, 'spctrm')))};
 
 fprintf('done! \n')
@@ -125,15 +125,15 @@ if strcmpi(showFigures, 'yes')
     fprintf('\t creating and plotting figures for artefacts \n')
     fprintf('\t\t creating frequency spectrum plot ...')
 
-    figure; plot(freq.freq, log10(abs(squeeze(nanmean(freq.(field2use)))))', 'LineWidth', 2)
+    figure; plot(freq.freq, log10(abs(squeeze(nanmean(fd.(field2use)))))', 'LineWidth', 2)
     legend(data.label)
     set(gca, 'YLim', [-4 Inf])
-    %     set(gcf, 'units', 'normalized', 'Position', [0 0 xScreenLength/2 yScreenLength])
+    set(gcf, 'Position', mp(size(mp,1),:));
     fprintf('done! \n')
 
     if strcmpi(saveFigures, 'yes')
         fprintf('\t\t\t saving ... ')
-        set(gcf, 'Position', get(0, 'Screensize'));
+        set(gcf, 'Position', mp(size(mp,1),:));
         saveas(gcf, [PATHS.FIGURES filesep currSubject '_' inputStr '_freqDirty.png'])
         fprintf('done! \n')
         close all
@@ -147,6 +147,7 @@ if strcmpi(showFigures, 'yes')
     cfg.visible         = 'on';
     cfg.triallength     = triallength;
     scrollPlot          = scrollPlotData(cfg, data);
+   
     fprintf('done! \n')
 
     if strcmpi(saveFigures,'yes')
@@ -253,9 +254,9 @@ if ~length(chans2remove) == 0
                 dataCut = data;
             end
 
-            evalc('freq = bvLL_frequencyanalysis(dataCut, freqrange,output);');
+            evalc('[freq, fd] = bvLL_frequencyanalysis(dataCut, freqrange,output);');
 
-            figure; plot(freq.freq, log10(abs(squeeze(mean(freq.(field2use)))))', 'LineWidth', 2)
+            figure; plot(freq.freq, log10(abs(squeeze(mean(fd.(field2use)))))', 'LineWidth', 2)
             legend(data.label)
             set(gca, 'YLim', [-4 Inf])
             set(gcf, 'Position', get(0, 'Screensize'));
@@ -299,9 +300,9 @@ if strcmpi(rmTrials, 'yes')
         fprintf('\t creating and plotting cleaned figures \n')
 
         fprintf('\t\t creating clean frequency spectrum plot ... ')
-        evalc('freq = bvLL_frequencyanalysis(data, freqrange,output);');
+        evalc('[freq, fd] = bvLL_frequencyanalysis(data, freqrange,output);');
 
-        figure; plot(freq.freq, log10(abs(squeeze(mean(freq.(field2use)))))', ...
+        figure; plot(freq.freq, log10(abs(squeeze(mean(fd.(field2use)))))', ...
             'LineWidth', 2)
         legend(data.label)
         set(gca, 'YLim', [-4 Inf])
@@ -309,7 +310,7 @@ if strcmpi(rmTrials, 'yes')
 
         if strcmpi(saveFigures, 'yes')
             fprintf('\t\t\t saving ... ')
-            set(gcf, 'Position', get(0, 'Screensize'));
+            set(gcf, 'Position', mp(size(mp,1),:));
             saveas(gcf, [PATHS.FIGURES filesep currSubject '_' inputStr ...
                 '_freqClean.png'])
             fprintf('done! \n')
@@ -341,7 +342,7 @@ if strcmpi(rmTrials, 'yes')
 
         if strcmpi(saveFigures, 'yes')
             fprintf('\t\t\t saving ... ')
-            set(gcf, 'Position', get(0, 'Screensize'));
+            set(gcf, 'Position', mp(size(mp,1),:));
             saveas(gcf, [PATHS.FIGURES filesep currSubject '_' inputStr ...
                 '_dataClean.png'])
             fprintf('done! \n')
