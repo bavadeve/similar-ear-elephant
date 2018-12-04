@@ -1,24 +1,15 @@
 clear all
-% resultStr = {...
-%     'wpli_debiased_delta.mat',...
-%     'wpli_debiased_theta.mat', ...
-%     'wpli_debiased_alpha1.mat', ...
-%     'wpli_debiased_alpha2.mat', ...
-%     'wpli_debiased_beta.mat', ...
-%     'wpli_debiased_gamma.mat'};
+str = 'pli5';
 
-str = 'pli';
-
-a = dir([str '*_*'  '.mat']);
+a = dir([str '_*.mat']);
 resultStr = {a.name};
 
-inputData = 'weighted'; % weighted, binary, weightedRandom, binaryRandom
+inputData = 'weighted';
 randomflag = 0;
 
 if strfind(inputData, 'Random') > 0
     randomflag = 1;
 end
-
 
 for i = 1:length(resultStr)
     disp(resultStr{i})
@@ -33,10 +24,11 @@ for i = 1:length(resultStr)
     
     metrics = fieldnames(graphResults.(inputData));
     metrics = metrics(cellfun(@isempty, strfind(metrics, 'thresholds')));
+    metrics = metrics(cellfun(@isempty, strfind(metrics, 'degree')));
     for j = 1:length(metrics)
         currMetricName = metrics{j};
         currMetric = real(graphResults.(inputData).(currMetricName));
-        
+
         if strcmpi(currMetricName, 'degree')
             for iN = 1:size(currMetric,1)
                 fprintf('\t \t calculate ICC ... ')
@@ -47,13 +39,12 @@ for i = 1:length(resultStr)
                 fprintf('done! \n')
                 
                 fprintf('\t \t bootstrapping for CI ... ')
-                bootstat = bootstrp(1000,@(x) ICC(x, '1-k'), cThresh);
+                bootstat = bootstrp(10000,@(x) ICC(x, '1-k'), cThresh);
                 
                 CI(iN,1)  = prctile(bootstat, 2.5);
                 CI(iN,2)  = prctile(bootstat, 97.5);
                 fprintf('done! \n')
             end
-            
             
         else
             fprintf('\t %s \n', currMetricName)
@@ -71,7 +62,7 @@ for i = 1:length(resultStr)
                     fprintf('done! \n')
                     
                     fprintf('\t \t bootstrapping for CI ... ')
-                    bootstat = bootstrp(1000,@(x) ICC(x, '1-k'), cThresh);
+                    bootstat = bootstrp(10000,@(x) ICC(x, '1-k'), cThresh);
                     
                     CI(iT,1)  = prctile(bootstat, 2.5);
                     CI(iT,2)  = prctile(bootstat, 97.5);
@@ -91,8 +82,7 @@ for i = 1:length(resultStr)
         end
         ICCresults.(inputData).(currMetricName) = output;
         ICCresults.(inputData).([currMetricName '_CI']) = CI;
-        
-        
+
     end
     fprintf('\t saving to %s ... ', resultStr{i})
     save(resultStr{i}, 'ICCresults', '-append')
