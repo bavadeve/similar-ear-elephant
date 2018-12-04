@@ -1,4 +1,4 @@
-function [connectivity] = bv_calculateConnectivity(cfg, data)
+function [ connectivity ] = bv_calculateConnectivity(cfg, data)
 % Calculates connectivity between EEG sensors with the following methods
 % implemented (pli, wpli, wpli_debiased). Weighted PLI measures are
 % calculated based on fieldtrip ft_connectivityanalysis. PLI is calculated
@@ -43,8 +43,8 @@ function [connectivity] = bv_calculateConnectivity(cfg, data)
 %                       using bv_cutAppendedIntoTrials. Leave empty to
 %                       leave the trialstructure of input file
 %
-% See also BV_CREATESUBJECTFOLDERS, BV_CUTAPPENDEDINTOTRIALS,
-% BV_SAVEDATA, BV_CHECK4DATA, FT_CONNECTIVITYANALYSIS, BV_SETDIAG
+% See also BV_CUTAPPENDEDINTOTRIALS, BV_SAVEDATA, BV_CHECK4DATA, 
+% FT_CONNECTIVITYANALYSIS, BV_SETDIAG
 
 %%%%%% general check for inputs %%%%%%
 ntrials     = ft_getopt(cfg, 'ntrials','all');
@@ -139,7 +139,7 @@ switch(method)
         connectivity.trialinfo = freq.trialinfo;
         connectivity.dimord = 'chan_chan_freq';
 
-        % find eventual removed channels and add a row of nans
+        % find removed channels and add a row of nans
         cfg = [];
         cfg.layout = 'biosemi32.lay';
         cfg.skipcomnt = 'yes';
@@ -165,6 +165,7 @@ switch(method)
 
             fprintf('\t filtering to for %s Hz... \n' , currFreq)
 
+            cfg = [];
             cfg.lpfilter = 'yes';
             cfg.lpfreq = currFreqRng(2);
             cfg.hpfilter = 'yes';
@@ -177,45 +178,41 @@ switch(method)
                 cfg = [];
                 cfg.saveData = 'no';
                 cfg.triallength = triallength;
+                cfg.ntrials = ntrials;
                 [dataCut, finished] = bv_cutAppendedIntoTrials(cfg, dataFilt);
-            end
-
-            % select data based on condition and select random trials
-            cfg = [];
-            if strcmpi(condition, 'all')
-                if strcmpi(ntrials, 'all')
-                    cfg.trials = 1:length(dataFilt.trial);
-                else
-                    cfg.trials = sort(randperm(length(dataFilt.trial), ntrials));
+                if ~finished
+                    connectivity = [];
+                    return;
                 end
             else
-                itrl = find(ismember(dataFilt.trialinfo, condition));
-                if strcmpi(ntrials, 'all')
-                    cfg.trials = itrl;
-                else
-                    cfg.trials = itrl(randperm(numel(itrl),ntrials));
-                end
-            end
-
-            if finished == 0
-                connectivity = [];
-                return
+                dataCut = dataFilt;
             end
 
             fprintf('\t calculating PLI ... ')
             PLIs = PLI(dataCut.trial,1);
             PLIs = cat(3,PLIs{:});
-%             W = mean(PLIs,3);
+            W = mean(PLIs,3);
 
-            connectivity.plispctrm(:,:,:,iFreq) = PLIs;
+            connectivity.plispctrm(:,:,iFreq) = W;
             fprintf('done!\n')
         end
-
+        
         connectivity.dimord = 'chan_chan__trl_freq';
         connectivity.freq = freqLabel;
         connectivity.freqRng = freqRng;
         connectivity.label = dataCut.label;
         connectivity.trialinfo = dataCut.trialinfo;
+        
+        % find removed channels and add a row of nans
+        cfg = [];
+        cfg.layout = 'biosemi32.lay';
+        cfg.skipcomnt = 'yes';
+        cfg.skipscale = 'yes';
+        evalc('layout = ft_prepare_layout(cfg);');
+        rmChannels = layout.label(not(ismember(layout.label, connectivity.label)));
+        if not(isempty(rmChannels))
+            connectivity = addRemovedChannels(connectivity, rmChannels);
+        end
 
 end
 
