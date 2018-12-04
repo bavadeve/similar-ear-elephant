@@ -1,6 +1,6 @@
 function [data, finished] = bv_cutAppendedIntoTrials(cfg, dataOld)
 % Cuts appended data into trials of given triallength, using
-% ft_redefinetrial. Only cuts continuous / consecutive data. 
+% ft_redefinetrial. Only cuts continuous / consecutive data.
 %
 % Can be used with data input:
 %  [ cutdata ] = bv_cutAppendedIntoTrials(cfg, appenddata)
@@ -34,6 +34,7 @@ inputStr    = ft_getopt(cfg, 'inputStr');
 triallength = ft_getopt(cfg, 'triallength');
 outputStr   = ft_getopt(cfg, 'outputStr', ['triallength' num2str(triallength)]);
 saveData    = ft_getopt(cfg, 'saveData');
+ntrials     = ft_getopt(cfg, 'ntrials', 'all');
 
 if isempty(triallength)
     error('no config struct does not contain triallength')
@@ -41,10 +42,10 @@ end
 
 if nargin < 2
     disp(currSubject)
-
+    
     eval('setOptions');
     eval('setPaths');
-
+    
     subjectFolderPath = [PATHS.SUBJECTS filesep currSubject];
     [subjectdata, dataOld] = bv_check4data(subjectFolderPath, inputStr);
 else
@@ -66,15 +67,15 @@ trialinfo = [];
 for i = 1:length(trialparts2use)
     trl = trialparts2use(i);
     nTrls = floor(continuousSeconds(trl) / triallength);
-
+    
     for j = 1:nTrls
         currsampleinfoStart = (dataOld.sampleinfo(trl,1) + triallength*dataOld.fsample*(j-1));
         currsampleinfoEnd = dataOld.sampleinfo(trl,1) + triallength*dataOld.fsample*(j) - 1;
         currsampleinfo = [currsampleinfoStart currsampleinfoEnd];
-
+        
         sampleinfo = cat(1, sampleinfo, currsampleinfo);
         trialinfo = cat(1, trialinfo, dataOld.trialinfo(trl));
-
+        
     end
 end
 
@@ -88,9 +89,24 @@ cfg.trl = trl;
 evalc('data = ft_redefinetrial(cfg, dataOld);');
 fprintf('done! \n')
 
-if strcmpi(saveData, 'yes')
-
-    bv_saveData(subjectdata, data, outputStr)
-
+if not(strcmpi(ntrials, 'all'))
+    if length(data.trial) < ntrials
+        fprintf('\t not enough trials found, skipping ... \n')
+        data = [];
+        finished = false;
+        return
+    else
+        cfg = [];
+        cfg.trials = sort(randperm(length(data.trial), ntrials));
+        fprintf('\t selecting %1.0f cut trials ... ', length(cfg.trials))
+        evalc('ft_selectdata(cfg, data);');
+        fprintf('done! \n')
+    end
 end
-finished = 1;
+
+if strcmpi(saveData, 'yes')
+    
+    bv_saveData(subjectdata, data, outputStr)
+    
+end
+finished = true;
