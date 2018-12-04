@@ -15,9 +15,9 @@ for iW = 1:n
 
     for jW = 1:m
         currW = currWs(:,:,jW);
-        nanChans = find(sum(isnan(currW)) == size(currW,2));
+        currW(isnan(currW)) = 0;
+        nanChans = find(sum(currW==0) == (size(currW,2) -1));
         rmChannels = unique([rmChannels nanChans]);
-        currWs(:,:,jW) = currW;
     end
 
     if ~isempty(rmChannels)
