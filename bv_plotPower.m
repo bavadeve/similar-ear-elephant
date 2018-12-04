@@ -1,4 +1,4 @@
-function bv_plotPower(cfg, data)
+function [y_toplot, x_toplot] = bv_plotPower(cfg, data)
 
 inputStr 	= ft_getopt(cfg, 'inputStr');
 currSubject = ft_getopt(cfg, 'currSubject');
@@ -34,20 +34,21 @@ if isempty(data.label)
     return
 end
 
-output = 'pow';
+output = 'fourier';
 fprintf('\t calculating frequency spectrum ...')
-evalc('freq = bvLL_frequencyanalysis(data, freqRange, output);');
-% figure; plot(freq.freq, log10(abs(squeeze(nanmean(freq.powspctrm))))', 'LineWidth', 2)
-% set(gca, 'YLim', [-2 2])
-% set(gca, 'XLim', [0 20])
+evalc('[freq fd] = bvLL_frequencyanalysis(data, freqRange, output);');
 fprintf('done! \n')
 
 if strcmpi(calcMean, 'yes')
-    plot(freq.freq, log10(abs(squeeze(nanmean(nanmean(freq.powspctrm),2))))', 'LineWidth', 2)
+    y_toplot = log10(squeeze(nanmean(nanmean(fd.powspctrm),2)));
+    x_toplot = fd.freq;
+    plot(x_toplot, y_toplot, 'LineWidth', 2)
 else
-    plot(freq.freq, log10(abs(squeeze(nanmean(freq.powspctrm,1)))))
+    figure;
+    plot(freq.freq, log10(squeeze(nanmean(fd.powspctrm,1))))
     legend(freq.label)
     set(gca, 'FontSize', 20)
+    drawnow
 end
 % set(gca, 'YLim', [-1 2])
 set(gca, 'XLim', [0 20])
