@@ -19,6 +19,7 @@ for i = 1:m
         case 'binary'
             [Ci(:,i),Q(i)] = modularity_und(W);
         case 'weighted'
-            [Ci(:,i),Q(i)] = modularity_und(W);
+            Wnrm = bv_normalizeW(W);
+            [Ci(:,i),Q(i)] = modularity_und(Wnrm);
     end
 end
