@@ -1,28 +1,75 @@
-function bv_write2brainwave(subjNr)
+function dataUse = bv_write2brainwave(cfg)
+
+currSubject = ft_getopt(cfg, 'currSubject');
+cleanedStr  = ft_getopt(cfg, 'cleanedStr');
+inputStr    = ft_getopt(cfg, 'inputStr');
+outputStr   = ft_getopt(cfg, 'outputStr', '');
+doFilter    = ft_getopt(cfg, 'filter');
+freqband    = ft_getopt(cfg, 'freqband');
 
 eval('setOptions')
 eval('setPaths')
 
-PATHS.BRAINWAVE = [PATHS.ROOT filesep 'Brainwave'];
-if ~exist(PATHS.BRAINWAVE ,'dir')
-    mkdir(PATHS.BRAINWAVE)
+disp(currSubject)
+subjectFolderPath = [PATHS.SUBJECTS filesep currSubject];
+[~, dataInput] = bv_check4data(subjectFolderPath, inputStr);
+
+filename = [PATHS.BRAINWAVE filesep currSubject '_' outputStr '_bw.txt'];
+
+if strcmpi(doFilter, 'yes')
+    if isempty(freqband)
+        error('No cfg.freqband given')
+    end
+    
+    switch freqband
+        case 'delta'
+            hpfreq = 1;
+            lpfreq = 3;
+        case 'theta'
+            hpfreq = 3;
+            lpfreq = 6;
+        case 'alpha1'
+            hpfreq = 6;
+            lpfreq = 9;
+        case 'alpha2'
+            hpfreq = 9;
+            lpfreq = 12;
+        case 'beta'
+            hpfreq = 12;
+            lpfreq = 25;
+        case 'gamma'
+            hpfreq = 25;
+            lpfreq = 45;
+        otherwise
+            error('unknown freqband given')
+    end
+    
+    cfg = [];
+    cfg.hpfreq = hpfreq;
+    cfg.lpfreq = lpfreq;
+    
+    dataFilt = bv_filterEEGdata(cfg, dataInput);
+    
+    filename = [PATHS.BRAINWAVE filesep currSubject '_' freqband '_' outputStr '_bw.txt'];
+    
 end
 
-subjectNames = dir([PATHS.SUBJECTS filesep '*' OPTIONS.sDirString '*']);
-subjectNames = {subjectNames.name};
-
-for iS = subjNr
-    disp(subjectNames{iS})
-    [subjectdata, data] = bv_check4data([PATHS.SUBJECTS filesep subjectNames{iS}], 'TRIALLENGTH8');
-    
-    fprintf('\t saving trialdata to %s ... ', [subjectdata.subjectName '_trialdata.txt'])
-    trialDat = [data.trial{:}]';
-    
-    fid = fopen([PATHS.BRAINWAVE filesep subjectdata.subjectName '_trialdata2.txt'], 'w');
-    fprintf(fid, repmat('%s\t', 1, length(data.label)), data.label{:});
-    fprintf(fid, [repmat('%12.6f\t', 1, size(trialDat,2)) '\r'], trialDat');
-    fclose all;
-    
-    dlmwrite([PATHS.BRAINWAVE filesep subjectdata.subjectName '_trialdata.txt'],trialDat, '\t');
-    fprintf('done! \n')
+if ~isempty(cleanedStr)
+    [~, dataCleaned] = bv_check4data(subjectFolderPath, cleanedStr);
+    cfg = [];
+    cfg.trl = [dataCleaned.sampleinfo, zeros(length(dataCleaned.trialinfo),1), ...
+        dataCleaned.trialinfo];
+    evalc('dataUse = ft_redefinetrial(cfg, dataFilt);');
+elseif strcmpi(doFilter, 'yes')
+    dataUse = dataFilt;
+else
+    dataUse = dataInput;
 end
+
+fprintf('\t saving %s ...', filename)
+trialdata = [dataUse.trial{:}];
+formatSpec = [repmat('%f \t ', 1, size(trialdata,1)) '\n'];
+fid = fopen(filename, 'w');
+fprintf(fid, formatSpec, trialdata);
+fclose( 'all' );
+fprintf('done! \n')

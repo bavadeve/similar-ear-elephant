@@ -33,8 +33,9 @@ varLim          = ft_getopt(cfg, 'varLim', Inf);
 invVarLim       = ft_getopt(cfg, 'invVarLim', Inf);
 kurtLim         = ft_getopt(cfg, 'kurtLim', Inf);
 flatLim         = ft_getopt(cfg, 'flatLim', Inf);
+jumpLim         = ft_getopt(cfg, 'jumpLim', Inf);
 triallength     = ft_getopt(cfg, 'triallength');
-padding         = ft_getopt(cfg, 'padding', 1);
+padding         = ft_getopt(cfg, 'padding',0);
 optionsFcn      = ft_getopt(cfg, 'optionsFcn');
 saveFigures     = ft_getopt(cfg, 'saveFigures', 'no');
 showFigures     = ft_getopt(cfg, 'showFigures');
@@ -46,6 +47,9 @@ rmTrials        = ft_getopt(cfg, 'rmTrials');
 cutOutputData   = ft_getopt(cfg, 'cutOutputData');
 zScoreLim       = ft_getopt(cfg, 'zScoreLim');
 vMaxLim         = ft_getopt(cfg, 'vMaxLim');
+maxbadchans     = ft_getopt(cfg, 'maxbadchans');
+
+cfgIn = cfg;
 
 mp = get(0, 'MonitorPositions');
 if isempty(triallength)
@@ -54,7 +58,7 @@ else
     redefineTrial = true;
 end
 
-if sum(isinf([betaLim gammaLim varLim invVarLim kurtLim flatLim zScoreLim vMaxLim])) == length([betaLim gammaLim varLim invVarLim kurtLim zScoreLim vMaxLim flatLim])
+if all(isinf([betaLim gammaLim varLim invVarLim kurtLim flatLim zScoreLim vMaxLim jumpLim]))
     error('No limits given so no artefacts will be detected')
 end
 
@@ -66,11 +70,13 @@ if nargin < 2
     else
         eval(optionsFcn)
     end
-
+    
     subjectFolderPath = [PATHS.SUBJECTS filesep currSubject];
     [subjectdata, data] = bv_check4data(subjectFolderPath, inputStr);
-
+    
     subjectdata.cfgs.(outputStr) = cfg;
+else
+    subjectdata = struct;
 end
 
 output = 'fourier';
@@ -108,29 +114,31 @@ cfg.kurtLim     = kurtLim;
 cfg.zScoreLim   = zScoreLim;
 cfg.vMaxLim     = vMaxLim;
 cfg.flatLim     = flatLim;
+cfg.jumpLim     = jumpLim;
 
 evalc('[artifactdef, counts] = bvLL_artefactDetection(cfg, data, freq);');
 fprintf('done! \n')
 
 
 if strcmpi(showFigures, 'yes')
-
+    
     if exist('findCoords', 'file')
         [xScreenLength, yScreenLength] = findCoords;
     else
         xScreenLength = 1;
         yScreenLength = 1;
     end
-
+    
     fprintf('\t creating and plotting figures for artefacts \n')
     fprintf('\t\t creating frequency spectrum plot ...')
-
-    figure; plot(freq.freq, log10(abs(squeeze(nanmean(fd.(field2use)))))', 'LineWidth', 2)
+    
+    figure; semilogy(freq.freq, squeeze(nanmean(fd.(field2use)))', 'LineWidth', 2)
     legend(data.label)
+    set(gca, 'XLim', [0 50])
     set(gca, 'YLim', [-4 Inf])
-    set(gcf, 'Position', mp(size(mp,1),:));
+    title(strrep(currSubject,'_', ' '))
     fprintf('done! \n')
-
+    
     if strcmpi(saveFigures, 'yes')
         fprintf('\t\t\t saving ... ')
         set(gcf, 'Position', mp(size(mp,1),:));
@@ -147,12 +155,11 @@ if strcmpi(showFigures, 'yes')
     cfg.visible         = 'on';
     cfg.triallength     = triallength;
     scrollPlot          = scrollPlotData(cfg, data);
-   
+    
     fprintf('done! \n')
-
+    
     if strcmpi(saveFigures,'yes')
         fprintf('\t\t\t saving ... ')
-        %         set(gcf, 'Position', get(0,'Screensize'));
         saveas(gcf, [PATHS.FIGURES filesep currSubject '_' inputStr '_dataDirty.png'])
         fprintf('done! \n')
         close all
@@ -161,7 +168,7 @@ end
 
 badTrialsPerChannel = hist(artifactdef.badPartsMatrix(:,2),1:length(data.label));
 pBadTrials = badTrialsPerChannel / length(data.trial);
-chans2remove = data.label(pBadTrials > 0.4);
+chans2remove = data.label(pBadTrials > 0.39);
 flatliners = data.label((sum(artifactdef.flatline.levels > flatLim,2) ./ length(data.trial)>0.4));
 
 if isfield(subjectdata, 'flatliners')
@@ -171,8 +178,23 @@ else
 end
 
 if ~length(chans2remove) == 0
+    if isfield(subjectdata, 'rmChannels')
+        allRmChannels = unique([chans2remove; subjectdata.rmChannels]);
+        if length(allRmChannels) > maxbadchans
+            fprintf(['\t too many bad channels (' repmat('%s ', 1, length(allRmChannels)) '), removing ... '], allRmChannels{:})
+            removingSubjects([], currSubject, 'channelremoval - too many channels removed')
+            return
+        end
+    else
+        if length(chans2remove) > maxbadchans
+            fprintf(['\t too many bad channels (' repmat('%s ', 1, length(chans2remove)) '), removing ... '], chans2remove{:})
+            removingSubjects([], currSubject, 'channelremoval - too many channels removed')
+            return
+        end
+    end
+    
     fprintf(['\t channels to remove and interpolate: ' repmat('%s ', 1, length(chans2remove)) '... \n'], chans2remove{:})
-
+    
     if isfield(subjectdata, 'rmChannels')
         subjectdata.rmChannels = reshape(subjectdata.rmChannels,length(subjectdata.rmChannels), 1);
         subjectdata.rmChannels = cat(1, subjectdata.rmChannels, chans2remove);
@@ -180,16 +202,15 @@ if ~length(chans2remove) == 0
     else
         subjectdata.rmChannels = chans2remove;
     end
-
-%     keepChannelIndx = ~ismember(data.label, chans2remove);
-
+    
+    
     rmChannelIndx = ismember(data.label, chans2remove);
-
+    
     if sum(rmChannelIndx) == length(data.label)
         removingSubjects([], currSubject, 'No artefact free channels')
         return
     end
-
+    
     cfg = [];
     cfg.layout = 'EEG1010';
     cfg.channel = 'all';
@@ -197,7 +218,7 @@ if ~length(chans2remove) == 0
     cfg.skipcomnt = 'yes';
     cfg.skipscale = 'yes';
     evalc('lay = ft_prepare_layout(cfg, data);');
-
+    
     cfg = [];
     cfg.method          = 'distance';
     cfg.neighbourdist   = 0.25;
@@ -208,24 +229,24 @@ if ~length(chans2remove) == 0
     cfg.skipcomnt       = 'yes';
     cfg.skipscale       = 'yes';
     evalc('neighbours = ft_prepare_neighbours(cfg, data);');
-
+    
     cfg = [];
     cfg.badchannel = chans2remove;
     cfg.method = 'weighted';
     cfg.neighbours = neighbours;
     cfg.channel = 'all';
     cfg.layout = lay;
-
+    
     if strcmpi(cutOutputData, 'yes')
-
+        
         evalc('data = ft_channelrepair(cfg, data);');
-
+        
         fprintf('\t recalculating artefacts with channels interpolated \n')
-
+        
         fprintf('\t\t frequency calculation ... ')
         evalc('freq = bvLL_frequencyanalysis(data, freqrange,output);');
         fprintf('done! \n')
-
+        
         fprintf('\t\t artefact determination ... ');
         cfg = [];
         cfg.betaLim     = betaLim;
@@ -235,79 +256,84 @@ if ~length(chans2remove) == 0
         cfg.kurtLim     = kurtLim;
         cfg.zScoreLim   = zScoreLim;
         cfg.vMaxLim     = vMaxLim;
-
+        cfg.jumpLim     = jumpLim;
+        
         evalc('[artifactdef, counts] = bvLL_artefactDetection(cfg, data, freq);');
         fprintf('done! \n');
     else
-
+        
         evalc('data = ft_channelrepair(cfg, oldData);');
-
+        
         if strcmpi(showFigures, 'yes');
             fprintf('\t showing cleaned frequency spectrum ... ')
-
+            
             if redefineTrial
                 cfg = [];
-                cfg.length  = 5;
+                cfg.length  = triallength;
                 cfg.overlap = 0;
                 evalc('dataCut = ft_redefinetrial(cfg, data);');
             else
                 dataCut = data;
             end
-
+            
             evalc('[freq, fd] = bvLL_frequencyanalysis(dataCut, freqrange,output);');
-
-            figure; plot(freq.freq, log10(abs(squeeze(mean(fd.(field2use)))))', 'LineWidth', 2)
+            
+            figure; semilogy(freq.freq, squeeze(mean(fd.(field2use)))', 'LineWidth', 2)
             legend(data.label)
-            set(gca, 'YLim', [-4 Inf])
-            set(gcf, 'Position', get(0, 'Screensize'));
-
+            set(gca, 'YLim', [-4 Inf]);
+            set(gca, 'XLim', [0 50]);
+            set(gcf, 'Position', mp(size(mp,1),:));
             fprintf('done! \n')
             drawnow;
         end
     end
 else
     fprintf('\t No channels to REMOVE! \n')
-
+    
     if ~strcmpi(cutOutputData, 'yes')
         data = oldData;
     end
-
+    
 end
 
 if strcmpi(rmTrials, 'yes')
-
-%     subjectdata.goodTrials = artifactdef.goodTrials';
-%     subjectdata.badTrials = artifactdef.badTrials;
-
+    
+    %     subjectdata.goodTrials = artifactdef.goodTrials';
+    %     subjectdata.badTrials = artifactdef.badTrials;
+    
     artifactdef.badTrials = unique([artifactdef.badTrials ...
         artifactdef.badTrials - (padding * triallength) ...
         artifactdef.badTrials + (padding * triallength)]);
-
+    
     percentageBad = (length(artifactdef.badTrials) ./ length(data.trial)) ...
         * 100;
-
+    
     artifactdef.goodTrials = find(ismember(1:length(data.trial), ...
         artifactdef.badTrials)==0);
-
+    
     fprintf('\t removing artefactridden trials (%1.0f%%)... ', ...
         percentageBad)
     cfg = [];
     cfg.trials = artifactdef.goodTrials;
     evalc('data = ft_selectdata(cfg, data);');
     fprintf('done! \n')
-
+    
+    subjectdata.cleanTRL = [data.sampleinfo zeros(length(data.trialinfo), 1) data.trialinfo];
+    
     if strcmpi(showFigures, 'yes')
         fprintf('\t creating and plotting cleaned figures \n')
-
+        
         fprintf('\t\t creating clean frequency spectrum plot ... ')
         evalc('[freq, fd] = bvLL_frequencyanalysis(data, freqrange,output);');
-
-        figure; plot(freq.freq, log10(abs(squeeze(mean(fd.(field2use)))))', ...
+        
+        figure; semilogy(freq.freq, squeeze(mean(fd.(field2use)))', ...
             'LineWidth', 2)
         legend(data.label)
         set(gca, 'YLim', [-4 Inf])
+        set(gca, 'XLim', [0 50])
+        title(strrep(currSubject,'_', ' '))
         fprintf('done! \n')
-
+        
         if strcmpi(saveFigures, 'yes')
             fprintf('\t\t\t saving ... ')
             set(gcf, 'Position', mp(size(mp,1),:));
@@ -316,7 +342,7 @@ if strcmpi(rmTrials, 'yes')
             fprintf('done! \n')
             close all
         end
-
+        
         fprintf('\t\t creating clean scrollplot ... ');
         cfg = [];
         cfg.betaLim     = betaLim;
@@ -326,9 +352,9 @@ if strcmpi(rmTrials, 'yes')
         cfg.kurtLim     = kurtLim;
         cfg.zScoreLim   = zScoreLim;
         cfg.vMaxLim     = vMaxLim;
-
+        
         evalc('[artifactdef, counts] = bvLL_artefactDetection(cfg, data, freq);');
-
+        
         % figure;
         %         addpath('~/git/eeg-graphmetrics-processing/figures/')
         cfg = [];
@@ -339,7 +365,7 @@ if strcmpi(rmTrials, 'yes')
         cfg.triallength     = triallength;
         scrollPlot          = scrollPlotData(cfg, data);
         fprintf('done! \n')
-
+        
         if strcmpi(saveFigures, 'yes')
             fprintf('\t\t\t saving ... ')
             set(gcf, 'Position', mp(size(mp,1),:));
@@ -348,66 +374,23 @@ if strcmpi(rmTrials, 'yes')
             fprintf('done! \n')
             close all
         end
-
+        
     end
-
+    
     if strcmpi(saveData, 'yes')
-        outputStrPathName = upper(outputStr);
-
-
-
-        dataFilename = [currSubject '_' outputStr '.mat'];
-        artifactdefFilename = [currSubject '_artifactdef.mat'];
-        subjectdata.PATHS.(outputStrPathName) = ...
-            [subjectdata.PATHS.SUBJECTDIR filesep dataFilename];
-        subjectdata.PATHS.artifactdef = ...
-            [subjectdata.PATHS.SUBJECTDIR filesep artifactdefFilename];
-
-        fprintf('\t saving %s ... ', dataFilename)
-        save(subjectdata.PATHS.(outputStrPathName), 'data')
-        fprintf('done! \n')
-
-        fprintf('\t saving %s ... ', artifactdefFilename)
-        save(subjectdata.PATHS.artifactdef, 'artifactdef')
-        fprintf('done! \n')
-
-        analysisOrder = strsplit(subjectdata.analysisOrder, '-');
-        analysisOrder = [analysisOrder outputStr];
-        analysisOrder = unique(analysisOrder, 'stable');
-        subjectdata.analysisOrder = strjoin(analysisOrder, '-');
-
-        fprintf('\t saving Subject.mat ... ')
-        save([subjectdata.PATHS.SUBJECTDIR filesep 'Subject.mat'] , ...
-            'subjectdata')
-        fprintf('done! \n')
+        subjectdata.analysisOrder = bv_updateAnalysisOrder(subjectdata.analysisOrder, cfgIn);
+        bv_updateSubjectSummary([PATHS.SUMMARY filesep 'SubjectSummary.mat'], subjectdata)
+        
+        bv_saveData(subjectdata, data, outputStr);
     end
 else
     if strcmpi(saveData, 'yes')
-
-        outputStrPathName = upper(outputStr);
-
-        dataFilename = [currSubject '_' outputStr '.mat'];
-        subjectdata.PATHS.(outputStrPathName) = ...
-            [subjectdata.PATHS.SUBJECTDIR filesep dataFilename];
-
-        fprintf('\t saving %s ... ', dataFilename)
-        save(subjectdata.PATHS.(outputStrPathName), 'data')
-        fprintf('done! \n')
-
-        if ~isfield(subjectdata, 'analysisOrder')
-            analysisOrder = {lower(inputStr) outputStr};
-        else
-            analysisOrder = strsplit(subjectdata.analysisOrder, '-');
-            analysisOrder = {analysisOrder{:} outputStr};
-        end
-
-        analysisOrder = unique(analysisOrder, 'stable');
-        subjectdata.analysisOrder = strjoin(analysisOrder, '-');
-
-        fprintf('\t saving Subject.mat ... ')
-        save([subjectdata.PATHS.SUBJECTDIR filesep 'Subject.mat'] , ...
-            'subjectdata')
-        fprintf('done! \n')
+        
+        subjectdata.analysisOrder = bv_updateAnalysisOrder(subjectdata.analysisOrder, cfgIn);
+        bv_updateSubjectSummary([PATHS.SUMMARY filesep 'SubjectSummary.mat'], subjectdata)
+        
+        bv_saveData(subjectdata, data, outputStr);
+        
     end
 end
 

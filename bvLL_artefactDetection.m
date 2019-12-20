@@ -10,10 +10,12 @@ rangeLim    = ft_getopt(cfg, 'rangeLim');
 zScoreLim   = ft_getopt(cfg, 'zScoreLim');
 vMaxLim     = ft_getopt(cfg, 'vMaxLim');
 flatLim     = ft_getopt(cfg, 'flatLim');
+jumpLim     = ft_getopt(cfg, 'jumpLim');
 
-freqFields  = fieldnames(freq);
-field2use   = freqFields{not(cellfun(@isempty, strfind(freqFields, 'spctrm')))};
-
+if nargin == 3
+    freqFields  = fieldnames(freq);
+    field2use   = freqFields{not(cellfun(@isempty, strfind(freqFields, 'spctrm')))};
+end
 if (~isempty(betaLim) || ~isempty(gammaLim)) && nargin < 3
     error('detecting artefacts based on frequency power, but no frequency input found in function')
 end
@@ -62,6 +64,10 @@ if ~isempty(flatLim)
     doStandardArtefacts = 1;
     artefactMethods = cat(2, artefactMethods, 'flatline');
 end
+if ~isempty(jumpLim)
+    doStandardArtefacts = 1;
+    artefactMethods = cat(2, artefactMethods, 'jumps');
+end
 
 
 badChannels = [];
@@ -84,7 +90,12 @@ if doStandardArtefacts
     if ismember('range', artefactMethods)
         artefactdef.range.levels = zeros(length(data.label), length(data.trial));
     end
-       
+    if ismember('jumps', artefactMethods)
+        artefactdef.jumps.levels = zeros(length(data.label), length(data.trial));
+    end
+    
+    artefactdef.nan.levels = zeros(length(data.label), length(data.trial));
+    
     for i = 1:length(data.trial)
         if ismember('kurtosis', artefactMethods)
             artefactdef.kurtosis.levels(:,i) = kurtosis(data.trial{i}, [], 2);
@@ -92,43 +103,48 @@ if doStandardArtefacts
         if ismember('variance', artefactMethods)
             artefactdef.variance.levels(:,i) = std(data.trial{i}, [], 2).^2;
         end
-        if ismember('inverseVariance', artefactMethods) 
+        if ismember('inverseVariance', artefactMethods)
             artefactdef.invvariance.levels(:,i) = 1./(std(data.trial{i}, [], 2).^2);
         end
         if ismember('flatline', artefactMethods)
             artefactdef.flatline.levels(:,i) = 1./(abs(max(data.trial{i},[],2) - min(data.trial{i},[],2)));
         end
         if ismember('range', artefactMethods)
-            artefactdef.range.levels (:, i) = max(data.trial{i}, [], 2) - min(data.trial{i}, [], 2);
+            artefactdef.range.levels(:,i) = max(data.trial{i}, [], 2) - min(data.trial{i}, [], 2);
+        end
+        if ismember('jumps', artefactMethods)
+            artefactdef.jumps.levels(:,i) = max(abs(diff(data.trial{i},[],2)), [], 2);
         end
         if ismember('vMax', artefactMethods)
             artefactdef.vMax.levels(:, i) = max(data.trial{i}, [], 2);
             artefactdef.vMin.levels(:, i) = min(data.trial{i}, [], 2);
             artefactdef.vAmp.levels(:, i) = artefactdef.vMax.levels(:, i) - artefactdef.vMin.levels(:, i);
         end
+        artefactdef.nan.levels(:,i) = all(isnan(data.trial{i}),2);
+        
     end
     
     if ismember('kurtosis', artefactMethods)
-                
+        
         [badChannelKurt, badTrialKurt] = find(artefactdef.kurtosis.levels > kurtLim);
         badChannels = [badChannels; badChannelKurt];
         badTrials = [badTrials; badTrialKurt];
         counts.Kurt = hist(badChannelKurt, 1:length(data.label));
         artefactdef.allCounts = [artefactdef.allCounts counts.Kurt'];
-
+        
     end
     if ismember('variance', artefactMethods)
-
+        
         [badChannelVar, badTrialVar] = find(artefactdef.variance.levels > varLim);
         badChannels = [badChannels; badChannelVar];
         badTrials = [badTrials; badTrialVar];
         counts.Var       = hist(badChannelVar, 1:length(data.label));
         artefactdef.allCounts = [artefactdef.allCounts counts.Var'];
         
-
+        
     end
     if ismember('inverseVariance', artefactMethods)
-
+        
         [badChannelInvVar, badTrialInvVar]  = find(artefactdef.invvariance.levels > invVarLim);
         badChannels = [badChannels; badChannelInvVar];
         badTrials = [badTrials; badTrialInvVar];
@@ -148,7 +164,7 @@ if doStandardArtefacts
     end
     
     if ismember('range', artefactMethods)
-
+        
         [badChannelRange, badTrialRange]  = find(artefactdef.range.levels > rangeLim);
         badChannels = [badChannels; badChannelRange];
         badTrials = [badTrials; badTrialRange];
@@ -156,15 +172,32 @@ if doStandardArtefacts
         artefactdef.allCounts = [artefactdef.allCounts counts.Range'];
         
     end
+    
+    if ismember('jumps', artefactMethods)
+        
+        [badChannelJumps, badTrialJumps]  = find(artefactdef.jumps.levels > jumpLim);
+        badChannels = [badChannels; badChannelJumps];
+        badTrials = [badTrials; badTrialJumps];
+        counts.jumps = hist(badChannelJumps, 1:length(data.label));
+        artefactdef.allCounts = [artefactdef.allCounts counts.jumps'];
+        
+    end
+    
     if ismember('vMax', artefactMethods)
-
+        
         [badChannelVMax, badTrialVMax]  = find(artefactdef.vAmp.levels > vMaxLim);
         badChannels = [badChannels; badChannelVMax];
         badTrials = [badTrials; badTrialVMax];
-        counts.vMax    = hist(badChannelVMax, 1:length(data.label));
+        counts.vMax = hist(badChannelVMax, 1:length(data.label));
         artefactdef.allCounts = [artefactdef.allCounts counts.vMax'];
     end
-
+    
+    [badChannelNan, badTrialNan]  = find(artefactdef.nan.levels == 1);
+    badChannels = [badChannels; badChannelNan];
+    badTrials = [badTrials; badTrialNan];
+    counts.nan = hist(badChannelNan, 1:length(data.label));
+    artefactdef.allCounts = [artefactdef.allCounts counts.nan'];
+    
 end
 
 if doStandardArtefacts
@@ -181,7 +214,7 @@ if doStandardArtefacts
         badTrials                       = [badTrials; badTrialBeta];
         counts.Beta                     = hist(badChannelBeta, 1:length(data.label));
         artefactdef.allCounts           = [artefactdef.allCounts counts.Beta'];
-
+        
     end
     if ismember('gammaPower', artefactMethods)
         
@@ -190,7 +223,7 @@ if doStandardArtefacts
         
         artefactdef.gammaPower  = squeeze( mean( freq.(field2use)( :, :, gammaStart:gammaEnd), 3 ) );
         artefactdef.gammaPower  = artefactdef.gammaPower';
-    
+        
         [badChannelGamma, badTrialGamma]    = find(artefactdef.gammaPower > gammaLim);
         badChannels                         = [badChannels; badChannelGamma];
         badTrials                           = [badTrials; badTrialGamma];
@@ -211,8 +244,8 @@ if doStandardArtefacts
         deltaStart  = find(freq.freq == 2);
         deltaEnd    = find(freq.freq == 3);
         
-        artefactdef.delta.power = squeeze( mean( freq.(field2use)( :, :, deltaStart:deltaEnd), 3 ) )';        
-        artefactdef.theta.power = squeeze( mean( freq.(field2use)( :, :, thetaStart:thetaEnd), 3 ) )';        
+        artefactdef.delta.power = squeeze( mean( freq.(field2use)( :, :, deltaStart:deltaEnd), 3 ) )';
+        artefactdef.theta.power = squeeze( mean( freq.(field2use)( :, :, thetaStart:thetaEnd), 3 ) )';
         artefactdef.alpha.power = squeeze( mean( freq.(field2use)( :, :, alphaStart:alphaEnd), 3 ) )';
         artefactdef.beta.power  = squeeze( mean( freq.(field2use)( :, :, betaStart:betaEnd), 3 ) )';
         artefactdef.gamma.power = squeeze( mean( freq.(field2use)( :, :, gammaStart:gammaEnd), 3 ) )';
@@ -241,7 +274,7 @@ if doStandardArtefacts
         counts.alphaZscore  = hist(badChannelAlphaZscore, 1:length(data.label));
         counts.betaZscore   = hist(badChannelBetaZscore, 1:length(data.label));
         counts.gammaZscore  = hist(badChannelGammaZscore, 1:length(data.label));
-       
+        
         artefactdef.allCounts               = [artefactdef.allCounts counts.deltaZscore' ...
             counts.thetaZscore' counts.alphaZscore' counts.betaZscore' ...
             counts.gammaZscore'];

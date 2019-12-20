@@ -23,7 +23,7 @@ hdrfile     = ft_getopt(cfg, 'hdrfile');
 hpfreq      = ft_getopt(cfg, 'hpfreq');
 lpfreq      = ft_getopt(cfg, 'lpfreq');
 notchfreq   = ft_getopt(cfg, 'notchfreq');
-filttype    = ft_getopt(cfg, 'filttype','but');
+filttype    = ft_getopt(cfg, 'filttype');
 
 if nargin < 1
     
@@ -97,3 +97,4 @@ end
 cfg.padding = 10; % set padding to limit edge effects of filter (not really important if you load in continuous data) 
 
 evalc('data = ft_preprocessing(cfg, data);');
+fprintf('done! \n')

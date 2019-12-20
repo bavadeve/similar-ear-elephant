@@ -20,7 +20,8 @@ if nargin < 2
     
 end
 
-subjectdata.cfgs.(outputStr) = cfg;
+cfgIn = cfg;
+subjectdata.cfgs.(outputStr) = cfgIn;
 
 fprintf('\t calculating component analysis ... ')
 
@@ -30,26 +31,18 @@ cfg = [];
 cfg.method              = method;
 cfg.(method).extended   = extended;
 cfg.(method).pca        = rank(trialdata);
-comp = ft_componentanalysis(cfg, data);
+evalc('comp = ft_componentanalysis(cfg, data);');
+
+subjectdata.analysisOrder = bv_updateAnalysisOrder(subjectdata.analysisOrder, cfgIn);
 
 fprintf('done! \n')
 
 compFilename = [currSubject '_' outputStr '.mat'];
 
 if strcmpi(saveData, 'yes')
-    fprintf('\t saving comp file and Subject.mat ... ')
     
-    subjectdata.PATHS.COMP = [subjectdata.PATHS.SUBJECTDIR filesep compFilename];
-    save(subjectdata.PATHS.COMP, 'comp')
+    bv_updateSubjectSummary([PATHS.SUMMARY filesep 'SubjectSummary.mat'], subjectdata)
+    bv_saveData(subjectdata, comp, outputStr);
     
-    %     analysisOrder = strsplit(subjectdata.analysisOrder, '-');
-    %     analysisOrder = [analysisOrder outputStr];
-    %     analysisOrder = unique(analysisOrder, 'stable');
-    %     subjectdata.analysisOrder = strjoin(analysisOrder, '-');
-    
-    fprintf('done! \n')
-    fprintf('\t saving Subject.mat file ... ')
-    save([subjectdata.PATHS.SUBJECTDIR filesep 'Subject.mat'], 'subjectdata')
-    fprintf('done! \n')
 end
 

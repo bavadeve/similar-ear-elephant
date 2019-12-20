@@ -1,4 +1,4 @@
-function varargout = bv_randomizeMetric (randWs, metrics)
+function varargout = bv_randomizeMetric(randWs, metrics)
 
 if ~iscell(metrics)
     metrics = {metrics};
@@ -18,11 +18,11 @@ for j = 1:n
         switch currMetric
             
             case 'CPL'
-                output{j}(:,i) = calculatePathlengthWs(randWs, 'weighted');
+                output{j}(:,i) = gr_calculatePathlengthWs(randWs, 'weighted');
                 
                 
             case 'CC'
-                output{j}(:,i) = calculateClusteringWs(randWs, 'weighted');
+                output{j}(:,i) = gr_calculateClusteringWs(randWs, 'weighted');
 
         end
         fprintf(repmat('\b', 1, lng))

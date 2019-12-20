@@ -65,7 +65,7 @@ chans = connectivity.label;
 freq = connectivity.freq;
 date = datetime('now');
 wpliflag = 0;
-if sum(strfind(lower(inputStr), 'wpli'))
+if contains(lower(inputStr), {'coh', 'wpli'})
     wpliflag = 1;
 end
 if wpliflag

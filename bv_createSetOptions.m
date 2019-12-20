@@ -52,7 +52,8 @@ fprintf(fid,'OPTIONS.COMPREMOVED.optionsFcn          = OPTIONS.pathsScript; \n')
 fprintf(fid,'OPTIONS.COMPREMOVED.automaticRemoval    = ''yes''; %% ''string'': (''yes'' or ''no''), to set whether automatic blink component removal is warranted \n');
 fprintf(fid,'OPTIONS.COMPREMOVED.blinkremoval        = ''no''; %% ''string'': (''yes'' or ''no''), to automatically remove blink components (only set when automaticRemoval is set to ''yes''). (default: ''no'') \n');
 fprintf(fid,'OPTIONS.COMPREMOVED.gammaremoval        = ''yes''; %% ''string'': (''yes'' or ''no''), to automatically remove gamma components (only set when automaticRemoval is set to ''yes''). (default: ''no'') \n');
-fprintf(fid,'OPTIONS.COMPREMOVED.saveFigure          = ''yes''; %% ''string'': (''yes'' or ''no''), to save component removal figure \n');
+fprintf(fid,'OPTIONS.COMPREMOVED.saveFigures         = ''yes''; %% ''string'': (''yes'' or ''no''), to save component removal figure \n');
+fprintf(fid,'OPTIONS.COMPREMOVED.showFigures         = ''yes''; %% ''string'': (''yes'' or ''no''), to save component removal figure \n');
 fprintf(fid, '\n%%%% Remove channels options \n');
 fprintf(fid, '%% set options for the removal of complete channels. It is recommended to \n');
 fprintf(fid, '%% only remove channels that are flatlining of are extremely noisy, so much \n');

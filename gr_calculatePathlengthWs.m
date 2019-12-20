@@ -3,7 +3,7 @@ function [L, eff, rad] = gr_calculatePathlengthWs(Ws, edgeType)
 % matrices. 
 %
 % usage:
-%   [CPLs] = calculateClusteringWs(Ws, edgeType)
+%   [CPLs] = gr_calculatePathlengthWs(Ws, edgeType)
 %
 % With Ws being the adjencency matrices with dim(chan * chan * subject)
 % and edgeType options 'weighted', 'binary' and 'mst' (for minimum spanning
@@ -30,8 +30,8 @@ for i = 1:m
             [L(i), eff(i), ~, rad(i)] = charpath( D );
             
         case 'weighted'
-            Wnrm = gr_normalizeW(W);
-            lengths = weight_conversion( Wnrm, 'lengths' );
+            Wnrm = weight_conversion(W, 'normalize');
+            lengths = weight_conversion( W, 'lengths' );
             D = distance_wei( lengths );
             L(i) = mean( squareform(D) );
             

@@ -92,20 +92,21 @@ currSubject = ft_getopt(cfg, 'currSubject');
 pathsFcn    = ft_getopt(cfg, 'pathsFcn');
 trialfun    = ft_getopt(cfg, 'trialfun');
 triggervalue = ft_getopt(cfg, 'triggervalue');
-triggerlabel = ft_getopt(cfg, 'triggerlabel');
+prestim     = ft_getopt(cfg, 'prestim');
+poststim    = ft_getopt(cfg, 'poststim');
 saveData    = ft_getopt(cfg, 'saveData', 'no');
 outputStr   = ft_getopt(cfg, 'outputStr', 'preproc');
 resampleFs  = ft_getopt(cfg, 'resampleFs');
 hpfreq      = ft_getopt(cfg, 'hpfreq');
 lpfreq      = ft_getopt(cfg, 'lpfreq');
 notchfreq   = ft_getopt(cfg, 'notchfreq');
-filttype    = ft_getopt(cfg, 'filttype', 'but');
+filttype    = ft_getopt(cfg, 'filttype');
 reref       = ft_getopt(cfg, 'reref', 'no');
 refelec     = ft_getopt(cfg, 'refelec', 'all');
 rmChannels  = ft_getopt(cfg, 'rmChannels');
 dataset     = ft_getopt(cfg, 'dataset');
 hdrfile     = ft_getopt(cfg, 'hdrfile');
-overwrite   = ft_getopt(cfg, 'overwrite');
+overwrite   = ft_getopt(cfg, 'overwrite', 'no');
 
 analysisOrd = {};
 
@@ -139,10 +140,10 @@ if ~hasdata % check whether data needs to be loaded from subject.mat file
     end
     
     disp(subjectdata.subjectName)
-    if ~overwrite
+    if strcmpi(overwrite, 'no')
         if isfield(subjectdata.PATHS, upper(outputStr))
             if exist(subjectdata.PATHS.(upper(outputStr)), 'file')
-                fprintf('\n\t %s already found, not overwriting ... \n', upper(outputStr))
+                fprintf('\t !!!%s already found, not overwriting ... \n', upper(outputStr))
                 data = [];
                 return
             end
@@ -158,8 +159,11 @@ if ~hasdata % check whether data needs to be loaded from subject.mat file
     fprintf('done! \n')
 end
 
+hdr = ft_read_header(hdrfile);
+
 subjectdata.cfgs.(outputStr) = cfg; % save used config file in subjectdata
 subjectdata.rmChannels = rmChannels'; % save possible removed channels in subjectdata
+subjectdata.trialfun = trialfun;
 
 fprintf('\t loading in data  ')
 cfg = []; % start new cfg file for loading data
@@ -175,7 +179,7 @@ if isfield(subjectdata, 'channels2remove')
         cfg.channel = cat(2,'EEG', strcat('-',subjectdata.channels2remove'));
         
     else
-        cfg.channel = {EEG'};
+        cfg.channel = {'EEG'};
     end
 else
     cfg.channel = {'EEG'};
@@ -193,8 +197,22 @@ if strcmpi(reref, 'yes')
     analysisOrd = [analysisOrd, 'reref'];
 end
 
-% cfg.refchannel = 'all';
-evalc('data = ft_preprocessing(cfg);');
+try
+    evalc('data = ft_preprocessing(cfg);');
+catch
+    fprintf('\n \t \t bdf file incomplete, removing subject and continueing ... \n')
+    
+    subjectdata.nTrialsPreproc = 0;
+    subjectdata.analysisOrder = strjoin(analysisOrd, '-');  % add analysis order so far to subjectdata
+    bv_saveData(subjectdata)
+    cfg = [];
+    cfg.optionsFcn = 'setOptions';
+    cfg.pathsFcn = 'setPaths';
+    removingSubjects(cfg, currSubject, 'preprocessing - incomplete bdf file')
+    data = [];
+    return
+end
+
 fprintf('done! \n')
 
 if isfield(subjectdata, 'channels2remove')
@@ -219,11 +237,23 @@ if ~isempty(resampleFs)
     cfg = [];
     cfg.resamplefs  = resampleFs;
     % cfg.detrend     = 'yes';
-    
-    evalc('data = ft_resampledata(cfg, data);');
-    
+    try
+        evalc('data = ft_resampledata(cfg, data);');
+    catch
+        fprintf('\n \t \t bdf file empty, removing subject and continueing ... \n')
+        
+        subjectdata.nTrialsPreproc = 0;
+        subjectdata.analysisOrder = strjoin(analysisOrd, '-');  % add analysis order so far to subjectdata
+        bv_saveData(subjectdata)
+        cfg = [];
+        cfg.optionsFcn = 'setOptions';
+        cfg.pathsFcn = 'setPaths';
+        removingSubjects(cfg, currSubject, 'preprocessing - empty bdf file')
+        return
+    end
+
     analysisOrd = [analysisOrd, 'res']; % managing analysis order to be saved later
-    
+    fprintf('done! \n')
 end
 
 % *** Filtering data (if a hpfreq, lpfreq, or notchfreq is given).
@@ -240,7 +270,6 @@ if ~isempty(hpfreq) || isempty(lpfreq) || isempty(notchfreq)
     analysisOrd = [analysisOrd, 'filt']; % managing analysis order to save later
 end
 
-fprintf('done!\n')
 % *** cut data into trials based on trialfun
 % Your trialfun detects the epochs in your data and adds them to a trl
 % variable. It's very important that if you've resampled your data, you use your
@@ -257,30 +286,35 @@ if ~isempty(trialfun)
     cfg.dataset = dataset;
     cfg.headerfile = hdrfile;
     cfg.trialfun = trialfun;
-    cfg.Fs = resampleFs;
-    cfg.trialdef.eventvalue = triggervalue;
-    cfg.trialdef.eventlabel = triggerlabel;
+    if isempty(resampleFs)
+        cfg.Fs = hdr.Fs;
+    else
+        cfg.Fs = resampleFs;
+    end
     
     try
         evalc('cfg = ft_definetrial(cfg)');
         
     catch
         fprintf('\n \t \t no trials found, removing subject and continueing ... \n')
+        
+        subjectdata.nTrialsPreproc = 0;
+        subjectdata.analysisOrder = strjoin(analysisOrd, '-');  % add analysis order so far to subjectdata
+        bv_saveData(subjectdata)
         cfg = [];
         cfg.optionsFcn = 'setOptions';
         cfg.pathsFcn = 'setPaths';
-        removingSubjects(cfg, currSubject, 'no trials found')
+        removingSubjects(cfg, currSubject, 'preprocessing - no trials found')
         return
     end
     
-    bv_showTrialAmount(cfg)
-    
+    trlCount = bv_showTrialAmount(cfg);
+    subjectdata.nTrialsPreproc = sum(trlCount);
     evalc('data = ft_redefinetrial(cfg, data);');
     
     analysisOrd = [analysisOrd, 'trial']; % managing analysis order to save later
     
 end
-
 
 % **** saving data
 if strcmpi(saveData, 'yes')
@@ -288,5 +322,5 @@ if strcmpi(saveData, 'yes')
     subjectdata.analysisOrder = strjoin(analysisOrd, '-');  % add analysis order so far to subjectdata
     
     bv_saveData(subjectdata, data, outputStr);              % save both data and subjectdata to the drive
-    
+    bv_updateSubjectSummary([PATHS.SUMMARY filesep 'SubjectSummary'], subjectdata)
 end

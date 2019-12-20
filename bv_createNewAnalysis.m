@@ -90,11 +90,21 @@ else
     end
 end
 
+fprintf('create log: \n')
+if ~overwrite && exist([PATHS.CURRANALYSIS filesep 'log.txt'], 'file')
+    logExist = true(1);
+    fprintf('log.txt already exists, not overwriting \n')
+else
+    logExist = true(1);
+    bv_createNewLog([PATHS.CURRANALYSIS filesep 'log.txt'])
+end
+
 fprintf('\n')
-if setPathExist && setOptionsExist && preprocessExist
+if setPathExist && setOptionsExist && preprocessExist && logExist
     fprintf('function finished with no problems !\n')
 else
     fprintf('!!function finished with (several) warnings, please check \n')
 end
 
 cd(PATHS.CURRANALYSIS)
+setPaths

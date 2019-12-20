@@ -13,17 +13,9 @@ end
 eval('setOptions')
 eval('setPaths')
 
-subject = dir([PATHS.SUBJECTS filesep str '*']);
-nSubject = length(subject);
-
-if nSubject ~= 1
-    if nSubject == 0
-        errorStr = sprintf('Subject with str-input: %s not found', str);
-    elseif nSubject > 1
-        errorStr = sprintf('Too many subjects found with str-input: %s', str);
-    end
-    error(errorStr)
-end
+subjectFolders = dir([PATHS.SUBJECTS filesep '*' OPTIONS.sDirString '*']);
+subjectFoldersName = {subjectFolders.name};
+subject.name = subjectFoldersName{ismember(subjectFoldersName, str)};
 
 
 disp(subject.name)
@@ -34,18 +26,20 @@ if israw
     
     cfg.dataset = subjectdata.PATHS.DATAFILE;
     cfg.headerfile = subjectdata.PATHS.HDRFILE;
-%     cfg.preproc.hpfilter = 'yes';
-%     cfg.preproc.hpfreq = 1;
-%     cfg.preproc.hpinstabilityfix = 'reduce';
+    cfg.preproc.hpfilter = 'yes';
+    cfg.preproc.hpfreq = 1;
+    cfg.preproc.hpinstabilityfix = 'reduce';
     cfg.preproc.bsfilter = 'yes';
     cfg.preproc.bsfreq = [48 52];
     cfg.preproc.bsinstabilityfix = 'reduce';
+    cfg.preproc.reref = 'yes';
+    cfg.preproc.refchannel = 'all';
     
     cfg.channel = 'EEG';
     cfg.viewmode = 'vertical';
     cfg.blocksize = 8;
     cfg.continuous = 'yes';
-    cfg.ylim = [-150 150];
+    cfg.ylim = [-100 100];
     fprintf('\t showing %s data \n', upper(filestr))
     evalc('ft_databrowser(cfg)');
     
@@ -56,7 +50,7 @@ else
     cfg.blocksize = 8;
     cfg.continuous = 'yes';
     
-    cfg.ylim = [-150 150];
+    cfg.ylim = [-100 100];
     fprintf('\t showing %s data \n', upper(filestr))
     evalc('ft_databrowser(cfg, data)');
 end

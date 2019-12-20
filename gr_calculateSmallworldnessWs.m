@@ -40,22 +40,28 @@ elseif isempty(Ls)
 end
 
 if doRandomize 
+    fprintf('\tRandomizing matrices ... ')
     switch edgeType
         case 'weighted'
-            evalc('randWs = gr_randomizeWeightedMatrices(Ws, 20);');
+            randWs = gr_randomizeWeightedMatrices(Ws, 20);
         case {'binary', 'mst'}
             evalc('randWs = bv_randomizeBinaryMatrices(Ws, 20);');
         otherwise
             error('unknown edgeType')
     end
+    fprintf('done! \n')
 end
 
 if doCalcCs
+    fprintf('\tCalculating clustering coefficient ... ')
     Cs = gr_calculateClusteringWs(Ws, edgeType);
+    fprintf('done! \n')
 end
 
 if doCalcLs
+    fprintf('\tCalculating characteristic path length ... ')
     Ls = gr_calculatePathlengthWs(Ws, edgeType);
+    fprintf('done! \n')
 end
 
 n = size(Ws,1);
@@ -65,15 +71,17 @@ k = size(randWs, 4);
 Ss = zeros(1, size(Ws,3));
 
 counter = 0;
+fprintf('\tCalculating small-worldness ... ')
 for i = 1:k
-    counter = counter + 1;
+    
     lng = printPercDone(k, counter);
     currRandW = randWs(:,:,:,i);
     randCs(:,i) = gr_calculateClusteringWs(currRandW, edgeType);
     randLs(:,i) = gr_calculatePathlengthWs(currRandW, edgeType);
     fprintf(repmat('\b', 1, lng))
+    counter = counter + 1;
 end
-
+fprintf('done! \n')
 gamma = Cs' ./ mean(randCs,2);
 lambda = Ls' ./ mean(randLs,2);
 

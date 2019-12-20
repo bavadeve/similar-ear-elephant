@@ -1,36 +1,37 @@
-function [h,Zi] = topoplotWrapper(dat, chans, lim) 
+function [Zi, h] = topoplotWrapper(dat, chans, lim) 
+addpath('~/MatlabToolboxes/Colormaps/')
 
 if nargin < 3
     lim = [min(dat), max(dat)];
 end
 
-% cfg = [];
-% cfg.channel  = chans;
-% cfg.layout   = 'EEG1010';
-% cfg.feedback = 'no';
-% cfg.skipcomnt  = 'yes';
-% cfg.skipscale  = 'yes';
-% evalc('lay = ft_prepare_layout(cfg);');
+cfg = [];
+cfg.channel  = chans;
+cfg.layout   = 'EEG1010';
+cfg.feedback = 'no';
+cfg.skipcomnt  = 'yes';
+cfg.skipscale  = 'yes';
+evalc('lay = ft_prepare_layout(cfg);');
+
+chanX = lay.pos(:,1);
+chanY = lay.pos(:,2);
+
+opt = {'interpmethod','v4','interplim','mask','gridscale',1000,'outline',lay.outline, ...
+    'shading','flat','isolines',10,'mask', lay.mask ,'style','isofill', 'conv', 'off', 'datmask', [], ...
+    'clim', [min(dat) max(dat)]};
+
+[Zi, h] = ft_plot_topo(chanX,chanY,dat,opt{:});
+
+% evalc('chanlocs = readlocs(''/Users/bauke/MyScripts/NBTpublic-NBTv0.5.5-public/External/EEGlab/plugins/dipfit2.3/standard_BESA/standard-10-5-cap385.elp'');');
 % 
-% chanX = lay.pos(:,1);
-% chanY = lay.pos(:,2);
-% 
-% opt = {'interpmethod','v4','interplim','mask','gridscale',1000,'outline',lay.outline, ...
-%     'shading','flat','isolines',10,'mask', lay.mask ,'style','isofill', 'conv', 'off', 'datmask', [], ...
-%     'clim', [min(dat) max(dat)]};
+% [~, order] = ismember(chans, {chanlocs.labels});
 % 
 % fig = figure;
-% ft_plot_topo(chanX,chanY,dat,opt{:});
-
-evalc('chanlocs = readlocs(''/Users/bauke/MyScripts/NBTpublic-NBTv0.5.5-public/External/EEGlab/plugins/dipfit2.3/standard_BESA/standard-10-5-cap385.elp'');');
-
-[~, order] = ismember(chans, {chanlocs.labels});
-
-fig = figure;
-[h,Zi] = topoplot(dat, chanlocs(order), 'colormap', colormap('parula'), 'plotdisk', 'on', 'style', 'both', 'conv', 'on', 'gridscale', 1000, 'electrodes','labelpoint', 'maplimits', lim );
-
-% set(gca, 'CLim', lim)
+% [h,Zi] = topoplot(dat, chanlocs(order), 'colormap', colormap('parula'), 'plotdisk', 'on', 'style', 'both', 'conv', 'on', 'gridscale', 1000, 'electrodes','labelpoint', 'maplimits', lim );
+% 
+% % set(gca, 'CLim', lim)
 colorbar
+colormap plasma
 
 axis equal
 axis off

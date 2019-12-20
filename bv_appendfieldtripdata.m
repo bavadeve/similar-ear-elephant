@@ -40,8 +40,7 @@ outputStr   = ft_getopt(cfg, 'outputStr');
 saveData    = ft_getopt(cfg, 'saveData');
 pathsFcn    = ft_getopt(cfg, 'pathsFcn', 'setPaths');
 optionsFcn  = ft_getopt(cfg, 'optionsFcn', 'setOptions');
-
-
+cfgIn = cfg;
 
 if nargin < 2
     eval(optionsFcn);
@@ -73,6 +72,8 @@ fprintf('done! \n')
 
 if strcmpi(saveData, 'yes')
     
-    bv_saveData(subjectdata, data, outputStr)
+    subjectdata.analysisOrder = bv_updateAnalysisOrder(subjectdata.analysisOrder, cfgIn);
+    bv_updateSubjectSummary([PATHS.SUMMARY filesep 'SubjectSummary.mat'], subjectdata)
     
+    bv_saveData(subjectdata, data, outputStr);
 end

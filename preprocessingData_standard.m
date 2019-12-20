@@ -40,8 +40,10 @@ if strcmpi(cfg.saveData, 'yes')
     save([PATHS.PREPROC filesep 'configfile.mat'], 'preproc_cfg')
 end
 
-for iSubjects = subjectVector
-    currSubject = subjectFolderNames{iSubjects};
+counter = 0;
+for iSubjects = startSubject:endSubject
+    counter = counter + 1;
+    fprintf('%1.0f/%1.0f\n', counter, length(startSubject:endSubject))    currSubject = subjectFolderNames{iSubjects};
     
     cfg.currSubject = currSubject;
     
@@ -52,8 +54,10 @@ end
 
 %% COMPONENT CALCULATION
 eval('setOptions')
-for iSubjects = subjectVector
-    currSubject = subjectFolderNames{iSubjects};
+counter = 0;
+for iSubjects = startSubject:endSubject
+    counter = counter + 1;
+    fprintf('%1.0f/%1.0f\n', counter, length(startSubject:endSubject))    currSubject = subjectFolderNames{iSubjects};
     
     cfg             = OPTIONS.COMP;
     cfg.currSubject = currSubject;
@@ -63,8 +67,10 @@ end
 
 %% COMPONENT REMOVAL
 eval('setOptions')
-for iSubjects = subjectVector
-    currSubject = subjectFolderNames{iSubjects};
+counter = 0;
+for iSubjects = startSubject:endSubject
+    counter = counter + 1;
+    fprintf('%1.0f/%1.0f\n', counter, length(startSubject:endSubject))    currSubject = subjectFolderNames{iSubjects};
     
     cfg             = OPTIONS.COMPREMOVED;
     cfg.currSubject = currSubject;
@@ -74,8 +80,10 @@ end
 
 %% REMOVING POOR CHANNELS
 eval('setOptions')
+counter = 0;
 for iSubjects = startSubject:endSubject
-    currSubject = subjectFolderNames{iSubjects};
+    counter = counter + 1;
+    fprintf('%1.0f/%1.0f\n', counter, length(startSubject:endSubject))    currSubject = subjectFolderNames{iSubjects};
     
     cfg             = OPTIONS.RMCHANNELS;
     cfg.currSubject = currSubject;
@@ -86,8 +94,10 @@ end
 
 %% REREFERENCING
 eval('setOptions')
+counter = 0;
 for iSubjects = startSubject:endSubject
-    currSubject = subjectFolderNames{iSubjects};
+    counter = counter + 1;
+    fprintf('%1.0f/%1.0f\n', counter, length(startSubject:endSubject))    currSubject = subjectFolderNames{iSubjects};
     
     cfg             = OPTIONS.REREF;
     cfg.currSubject = currSubject;
@@ -98,8 +108,10 @@ end
 
 %% REMOVING POOR TRIALS
 eval('setOptions')
+counter = 0;
 for iSubjects = startSubject:endSubject
-    currSubject = subjectFolderNames{iSubjects};
+    counter = counter + 1;
+    fprintf('%1.0f/%1.0f\n', counter, length(startSubject:endSubject))    currSubject = subjectFolderNames{iSubjects};
     
     cfg                 = OPTIONS.CLEANED;
     cfg.currSubject     = currSubject;
@@ -110,8 +122,10 @@ end
 
 %% APPEND BASED ON SAMPLEINFO
 eval('setOptions')
+counter = 0;
 for iSubjects = startSubject:endSubject
-    currSubject = subjectFolderNames{iSubjects};
+    counter = counter + 1;
+    fprintf('%1.0f/%1.0f\n', counter, length(startSubject:endSubject))    currSubject = subjectFolderNames{iSubjects};
     
     cfg.currSubject = currSubject;
     cfg.inputStr    = 'CLEANED';
@@ -124,8 +138,10 @@ end
 
 %% CUT APPENDED DATA INTO TRIALS
 eval('setOptions')
+counter = 0;
 for iSubjects = startSubject:endSubject
-    currSubject = subjectFolderNames{iSubjects};
+    counter = counter + 1;
+    fprintf('%1.0f/%1.0f\n', counter, length(startSubject:endSubject))    currSubject = subjectFolderNames{iSubjects};
     
     cfg = OPTIONS.DATACUT;
     cfg.currSubject = currSubject;

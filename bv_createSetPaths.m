@@ -17,6 +17,7 @@ fprintf(fid, 'PATHS.RESULTS = ''%s''; %% path to results folder\n', [path2root f
 fprintf(fid, 'PATHS.REMOVED = ''%s''; %% path to removed subjects folder \n', [path2subjects filesep 'removed']);
 fprintf(fid, 'PATHS.FIGURES = ''%s''; %% path to figures  folder \n', [path2root filesep 'figures']);
 fprintf(fid, 'PATHS.CONFIG = ''%s''; %% path to config folder \n', [path2root filesep 'config']);
+fprintf(fid, 'PATHS.SUMMARY = ''%s''; %% path to summary folder \n', [path2root filesep 'summary']);
 
 fprintf(fid,'\n%% create, if necessary the folders \nif ~exist(PATHS.SUBJECTS, ''dir'')\n\tmkdir(PATHS.SUBJECTS)\nend\n');
 fprintf(fid,'if ~exist(PATHS.RESULTS, ''dir'')\n\tmkdir(PATHS.RESULTS)\nend\n');
@@ -25,6 +26,7 @@ fprintf(fid,'if ~exist(PATHS.SUBFUNCTIONS, ''dir'')\n\tmkdir(PATHS.SUBFUNCTIONS)
 fprintf(fid,'if ~exist(PATHS.FILES, ''dir'')\n\tmkdir(PATHS.FILES)\nend\n');
 fprintf(fid,'if ~exist(PATHS.REMOVED, ''dir'')\n\tmkdir(PATHS.REMOVED)\nend\n');
 fprintf(fid,'if ~exist(PATHS.CONFIG, ''dir'')\n\tmkdir(PATHS.CONFIG)\nend\n');
+fprintf(fid,'if ~exist(PATHS.SUMMARY, ''dir'')\n\tmkdir(PATHS.SUMMARY)\nend\n');
 
 fprintf(fid, '\n%% add fieldtrip and the subfunctions to your matlab path\nPATHS.FTPATH = ''/Users/bauke/MatlabToolboxes/fieldtrip-20180209'';');
 fprintf(fid, 'addpath(PATHS.FTPATH)\n');

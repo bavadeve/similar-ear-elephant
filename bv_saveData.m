@@ -2,10 +2,13 @@ function bv_saveData(subjectdata, data, outputStr)
 
 global PATHS
 
+
 if nargin > 1
+    eval([inputname(2) ' = data;'])
+
     filename = [subjectdata.subjectName '_' outputStr '.mat'];
     
-    if strcmpi(outputStr, 'PREPROC')
+    if contains(outputStr, 'PREPROC')
         filePath = [PATHS.PREPROC filesep filename];
     else
         filePath = [subjectdata.PATHS.SUBJECTDIR filesep filename];
@@ -13,7 +16,7 @@ if nargin > 1
     subjectdata.PATHS.(upper(outputStr)) = filePath;
     
     fprintf('\t saving %s ... ', filePath)
-    save(filePath, 'data')
+    save(filePath, inputname(2))
     fprintf('done! \n')
     
 end

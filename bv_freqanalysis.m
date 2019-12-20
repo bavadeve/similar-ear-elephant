@@ -1,18 +1,16 @@
-function [freq] = bv_freqanalysis(cfg, data)
+function [fd] = bv_freqanalysis(cfg, data)
 
 currSubject = ft_getopt(cfg, 'currSubject');
 saveData    = ft_getopt(cfg, 'saveData');
 inputStr    = ft_getopt(cfg, 'inputStr');
 outputStr   = ft_getopt(cfg, 'outputStr', 'freq');
-optionsFcn  = ft_getopt(cfg, 'optionsFcn');
 freqrange   = ft_getopt(cfg, 'freqrange', [0 100]);
 
-global PATHS
+eval('setPaths')
+eval('setOptions')
 
 if nargin < 2
-    
-    eval(optionsFcn)
-    
+        
     try
         load([PATHS.SUBJECTS filesep currSubject filesep 'Subject.mat'], 'subjectdata')
     catch
@@ -34,30 +32,23 @@ end
 
 fprintf('\t starting frequency analysis ... ')
 cfg = [];
-cfg.method      = 'mtmconvol';
-cfg.taper       = 'hanning';
-cfg.output      = 'fourier';
-cfg.foi         = freqrange(1):0.1:freqrange(2);
-cfg.keeptrials  = 'yes';
-cfg.toi         = '50%';
-cfg.t_ftimwin   = ones(1, length(cfg.foi));
-cfg.pad         = 'nextpow2';
-freq = ft_freqanalysis(cfg, data);
+cfg.method      = 'mtmfft';
+cfg.taper       = 'dpss';
+cfg.tapsmofrq   = 1;
+cfg.output      = 'powandcsd';
+cfg.foilim      = [freqrange(1) freqrange(2)];
+cfg.pad         ='nextpow2';
+% cfg.keeptrials  = 'yes';
+% cfg.keeptapers  = 'yes';
+evalc('freq = ft_freqanalysis(cfg, data);');
+evalc('fd = ft_freqdescriptives(cfg, freq);');
 
 fprintf('done! \n')
 
 if strcmpi(saveData, 'yes')
-    outputFilename = [subjectdata.PATHS.SUBJECTDIR filesep currSubject '_' outputStr '.mat'];
     
-    subjectdata.analysisOrder = cat(2, subjectdata.analysisOrder, '-freq');
+    bv_saveData(subjectdata, fd, outputStr)
     
-    fprintf('\t saving freq data to %s ... ', outputFilename)
-    save(outputFilename, '-v7.3', 'freq')
-    fprintf('done! \n')
-    
-    fprintf('\t saving subjectdata to Subject.mat file')
-    save([subjectdata.PATHS.SUBJECTDIR filesep 'Subject.mat'], 'subjectdata')
-    fprintf('done! \n')
 end
 
 

@@ -12,6 +12,11 @@ for i = 1:size(Ws,3)
     currW1 = Ws(:, :, i);
 
     for j = 1:size(Ws,3)
+        if i == j
+            R(i,j) = 0;
+            P(i,j) = NaN;
+            continue;
+        end
         currW2 = Ws(:, :, j);
 
         [currR, currP] = correlateMatrices(currW1, currW2);

@@ -17,9 +17,9 @@ for i = 1:m
     
     switch edgeType
         case 'binary'
-            [Ci(:,i),Q(i)] = modularity_und(W);
+            [Ci(:,i),Q(i)] = community_louvain(W);
         case 'weighted'
-            Wnrm = bv_normalizeW(W);
-            [Ci(:,i),Q(i)] = modularity_und(Wnrm);
+%             Wnrm = gr_normalizeW(W);
+            [Ci(:,i),Q(i)] = community_louvain(W);
     end
 end

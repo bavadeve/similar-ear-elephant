@@ -1,4 +1,4 @@
-function bv_showTrialAmount(cfg)
+function trlCount = bv_showTrialAmount(cfg)
 % input cfg, with cfg.trl
 
 if ~isfield(cfg,'trl')

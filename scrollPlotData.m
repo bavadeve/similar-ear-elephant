@@ -8,7 +8,7 @@ function fig_handle = scrollPlotData(cfg, data)
 %
 % general fieldtrip data structure is needed
 % config structure with following fields is needed:
-%   cfg.artifactdef = artifactdefinition from bvLL_artifactDetection
+%   cfg.artifactdef = artifactdefinition from bvLL_artefactDetection
 %   cfg.artifactdef.badPartsMatrix = only necessary field for this function.
 %       Boolean matrix with zeros for each trial and each channel if data is
 %       artifact-free or ones if artifact is present. For more information,
@@ -120,7 +120,7 @@ else
     tmpBadData = data.trial;
     tmpBadTime = data.time;
     
-    for i = 1:length(goodPartsMatrix)
+    for i = 1:size(goodPartsMatrix,1)
         tmpBadData{goodPartsMatrix(i,1)}(goodPartsMatrix(i,2),:) = nan(1, size(tmpBadData{goodPartsMatrix(i,1)},2));
     end
     
@@ -130,6 +130,11 @@ else
     
     goodTrialData = [tmpGoodData{:}];
     goodTimeData = [tmpGoodTime{:}];
+    
+    if sum(not(isnan(goodTrialData(:)))) == 0
+        fig_handle = figure;
+        return
+    end
     
     vTime = 0:1/data.fsample:length(trialData)/data.fsample - (1/data.fsample);
     
@@ -165,9 +170,11 @@ else
     figpos = [figpos(1) + figpos(3)/2, figpos(2) figpos(3)/2 figpos(4)];
     set(gcf, 'Position', figpos);
     set(gca, 'FontSize', 20)
-    plot(vTime(startIndx:endIndx), newGoodData(:,(startIndx:endIndx)), 'b')
+%     plot(vTime(startIndx:endIndx), newGoodData(:,(startIndx:endIndx)), 'b')
+    plot(vTime, newGoodData, 'b')
     hold on
-    plot(vTime(startIndx:endIndx), newBadData(:,(startIndx:endIndx)), 'r')
+%     plot(vTime(startIndx:endIndx), newBadData(:,(startIndx:endIndx)), 'r')
+    plot(vTime, newBadData, 'r')
     hold off
     
     set(gca,'YTick',limVector)
@@ -180,7 +187,7 @@ else
     set(gca, 'YLim', [0 (max(limVector) + vertLim)], 'XLim', [0 horzLim])
     drawnow
     if doScroll
-        set(gca, 'KeyPressFcn', @scrollView)
+        set(gcf, 'KeyPressFcn', @scrollView)
     end
 end
 end

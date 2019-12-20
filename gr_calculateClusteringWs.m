@@ -38,8 +38,8 @@ for i = 1:m
         case 'binary'
             C(i) = mean(clustering_coef_bu(W));
         case 'weighted'
-            Wnrm = weight_conversion(W, 'normalize');
-            C(i) = mean(clustering_coef_wu(Wnrm));
+            Wnrm = gr_normalizeW(W);
+            C(i) = mean(clustering_coef_wu_sign(Wnrm,2));
         case 'mst'
             Wnrm = double(W>0);
             C(i) = mean(clustering_coef_bu(Wnrm));

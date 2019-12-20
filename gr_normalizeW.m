@@ -3,7 +3,9 @@ function Wnrm = gr_normalizeW(W)
 %
 % See also SQUAREFORM
 
-Wsq = squareform(W);
-Wsqnrm =  (Wsq - min(Wsq(:))) / (max(Wsq(:)) - min(Wsq(:)));
+Wsq = nansquareform(W);
+Wsqnrm = Wsq;
+Wsqnrm(Wsqnrm > 0) = (Wsqnrm(Wsqnrm > 0) - min(Wsqnrm(Wsqnrm > 0))) / ...
+    (max(Wsqnrm(Wsqnrm > 0)) - min(Wsqnrm(Wsqnrm > 0)));
 Wnrm = squareform(Wsqnrm);
 

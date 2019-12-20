@@ -20,20 +20,6 @@ event(~statusIndx) = [];
 
 % resample sampling rate, to rate used with data file
 EVvalue = [event.value]';
-
-% % find overlapping triggers and remove
-% startERPtaskIndx = find(EVvalue==1);
-% endERPtaskIndx = find(EVvalue==15);
-% startERPtaskIndx = startERPtaskIndx(1:length(endERPtaskIndx));
-% 
-% rmVect = zeros(1,length(event));
-% for k = 1:length(startERPtaskIndx)
-%     rmVect(startERPtaskIndx(k):endERPtaskIndx(k)) = 1;
-% end
-% 
-% event = event(~rmVect);
-% 
-% EVvalue = [event.value]';
 EVsample = [event.sample]';
 EVsample = ceil((cfg.Fs * EVsample) ./ hdr.Fs);
 

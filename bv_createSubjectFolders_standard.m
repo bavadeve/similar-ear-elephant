@@ -70,6 +70,9 @@ for subjIndex = 1:length(fileNames)
     include = true;
     inputnames = varargin;
     [~, cFile] = fileparts(fileNames{subjIndex});
+    
+    
+    
     a = regexp(cFile, '[A-B,0-9]', 'Match');
     
     splitFile = {[a{:}]};
@@ -163,7 +166,7 @@ for subjIndex = 1:length(fileNames)
     
     subjectdata.date = date;
     
-    [subjectdata.testdate , subjectdata.testtime] = bv_readOutDateAndTimeBdf(dataFile)
+    [subjectdata.testdate , subjectdata.testtime] = bv_readOutDateAndTimeBdf(dataFile);
     
     fprintf('\t saving Subject.mat...')
     save([subjectdata.PATHS.SUBJECTDIR filesep 'Subject'],'subjectdata'); % save individual subjectdata structure to individual folder

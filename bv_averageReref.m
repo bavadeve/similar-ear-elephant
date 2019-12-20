@@ -6,7 +6,7 @@ saveData    = ft_getopt(cfg, 'saveData');
 outputStr   = ft_getopt(cfg, 'outputStr');
 optionsFcn  = ft_getopt(cfg, 'optionsFcn');
 refElectrode = ft_getopt(cfg, 'refElectrode');
-
+cfgIn = cfg;
 
 if nargin < 2
     disp(currSubject)
@@ -30,23 +30,8 @@ evalc('data = ft_preprocessing(cfg,data);');
 fprintf('done! \n')
 
 if strcmpi(saveData, 'yes')
-    outputFilename = [ currSubject '_' outputStr '.mat'];
-    subjectdata.PATHS.REREF = [subjectdata.PATHS.SUBJECTDIR filesep outputFilename];
-    
-    if ~isfield(subjectdata, 'analysisOrder')
-        subjectdata.analysisOrder = lower(inputStr);
-    end
-    
-    analysisOrder = strsplit(subjectdata.analysisOrder, '-');
-    analysisOrder = [analysisOrder outputStr];
-    analysisOrder = unique(analysisOrder, 'stable');
-    subjectdata.analysisOrder = strjoin(analysisOrder, '-');
-    
-    fprintf('\t saving preproc data to %s ... ', outputFilename)
-    save([subjectdata.PATHS.REREF], 'data')
-    fprintf('done! \n')
-    
-    fprintf('\t saving Subject.mat file ... ' )
-    save([subjectdata.PATHS.SUBJECTDIR filesep 'Subject.mat'], 'subjectdata')
-    fprintf('done! \n')
+        subjectdata.analysisOrder = bv_updateAnalysisOrder(subjectdata.analysisOrder, cfgIn);
+        bv_updateSubjectSummary([PATHS.SUMMARY filesep 'SubjectSummary.mat'], subjectdata);
+        
+        bv_saveData(subjectdata, data, outputStr);
 end

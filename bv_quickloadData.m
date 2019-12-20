@@ -9,18 +9,9 @@ if isnumeric(str)
     subjectName = subjectNames{str};
 else
     
-    subject = dir([PATHS.SUBJECTS filesep str '*']);
-    nSubject = length(subject);
-    
-    if nSubject ~= 1
-        if nSubject == 0
-            errorStr = sprintf('Subject with str-input: %s not found', str);
-        elseif nSubject > 1
-            errorStr = sprintf('Too many subjects found with str-input: %s', str);
-        end
-        error(errorStr)
-    end
-    subjectName = subject.name;
+    subjectFolders = dir([PATHS.SUBJECTS filesep '*' OPTIONS.sDirString '*']);
+    subjectFoldersName = {subjectFolders.name};
+    subjectName = subjectFoldersName{ismember(subjectFoldersName, str)};
     
 end
 

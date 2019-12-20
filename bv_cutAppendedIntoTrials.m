@@ -35,6 +35,7 @@ triallength = ft_getopt(cfg, 'triallength');
 outputStr   = ft_getopt(cfg, 'outputStr', ['triallength' num2str(triallength)]);
 saveData    = ft_getopt(cfg, 'saveData');
 ntrials     = ft_getopt(cfg, 'ntrials', 'all');
+cfgIn = cfg;
 
 if isempty(triallength)
     error('no config struct does not contain triallength')
@@ -99,14 +100,18 @@ if not(strcmpi(ntrials, 'all'))
         cfg = [];
         cfg.trials = sort(randperm(length(data.trial), ntrials));
         fprintf('\t selecting %1.0f cut trials ... ', length(cfg.trials))
-        evalc('ft_selectdata(cfg, data);');
+        evalc('data = ft_selectdata(cfg, data);');
         fprintf('done! \n')
     end
 end
 
+subjectdata.nTrialsCleaned = length(data.trial);
+
 if strcmpi(saveData, 'yes')
     
-    bv_saveData(subjectdata, data, outputStr)
+    subjectdata.analysisOrder = bv_updateAnalysisOrder(subjectdata.analysisOrder, cfgIn);
+    bv_updateSubjectSummary([PATHS.SUMMARY filesep 'SubjectSummary.mat'], subjectdata)
     
+    bv_saveData(subjectdata, data, outputStr);
 end
 finished = true;

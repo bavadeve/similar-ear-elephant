@@ -1,126 +1,127 @@
-function removeChannels(cfg)
-% remove faulty channels, use before preprocessing! Reject channels in
-% ft_rejectvisual GUI
+function data = bv_removeChannels(cfg, data, artefactdef)
+% remove faulty channels, based on given limits in config-var
 %
 % input variables:
-%   sDir:       [string] subject directory name
+%   cfg:        [struct] with the following fields
+%
+%
 %   sDirString: [string] non-unique part all subject directories (e.g. 'pp')
 %
 % Copyright (C) 2015-2016, Bauke van der Velde
 %
 %   removeChannels(sDir, sDirString)
 
-overwrite = ft_getopt(cfg, 'overwrite');
+lims            = ft_getopt(cfg, 'lims');
+pathsFcn        = ft_getopt(cfg, 'pathsFcn');
+currSubject     = ft_getopt(cfg, 'currSubject');
+inputStr        = ft_getopt(cfg, 'inputStr');
+outputStr       = ft_getopt(cfg, 'outputStr');
+artfctdefStr    = ft_getopt(cfg, 'artfctdefStr');
+saveData        = ft_getopt(cfg, 'saveData');
+maxpercbad      = ft_getopt(cfg, 'maxpercbad');
+expectedtrials  = ft_getopt(cfg, 'maxtrials');
+repairchans     = ft_getopt(cfg, 'repairchans');
+overwrite       = ft_getopt(cfg, 'overwrite', 'no');
 
-setStandards();
+cfgIn = cfg;
 
-% find subjectfolder names
-subjectFolders = dir([PATHS.SUBJECTS filesep sDirString '*']);
-subjectFolderNames = {subjectFolders.name};
+if isempty(lims)
+    error('Please give cfg.lims struct as input')
+end
+if isempty(maxpercbad)
+    error('Please set maximum percentage missing per channel in cfg.maxpercbad')
+end
 
-for iFolName = 1:length(subjectFolderNames)
-    % load subject file and go to folder
-    try
-        load([PATHS.SUBJECTS filesep subjectFolderNames{iFolName} filesep 'Subject.mat'])
-    catch
-        error('ERROR: no Subject.mat found for %s', subjectFolderNames{iFolName})
-    end
-    cd(subjectdata.PATHS.SUBJECTDIR)
-    disp(subjectdata.subjectName)
-    
-    doNoAnalysis = isfield(subjectdata, 'removedchannels') && ~overwrite;
-    
-    if doNoAnalysis
-        fprintf('\t removed channels already determined and not overwriting \n')
-        continue
-    end
-    
-    % get header, calculate nyquist frequency and based on that create a
-    % vector for bandstop filter
-    
-    bsFreq = [48 52];
-
-    cfg = [];    
-    cfg.dataset         = subjectdata.PATHS.DATAFILE;
-    cfg.headerfile      = subjectdata.PATHS.HDRFILE;
-    cfg.trialfun        = 'trialfun_remChans_10mnd';
-    cfg.trigger        = [11 12];
-    evalc('cfg = ft_definetrial(cfg);');
-    cfg.channel         = {'all'};
-    
-    % Filtering options and preprocess
-    cfg.bsfilter        = 'yes';
-    cfg.bsfreq          = bsFreq;
-    cfg.hpfilter        = 'yes';
-    cfg.hpfreq          = 2;
-       
-%     % reref options
-%     cfg.reref           = 'yes';
-%     cfg.refchannel      = {'EEG'};
-    
-    evalc('data = ft_preprocessing(cfg);');
-    
-    cfg = [];
-    cfg.length = 5;
-    cfg.overlap = 0;
-    evalc('data = ft_redefinetrial(cfg, data);');
-    
-    % view data
-    cfg = [];
-    cfg.viewmode = 'vertical';
-    cfg.channel = {'EEG'};
-    evalc('ft_databrowser(cfg, data)');
-   
-    % reject channels in ft_rejectvisual GUI
-    cfg = [];
-    cfg.method = 'summary';
-    cfg.channel = {'EEG', '-A2'};
-    evalc('cleanData = ft_rejectvisual(cfg, data);');
-    
-    close all
-    
-    % ask operator whether subject need to be removed
-    inputStr = sprintf('\t Move subject to removed folder because of bad data? [Y/N]');
-    removeSubject = input(inputStr, 's');
-    
-    if strcmp(removeSubject, 'Y');
-        % if bad data, move subject to PATHS.REMOVED and add error message to
-        % individual WhyRemoved.txt file and summary removeLog.mat
-        if ~exist(PATHS.REMOVED, 'dir')
-            mkdir(PATHS.REMOVED)
-        end
-        
-        movefile([subjectdata.PATHS.SUBJECTDIR filesep], PATHS.REMOVED);
-        subjectdata.PATHS.SUBJECTDIR   = [PATHS.REMOVED filesep subjectFolderNames{iFolName}];
-        errorstr = 'Subject data not good enough, moved to removed directory';
-        fprintf('%s: %s', subjectdata.subjectName, errorstr)
-        
-        fid = fopen([subjectdata.PATHS.SUBJECTDIR filesep 'WhyRemoved.txt'],'w');
-        fprintf(fid, errorstr);
-        fclose( fid );
-        
-        if exist([PATHS.REMOVED filesep 'removeLog.mat'], 'file')
-            load([PATHS.REMOVED filesep 'removeLog.mat'])
-            nrSubjectSoFar = size(removeLog, 1);
-        else
-            removeLog = {};
-            nrSubjectSoFar = 0;
-        end
-        removeLog{nrSubjectSoFar + 1, 1} = subjectdata.subjectName;
-        removeLog{nrSubjectSoFar + 1, 2} = errorstr;
-        
-        save([PATHS.REMOVED filesep 'removeLog'],'removeLog');
-        clear removeLog
+if nargin < 2 % data loading
+    if isempty(pathsFcn)
+        error('please add options function cfg.optionsFcn')
     else
-        subjectdata.removedchannels = setdiff(data.label, cleanData.label);
-        subjectdata.sInfoLastTrial = cleanData.sampleinfo(end, :);
-        fprintf(['\t channel(s) to be to removed of subject %s: ' ...
-            repmat('%s ', 1, length(subjectdata.removedchannels)) '\n'], subjectdata.subjectName, subjectdata.removedchannels{:})
-        save('Subject.mat','subjectdata')
+        eval(pathsFcn)
     end
     
+    disp(currSubject)
+    subjectFolderPath = [PATHS.SUBJECTS filesep currSubject];
+    [subjectdata] = bv_check4data(subjectFolderPath);
     
+    if strcmpi(overwrite, 'no')
+        if isfield(subjectdata.PATHS, upper(outputStr))
+            if exist(subjectdata.PATHS.(upper(outputStr)), 'file')
+                fprintf('\t !!!%s already found, not overwriting ... \n', upper(outputStr))
+                data = [];
+                return
+            end
+        end
+    end
+    
+    [subjectdata, data, artefactdef] = bv_check4data(subjectFolderPath, inputStr, artfctdefStr);
+    
+    
+    subjectdata.cfgs.(outputStr) = cfg;
+else
+    subjectdata = struct;
+    repairchans = 'yes';
+    saveData = 'no';
+end
+
+if isempty(expectedtrials)
+    expectedtrials = size(artefactdef.sampleinfo,1);
+end
+
+fprintf('\t checking for channels to remove ... \n')
+% artefact detection
+limFields = fieldnames(lims);
+for i = 1:length(limFields)
+    cField = limFields{i};
+    
+    out(:,:,i) = artefactdef.(cField).levels > lims.(cField);
     
 end
 
-cd( PATHS.ROOT )
+% badchannel calculation
+badchans = data.label(((sum(sum(out,3)>0,2) / expectedtrials) * 100 ) > maxpercbad);
+subjectdata.channels2remove = badchans;
+subjectdata.flatchannels = ...
+    data.label(((sum(sum(out(:,:, ...
+    contains(limFields, 'flat')),3)>0,2) / expectedtrials) * 100 ) > ...
+    maxpercbad);
+subjectdata.noisychannels = ...
+    data.label(((sum(sum(out(:,:, ...
+    not(contains(limFields, 'flat'))),3)>0,2) / expectedtrials) * 100 ) > ...
+    maxpercbad);
+
+if not(isempty(subjectdata.channels2remove))
+    fprintf(['\t \t bad channels detected: ' repmat('%s,', 1, length(badchans)) '\n'], badchans{:})
+    
+    % badchannel interpolation
+    if strcmpi(repairchans, 'yes') 
+        fprintf('\t repairing ... ')
+        cfg = [];
+        cfg.method          = 'triangulation';
+        cfg.template        = 'EEG1010';
+        cfg.layout          = 'biosemi32.lay';
+        cfg.feedback        = 'no';
+        evalc('neighbours = ft_prepare_neighbours(cfg, data);');
+        
+        cfg = [];
+        cfg.missingchannel = subjectdata.channels2remove';
+        cfg.method = 'weighted';
+        cfg.neighbours = neighbours;
+        cfg.layout = 'biosemi32.lay';
+        evalc('data = ft_channelrepair(cfg, data);');
+        fprintf('done! \n')
+    else
+        fprintf('\t added to subjectdata struct \n')
+    end
+end
+
+if strcmpi(saveData, 'yes')
+    subjectdata.analysisOrder = bv_updateAnalysisOrder(subjectdata.analysisOrder, cfgIn);
+    
+    if strcmpi(repairchans, 'yes')
+        bv_saveData(subjectdata, data, outputStr);              % save both data and subjectdata to the drive
+    else
+        bv_saveData(subjectdata);              % save only subjectdata to the drive
+    end
+    bv_updateSubjectSummary([PATHS.SUMMARY filesep 'SubjectSummary'], subjectdata)
+end
+

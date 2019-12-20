@@ -42,6 +42,8 @@ function [ connectivity ] = bv_calculateConnectivity(cfg, data)
 %   cfg.triallength = [ number ], cut data into trials with given length,
 %                       using bv_cutAppendedIntoTrials. Leave empty to
 %                       leave the trialstructure of input file
+%   cfg.keeptrials  = 'yes/no' (method = 'PLI' only). To keep trials in
+%                       output (default: 'no');
 %
 % See also BV_CUTAPPENDEDINTOTRIALS, BV_SAVEDATA, BV_CHECK4DATA, 
 % FT_CONNECTIVITYANALYSIS, BV_SETDIAG
@@ -57,9 +59,14 @@ outputStr   = ft_getopt(cfg, 'outputStr');
 pathsFcn    = ft_getopt(cfg, 'pathsFcn', 'setPaths');
 optionsFcn  = ft_getopt(cfg, 'optionsFcn', 'setOptions');
 triallength = ft_getopt(cfg, 'triallength');
+keeptrials  = ft_getopt(cfg, 'keeptrials', 'no');
 
 if isempty(method)
     error('no cfg.method given')
+end
+
+if ~strcmpi(method, 'pli') && strcmpi(keeptrials, 'yes')
+    error('cannot keep trials with method: %s', method)
 end
 
 % load in data if no input data is given
@@ -80,10 +87,9 @@ if nargin < 2
 
 end
 
-
 %%%%%% start connectivity analysis based on given method %%%%%%
 switch(method)
-    case {'wpli_debiased', 'wpli'} % based on ft_connectivityanalysis with cfg.method = 'wpli_debiased'
+    case {'wpli_debiased', 'wpli', 'coh'} % based on ft_connectivityanalysis with cfg.method = 'wpli_debiased'
 
         % cut, if needed data into trials
         if ~isempty(triallength)
@@ -110,7 +116,7 @@ switch(method)
             end
         end
 
-        fprintf('\t connectivity analysis started for wpli_debiased... \n')
+        fprintf('\t connectivity analysis started for %s... \n', method)
         % frequency analysis
         cfg.method      = 'mtmfft';
         cfg.taper       = 'hanning';
@@ -118,6 +124,7 @@ switch(method)
         cfg.keeptrials  = 'yes';
         cfg.tapsmofrq   = 1;
         cfg.pad         = 'nextpow2';
+        cfg.foilim      = [1 45];
 
         evalc('freq = ft_freqanalysis(cfg, data);');
 
@@ -145,10 +152,9 @@ switch(method)
         cfg.skipcomnt = 'yes';
         cfg.skipscale = 'yes';
         evalc('layout = ft_prepare_layout(cfg);');
-        rmChannels = find(not(ismember(layout.label, connectivity.label)));
+        rmChannels = layout.label(not(ismember(layout.label, connectivity.label)));
         if not(isempty(rmChannels))
-            trueRmChannels = subjectdata.rmChannels(not(ismember(subjectdata.rmChannels, OPTIONS.PREPROC.rmChannels)));
-            connectivity = addRemovedChannels(connectivity, trueRmChannels);
+            connectivity = addRemovedChannels(connectivity, rmChannels);
         end
 
         % set diagonal at zero if needed
@@ -170,6 +176,7 @@ switch(method)
             cfg.lpfreq = currFreqRng(2);
             cfg.hpfilter = 'yes';
             cfg.hpfreq = currFreqRng(1);
+            cfg.hpinstabilityfix = 'reduce';
 
             evalc('dataFilt = ft_preprocessing(cfg, data);');
 
@@ -188,16 +195,31 @@ switch(method)
                 dataCut = dataFilt;
             end
 
+            if not(strcmpi(condition, 'all'))
+                cfg = [];
+                cfg.trials = find(ismember(dataCut.trialinfo, condition));
+                evalc('dataCut = ft_selectdata(cfg, dataCut);');
+            end
+            
+            fprintf('\t %1.0f trials found\n', length(dataCut.trial));
+
             fprintf('\t calculating PLI ... ')
             PLIs = PLI(dataCut.trial,1);
             PLIs = cat(3,PLIs{:});
-            W = mean(PLIs,3);
+            
+            if strcmpi(keeptrials, 'yes')
+                connectivity.plispctrm(:,:,:, iFreq) = PLIs;
+                connectivity.dimord = 'chan_chan_trl_freq';
+                connectivity.sampleinfo = dataCut.sampleinfo;
+                connectivity.time = dataCut.time;
+            else
+                connectivity.plispctrm(:,:,iFreq) = mean(PLIs,3);
+                connectivity.dimord = 'chan_chan_freq';
+            end
 
-            connectivity.plispctrm(:,:,iFreq) = W;
             fprintf('done!\n')
         end
         
-        connectivity.dimord = 'chan_chan__trl_freq';
         connectivity.freq = freqLabel;
         connectivity.freqRng = freqRng;
         connectivity.label = dataCut.label;

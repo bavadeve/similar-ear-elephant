@@ -6,6 +6,8 @@ cfg.method      = ft_getopt(cfg, 'method','checkfiles');
 cfg.mintrials   = ft_getopt(cfg, 'mintrials');
 cfg.minchans    = ft_getopt(cfg, 'minchans');
 cfg.trialinfo   = ft_getopt(cfg, 'trialinfo', 'all');
+cfg.maxbadchans = ft_getopt(cfg, 'maxbadchans');
+cfg.inputStr    = ft_getopt(cfg, 'inputStr');
 
 if strcmp(cfg.method, 'checktrials') && isempty(cfg.mintrials)
     error('checking trials while no minimum trials is given')
@@ -36,15 +38,16 @@ for iSubj = 1:length(subjectNames)
         continue
     end
     
-    if ~isfield(subjectdata.PATHS, upper(cfg.inputStr))
-        removingSubjects(cfg, currSubject, sprintf('cfg.inputStr: ''%s'' not found \n', cfg.inputStr))
-        continue
-    else
-        fprintf('\t cfg.inputStr: ''%s'' found \n', cfg.inputStr)
-        [subjectdata, data] = bv_check4data(subjectdata.PATHS.SUBJECTDIR, ...
-            cfg.inputStr);
+    if ~isempty(cfg.inputStr)
+        if ~isfield(subjectdata.PATHS, upper(cfg.inputStr))
+            removingSubjects(cfg, currSubject, sprintf('cfg.inputStr: ''%s'' not found \n', cfg.inputStr))
+            continue
+        else
+            fprintf('\t cfg.inputStr: ''%s'' found \n', cfg.inputStr)
+            [subjectdata, data] = bv_check4data(subjectdata.PATHS.SUBJECTDIR, ...
+                cfg.inputStr);
+        end
     end
-    
     
     switch cfg.method
         case 'checkfiles'
@@ -69,7 +72,16 @@ for iSubj = 1:length(subjectNames)
                 fprintf('\t !!! too little channels (%s), removing ... \n', num2str(nChans))
                 removingSubjects(cfg, currSubject, sprintf('too little channels (%s)', num2str(nChans)))
             else
-                fprintf('\t enough trials found (%s), not removing ... ', num2str(nChans))
+                fprintf('\t enough channels found (%s), not removing ... ', num2str(nChans))
+            end
+            
+        case 'checkmaxbadchans'
+            nBadChans = length(subjectdata.channels2remove);
+            if nBadChans > cfg.maxbadchans
+                fprintf('\t !!! too many bad channels (%1.0f), removing ... \n', nBadChans)
+                removingSubjects(cfg, currSubject, sprintf('too many bad channels (%1.0f)', nBadChans))
+            else
+                fprintf('\t no problems, not removing ... \n ')
             end
     end
     

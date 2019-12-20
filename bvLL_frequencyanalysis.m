@@ -13,7 +13,9 @@ if nargin < 1
     error('Please input config file')
 end
 
-if redefinetrial
+strial = size(data.trial{1},2) / data.fsample;
+
+if redefinetrial && strial>5
     cfg =[];
     cfg.length = 5;
     cfg.overlap = 0;

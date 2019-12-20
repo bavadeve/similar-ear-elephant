@@ -1,7 +1,7 @@
 function Wsnrm = normalizeWs(Ws, range)
 
 if nargin<2 || isempty(range)
-    range = [0.001 1];
+    range = [0 1];
 end
 
 m = size(Ws,3);
@@ -16,7 +16,7 @@ for i = 1:n
             ncols = size(W,2);
             W(1:ncols+1:end) = 0;
         end
-        sqW = squareform(W);
+        sqW = nansquareform(W);
         
         a = (range(2)-range(1))/(max(sqW(:))-min(sqW(:)));
         b = range(2) - a * max(sqW(:));

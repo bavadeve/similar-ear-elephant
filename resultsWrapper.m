@@ -1,10 +1,10 @@
 clear all
-str = 'pli5';
+str = 'wpli_debiased5_alpha1';
 
-a = dir([ str '_*.mat']);
+a = dir([ str '.mat']);
 resultStr = {a.name};
 
-method = {'all'};
+method = {'unitwise75'};
 
 if strcmp(method{:}, 'all')
     method = {'cleanSessions', 'conMatrixCor', 'corrCorrMatrix', ...

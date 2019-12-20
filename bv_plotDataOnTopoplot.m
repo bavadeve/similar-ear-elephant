@@ -15,7 +15,7 @@ end
 if nargin < 2
     error('Input variable labels not given')
 end
-if nargin < 3
+if nargin < 3 || isempty(propThr)
     doThresh = 0;
 else
     doThresh = 1;
@@ -54,25 +54,28 @@ for currW = 1:size(Ws,3)
     lay.height = lay.height(indxSort);
     
     if size(Ws,3) > 1
-        subplot(floor(sqrt(size(Ws,3))), ceil(sqrt(size(Ws,3))), currW)
+        if size(Ws,3) == 2
+            subplot(1,2,currW)
+        else
+            subplot(ceil(sqrt(size(Ws,3))), ceil(sqrt(size(Ws,3))), currW)
+        end
     end
     
     fprintf('creating topoplot %s...', num2str(currW))
     hold on
     
-    sqW = squareform(W);
-    I = find(sqW);
-    
-    norm_data = (sqW(I) - min(sqW(I))) / ( max(sqW(I)) - min(sqW(I)) ) + 0.01;
-    
-    sqW(I) = norm_data;
-    weights = squareform(sqW);
-    
-    if nansum(squareform(W))~=0        
-        if ~weighted
-            weights = double(weights>0).*0.1;
-        end
+    if weighted
+        sqW = nansquareform(W);
+        I = find(sqW);
         
+        norm_data = (sqW(I) - min(sqW(I))) / ( max(sqW(I)) - min(sqW(I)) ) + 0.01;
+        
+        sqW(I) = norm_data;
+        weights = squareform(sqW);
+    end
+    
+    if nansum(squareform(W))~=0
+       
         counter = 0;
         for i = 1:size(W,1)
             for j = 1:size(W,2)
@@ -81,14 +84,14 @@ for currW = 1:size(Ws,3)
                 if W(i,j)==0
                     continue
                 end
-                                
+                
                 x = lay.pos([i j],1);
                 y = lay.pos([i j],2);
                 
                 if ~weighted
-                    h(counter) = patch(x,y, color, 'EdgeColor', color, 'LineWidth',3 ); %,'edgecolor','flat','linewidth',(weights(i,j)+0.25)*5);
+                    h(counter) = patch(x,y, color, 'LineWidth',3 ); %,'edgecolor','flat','linewidth',(weights(i,j)+0.25)*5);
                 else
-                    h(counter) = patch(x,y, weights(i,j)*[1 1], 'edgecolor','flat','linewidth', (weights(i,j)+0.25)*5);
+                    h(counter) = patch(x,y, weights(i,j)*[1 1], 'edgecolor','flat','linewidth', (weights(i,j)+0.25)*5, 'edgealpha', (weights(i,j)-0.01)/2);
                 end
             end
         end
@@ -96,16 +99,17 @@ for currW = 1:size(Ws,3)
     end
     
     if weighted
-        colormap(plasma)
-        colorbar
+        colormap(viridis)
     end
     
     scatter(lay.pos(:,1), lay.pos(:,2), 10, 'MarkerFaceColor', 'k', 'MarkerEdgeColor', 'k')
     line(lay.outline{1}(:,1), lay.outline{1}(:,2), 'LineWidth', 3, 'color', [0.5 0.5 0.5])
     
-    title(subplotlabels{currW})
+    if not(isempty(subplotlabels))
+        title(subplotlabels{currW})
+    end
     axis equal
     axis off
     fprintf('done \n')
- 
+    
 end

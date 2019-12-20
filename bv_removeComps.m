@@ -7,10 +7,11 @@ outputStr           = ft_getopt(cfg, 'outputStr');
 dataStr             = ft_getopt(cfg, 'dataStr');
 compStr             = ft_getopt(cfg, 'compStr');
 automaticRemoval    = ft_getopt(cfg, 'automaticRemoval');
-saveFigure          = ft_getopt(cfg, 'saveFigure');
+saveFigures         = ft_getopt(cfg, 'saveFigures');
+showFigures         = ft_getopt(cfg, 'saveFigures');
 blinkremoval        = ft_getopt(cfg, 'blinkremoval', 'no');
 gammaremoval        = ft_getopt(cfg, 'gammaremoval', 'no');
-
+deltaremoval        = ft_getopt(cfg, 'deltaremoval', 'no');
 
 if strcmpi(automaticRemoval, 'yes')
     automaticFlag = 1;
@@ -38,45 +39,37 @@ if nargin < 3
 end
 
 oldcfg = cfg;
+subjectdata.analysisOrder = bv_updateAnalysisOrder(subjectdata.analysisOrder, oldcfg);
 
-xScreenLength = 1;
-yScreenLength = 1;
-
-if exist('WindowSize', 'file')
-    [xScreenSize, yScreenSize] = WindowSize(0);
-    set(0, 'units', 'pixels')
-    realScreenSize = get(0, 'ScreenSize');
-    xDiff = xScreenSize / realScreenSize(3);
-    xScreenLength = xScreenLength * xDiff;
-    yDiff = yScreenSize / realScreenSize(4);
-    yScreenLength = yScreenLength * yDiff;
+if strcmpi(showFigures, 'yes')
+    fprintf('\t creating frequency plot ... ')
+    
+    output = 'fourier';
+    freqrange = [0 50];
+    evalc('[freq, fd] = bvLL_frequencyanalysis(data, freqrange, output, 1);');
+    freqFields  = fieldnames(freq);
+    field2use   = freqFields{not(cellfun(@isempty, strfind(freqFields, 'spctrm')))};
+    
+    mp = get(0, 'MonitorPositions');
+    figure;
+    set(gcf, 'Position', mp(1,:));
+    semilogy(freq.freq, squeeze(mean(fd.powspctrm)), 'LineWidth', 2)
+    legend(data.label)
+    set(gca, 'YLim', [0 Inf])
+    % set(gcf, 'units', 'normalized', 'Position', [0 0 xScreenLength yScreenLength])
+    
+    if strcmpi(saveFigures, 'yes')
+        cfg = [];
+        cfg.fighandle   = gcf;
+        cfg.outputStr   = outputStr;
+        cfg.filename    = [currSubject '_freq_before'];
+        cfg.figtitle    = strrep(cfg.filename, '_','-');
+        
+        bv_saveFigures(cfg)
+    end
+    fprintf('done! \n')
 end
 
-fprintf('\t creating frequency plot ... ')
-
-output = 'fourier';
-freqrange = [0 50];
-evalc('[freq, fd] = bvLL_frequencyanalysis(data, freqrange, output, 1);');
-freqFields  = fieldnames(freq);
-field2use   = freqFields{not(cellfun(@isempty, strfind(freqFields, 'spctrm')))};
-
-mp = get(0, 'MonitorPositions');
-figure;
-set(gcf, 'Position', mp(size(mp,1),:));
-semilogy(freq.freq, squeeze(mean(fd.powspctrm)), 'LineWidth', 2)
-legend(data.label)
-set(gca, 'YLim', [0 Inf])
-% set(gcf, 'units', 'normalized', 'Position', [0 0 xScreenLength yScreenLength])
-
-cfg = [];
-cfg.fighandle   = gcf;
-cfg.outputStr   = outputStr;
-cfg.filename    = [currSubject '_freq_before'];
-cfg.figtitle    = strrep(cfg.filename, '_','-');
-
-bv_saveFigures(cfg)
-
-fprintf('done! \n')
 
 if automaticFlag
     fprintf('\t automatic component removal started ... \n')
@@ -84,6 +77,7 @@ if automaticFlag
     cfg = [];
     cfg.blinkremoval = blinkremoval;
     cfg.gammaremoval = gammaremoval;
+    cfg.deltaremoval = deltaremoval;
     
     rmComps = automaticCompRemoval(cfg, data, comp);
     
@@ -101,16 +95,16 @@ else
     
     fprintf('\t showing components ... \n')
     
-%     cfg = [];
-%     cfg.component = 1:length(comp.label); % specify the component(s) that should be plotted
-%     cfg.layout    = 'EEG1010'; % specify the layout file that should be used for plotting
-%     cfg.comment   = 'no';
-%     cfg.compscale = 'local';
-%     cfg.interactive = 'no';
-%     figure();
-%     evalc('ft_topoplotIC(cfg, comp);');
-% %     set(gcf, 'units', 'normalized', 'Position', [xScreenLength/2 yScreenLength xScreenLength/2 yScreenLength])
-%     
+    %     cfg = [];
+    %     cfg.component = 1:length(comp.label); % specify the component(s) that should be plotted
+    %     cfg.layout    = 'EEG1010'; % specify the layout file that should be used for plotting
+    %     cfg.comment   = 'no';
+    %     cfg.compscale = 'local';
+    %     cfg.interactive = 'no';
+    %     figure();
+    %     evalc('ft_topoplotIC(cfg, comp);');
+    % %     set(gcf, 'units', 'normalized', 'Position', [xScreenLength/2 yScreenLength xScreenLength/2 yScreenLength])
+    %
     cfg = [];
     cfg.badPartsMatrix  = [];
     cfg.horzLim         = 60;
@@ -139,47 +133,48 @@ if ~isnan(rmComps)
     rmCompIndx = rmComps;
     rmComps = reshape(rmComps, length(rmComps), 1);
     
-    badPartsMatrix = [repmat(1:length(comp.trial),1,length(rmComps))', ...
-        sort(repmat(rmComps, length(comp.trial), 1))];
-    
-    cfg = [];
-    cfg.badPartsMatrix  = badPartsMatrix;
-    cfg.horzLim         = 60;
-    cfg.scroll          = 0;
-    cfg.visible         = 'on';
-    cfg.channel         = 'all';
-    fig1 = scrollPlotData(cfg, comp);
-%     set(gcf, 'units', 'normalized', 'Position', [xScreenLength/2 yScreenLength xScreenLength/2 yScreenLength])
-    
-%     cfg = [];
-%     cfg.component = rmComps; % specify the component(s) that should be plotted
-%     cfg.layout    = 'EEG1010'; % specify the layout file that should be used for plotting
-%     cfg.comment   = 'no';
-%     cfg.compscale = 'local';
-%     cfg.interactive = 'no';
-%     fig2 = figure();
-%     evalc('ft_topoplotIC(cfg, comp);');
-%     set(gcf, 'units', 'normalized', 'Position', [0 0 xScreenLength/2 yScreenLength])
-    
-    
-    if strcmpi(saveFigure, 'yes')
+    if strcmpi(showFigures, 'yes')
+        badPartsMatrix = [repmat(1:length(comp.trial),1,length(rmComps))', ...
+            sort(repmat(rmComps, length(comp.trial), 1))];
         
-        filename = [currSubject '_badComponentsTrial.png'];
         cfg = [];
-        cfg.fighandle   = fig1;
-        cfg.outputStr   = outputStr;
-        cfg.filename    = filename;
-        bv_saveFigures(cfg)
+        cfg.badPartsMatrix  = badPartsMatrix;
+        cfg.horzLim         = 60;
+        cfg.scroll          = 0;
+        cfg.visible         = 'on';
+        cfg.channel         = 'all';
+        fig1 = scrollPlotData(cfg, comp);
+        %     set(gcf, 'units', 'normalized', 'Position', [xScreenLength/2 yScreenLength xScreenLength/2 yScreenLength])
         
-        filename = [currSubject '_badComponentsTopo.png'];
         cfg = [];
-        cfg.fighandle   = fig2;
-        cfg.outputStr   = outputStr;
-        cfg.filename    = filename;
-        bv_saveFigures(cfg)
+        cfg.component = rmComps; % specify the component(s) that should be plotted
+        cfg.layout    = 'EEG1010'; % specify the layout file that should be used for plotting
+        cfg.comment   = 'no';
+        cfg.compscale = 'local';
+        cfg.interactive = 'no';
+        fig2 = figure();
+        evalc('ft_topoplotIC(cfg, comp);');
+        %     set(gcf, 'units', 'normalized', 'Position', [0 0 xScreenLength/2 yScreenLength])
         
+        
+        if strcmpi(saveFigures, 'yes')
+            
+            filename = [currSubject '_badComponentsTrial.png'];
+            cfg = [];
+            cfg.fighandle   = fig1;
+            cfg.outputStr   = outputStr;
+            cfg.filename    = filename;
+            bv_saveFigures(cfg)
+            
+            filename = [currSubject '_badComponentsTopo.png'];
+            cfg = [];
+            cfg.fighandle   = fig2;
+            cfg.outputStr   = outputStr;
+            cfg.filename    = filename;
+            bv_saveFigures(cfg)
+            
+        end
     end
-    
     badComponents = textscan(num2str(rmComps'),'%s');
     
     fprintf(['\t removing component(s): ' repmat('%s, ',1,length(badComponents{:})), ...
@@ -194,34 +189,34 @@ if ~isnan(rmComps)
     
     fprintf('done! \n')
     
-    
-    output = 'fourier';
-    freqrange = [0 50];
-    evalc('[freq, fd] = bvLL_frequencyanalysis(data, freqrange, output, 1);');
-    
-    freqFields  = fieldnames(freq);
-    field2use   = freqFields{not(cellfun(@isempty, strfind(freqFields, 'spctrm')))};
-    
-    fig3 = figure;
-    set(gcf, 'Position', mp(size(mp,1),:));
-    semilogy(fd.freq, squeeze(mean(fd.powspctrm)), 'LineWidth', 2)
-    legend(data.label)
-    set(gca, 'YLim', [-4 Inf])
-%     set(fig3, 'units', 'normalized', 'Position', [0 0 xScreenLength yScreenLength])
-    
-    drawnow;
-    
-    if strcmpi(saveFigure, 'yes')
-        cfg = [];
-        cfg.fighandle   = fig3;
-        cfg.outputStr   = outputStr;
-        cfg.filename    = [currSubject '_freq_after'];
-        cfg.figtitle    = strrep(cfg.filename, '_','-');
-        bv_saveFigures(cfg)
+    if strcmpi(showFigures, 'yes')
+        output = 'fourier';
+        freqrange = [0 50];
+        evalc('[freq, fd] = bvLL_frequencyanalysis(data, freqrange, output, 1);');
         
-        close all
+        freqFields  = fieldnames(freq);
+        field2use   = freqFields{not(cellfun(@isempty, strfind(freqFields, 'spctrm')))};
+        
+        fig3 = figure;
+        set(gcf, 'Position', mp(1,:));
+        semilogy(fd.freq, squeeze(mean(fd.powspctrm)), 'LineWidth', 2)
+        legend(data.label)
+        set(gca, 'YLim', [-4 Inf])
+        %     set(fig3, 'units', 'normalized', 'Position', [0 0 xScreenLength yScreenLength])
+        
+        drawnow;
+        
+        if strcmpi(saveFigures, 'yes')
+            cfg = [];
+            cfg.fighandle   = fig3;
+            cfg.outputStr   = outputStr;
+            cfg.filename    = [currSubject '_freq_after'];
+            cfg.figtitle    = strrep(cfg.filename, '_','-');
+            bv_saveFigures(cfg)
+            
+            close all
+        end
     end
-    
     if strcmpi(saveData, 'yes')
         
         subjectdata.rmComps = badComponents;
@@ -233,14 +228,10 @@ if ~isnan(rmComps)
         save(subjectdata.PATHS.COMPREMOVED, 'data')
         fprintf('done! \n')
         
-        %         analysisOrder = strsplit(subjectdata.analysisOrder, '-');
-        %         analysisOrder = [analysisOrder outputStr];
-        %         analysisOrder = unique(analysisOrder, 'stable');
-        %         subjectdata.analysisOrder = strjoin(analysisOrder, '-');
-        
         subjectdata.cfgs.(outputStr) = oldcfg;
         fprintf('\t Saving Subject.mat ... ')
         save([subjectdata.PATHS.SUBJECTDIR filesep 'Subject.mat'], 'subjectdata')
+        bv_updateSubjectSummary([PATHS.SUMMARY filesep 'SubjectSummary'], subjectdata)
         fprintf('done! \n')
     end
 else
@@ -255,16 +246,10 @@ else
         save(subjectdata.PATHS.COMPREMOVED, 'data')
         fprintf('done! \n')
         
-        %         analysisOrder = strsplit(subjectdata.analysisOrder, '-');
-        %         analysisOrder = [analysisOrder outputStr];
-        %         analysisOrder = unique(analysisOrder, 'stable');
-        %         subjectdata.analysisOrder = strjoin(analysisOrder, '-');
-        %
-        subjectdata.cfgs.(outputStr) = oldcfg;
-        
         subjectdata.cfgs.(outputStr) = oldcfg;
         fprintf('\t Saving Subject.mat ... ')
         save([subjectdata.PATHS.SUBJECTDIR filesep 'Subject.mat'], 'subjectdata')
+        bv_updateSubjectSummary([PATHS.SUMMARY filesep 'SubjectSummary'], subjectdata)
         fprintf('done! \n')
     end
 end

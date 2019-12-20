@@ -2,8 +2,12 @@ function [ rmComp ] = automaticCompRemoval(cfg, data, comp, freq)
 
 blinkremoval = ft_getopt(cfg, 'blinkremoval');
 gammaremoval = ft_getopt(cfg, 'gammaremoval');
-
+deltaremoval = ft_getopt(cfg, 'deltaremoval');
 rmComp = [];
+
+if strcmpi(deltaremoval, 'yes') || strcmpi(gammaremoval, 'yes')
+    freqRemoval = true(1);
+end
 
 if strcmpi(blinkremoval, 'yes')
     
@@ -57,28 +61,53 @@ if strcmpi(blinkremoval, 'yes')
     end
 end
 
-if strcmpi(gammaremoval, 'yes')
-    
-    fprintf('\t searching for components with too high gamma ... ')
-    
+if freqRemoval
+    fprintf('\t frequency removal ... \n')
+   
     output = 'fourier';
     freqrange = [0.2 100];
-    evalc('[freq, fd] = bvLL_frequencyanalysis(comp, freqrange, output, 0);');
+    evalc('[freq, fd] = bvLL_frequencyanalysis(comp, freqrange, output, 1);');
     
-    lowgammastart = find(fd.freq == 25);
-    lowgammaend = find(fd.freq == 45);
-    highgammastart = find(fd.freq == 55);
-    highgammaend = find(fd.freq == 85);
+    if strcmpi(gammaremoval, 'yes')
+        
+        fprintf('\t \t searching for components with too high gamma ... ')
 
-    meangamma = squeeze(nanmean(nanmean(fd.powspctrm(:,:,[lowgammastart:lowgammaend, highgammastart:highgammaend])),3));
-    gammacomps = find(isoutlier(meangamma));
-    
-    if isempty(gammacomps)
-        fprintf('none found! \n')
-    else
-        fprintf('done! \n')
+        lowgammastart = find(fd.freq == 25);
+        lowgammaend = find(fd.freq == 45);
+        highgammastart = find(fd.freq == 55);
+        highgammaend = find(fd.freq == 85);
+        
+        meangamma = squeeze(nanmean(nanmean(fd.powspctrm(:,:,[lowgammastart:lowgammaend, highgammastart:highgammaend])),3));
+        gammacomps = find(isoutlier(meangamma));
+        
+        if isempty(gammacomps)
+            fprintf('none found! \n')
+        else
+            fprintf('done! \n')
+        end
+        
+        rmComp = [rmComp gammacomps];
+        
     end
     
-    rmComp = [rmComp gammacomps];
-    
+    if strcmpi(deltaremoval, 'yes')
+        
+        fprintf('\t \t searching for components with too high delta ... ')
+        
+        deltastart = find(fd.freq == 1);
+        deltaend = find(fd.freq == 3);
+        
+        meandelta = ...
+            squeeze(nanmean(nanmean(fd.powspctrm(:,:,deltastart:deltaend)),3));
+        deltacomps = find(isoutlier(meandelta));
+        
+        if isempty(deltacomps)
+            fprintf('none found! \n')
+        else
+            fprintf('done! \n')
+        end
+        
+        rmComp = [rmComp deltacomps];
+        
+    end
 end

@@ -11,10 +11,20 @@ eval(cfg.pathsFcn)
 subjectFolderPath = [PATHS.SUBJECTS filesep currSubject];
 subjectdata = bv_check4data(subjectFolderPath);
 
-subjectdata.removed.bool = 'yes';
-subjectdata.removed.reason = reason;
+lastCalled = dbstack('-completenames',1);
+
+subjectdata.removed = true(1);
+if isempty(lastCalled)
+    subjectdata.removedDuring = 'commandline';
+else
+    subjectdata.removedDuring = lastCalled(1).name;
+end
+subjectdata.removedreason = reason;
 
 bv_saveData(subjectdata)
+bv_updateSubjectSummary([PATHS.SUMMARY filesep 'SubjectSummary'], subjectdata)
+
+subjectdata.PATHS.SUBJECTDIR = [PATHS.REMOVED filesep currSubject];
 
 movefile([PATHS.SUBJECTS filesep currSubject], PATHS.REMOVED)
 fprintf('\t \t moved to PATHS.REMOVED folders \n')

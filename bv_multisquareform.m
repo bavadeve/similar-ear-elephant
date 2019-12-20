@@ -4,6 +4,9 @@ sz = size(Ws);
 
 if length(sz) > 3
     WsNew = reshape(Ws, [sz(1) sz(2) prod(sz(3:end))]);
+elseif length(sz)==2
+    Wsq = nansquareform(Ws);
+    return;
 else
     WsNew = Ws;
 end
