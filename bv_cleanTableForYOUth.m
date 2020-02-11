@@ -55,6 +55,10 @@ for j = 1:height(T)
     end
 end
 
+T.roomNumber = strrep(T.roomNumber, ',', '');
+T.roomNumber = strrep(T.roomNumber, '.', '');
+T.roomNumber(find(cellfun(@length, T.roomNumber) ~= 3)) = {''};
+
 % cleanup assistant names
 T = bv_cleanAssistantNames(T);
 

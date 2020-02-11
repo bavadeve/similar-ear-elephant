@@ -48,20 +48,20 @@ for i = 1:length(data.trial)
         artefactdef.range.levels(:,i) = max(data.trial{i}, [], 2) - min(data.trial{i}, [], 2);
         artefactdef.abs.levels(:,i) = max(abs(data.trial{i}), [],2);
 end
-
-artefactdef.jump.levels = zeros(length(data.label), length(data.trial));
-counter = 0;
-for i = 1:length(data.label)
-    cfg = [];
-    cfg.artfctdef.jump.channel = data.label{i};
-    cfg.continuous = 'no';
-    evalc('[tmp,artifact] = ft_artifact_jump(cfg, data);');
-    for j = 1:size(artifact,1)
-        counter = counter + 1;
-        [~,sel] = min(abs(mean(data.sampleinfo(:,1:2),2) - mean(artifact(j,:))));
-        artefactdef.jump.levels(i,sel) = 1;
-    end
-end
+% 
+% artefactdef.jump.levels = zeros(length(data.label), length(data.trial));
+% counter = 0;
+% for i = 1:length(data.label)
+%     cfg = [];
+%     cfg.artfctdef.jump.channel = data.label{i};
+%     cfg.continuous = 'no';
+%     evalc('[tmp,artifact] = ft_artifact_jump(cfg, data);');
+%     for j = 1:size(artifact,1)
+%         counter = counter + 1;
+%         [~,sel] = min(abs(mean(data.sampleinfo(:,1:2),2) - mean(artifact(j,:))));
+%         artefactdef.jump.levels(i,sel) = 1;
+%     end
+% end
 fprintf('done! \n')
 
 artefactdef.sampleinfo = data.sampleinfo;

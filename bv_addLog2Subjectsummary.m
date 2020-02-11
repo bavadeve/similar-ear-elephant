@@ -1,50 +1,64 @@
 function subjectdatasummary = bv_addLog2Subjectsummary(subjectdatasummary)
 
 eval('setPaths')
-logs = dir([PATHS.FILES filesep '*.xlsx']);
-logs = logs(not(contains({logs.name}, '~')));
+logsEEG = dir([PATHS.FILES filesep '*EEG*.xlsx']);
+logsEEG = logsEEG(not(contains({logsEEG.name}, '~')));
 
-for i = 1:length(logs)
-    path2log = [logs(i).folder filesep (logs(i).name)];
-    logcell{i} = bv_log2Table(path2log);
+for i = 1:length(logsEEG)
+    path2log = [logsEEG(i).folder filesep (logsEEG(i).name)];
+    logcellEEG{i} = bv_log2Table(path2log);
 end
+T_EEG = createLogFromFile(logcellEEG);
 
-T1 = logcell{1};
-for i = 2:size(logcell,2)
-    T2 = logcell{i};
-    T2Missing = setdiff(T1.Properties.VariableNames, T2.Properties.VariableNames);
-    T1Missing = setdiff(T2.Properties.VariableNames, T1.Properties.VariableNames);
-    T2 = [T2 array2table(nan(height(T2), numel(T2Missing)), 'VariableNames', T2Missing)];
-    T1 = [T1 array2table(nan(height(T1), numel(T1Missing)), 'VariableNames', T1Missing)];
-    
-    for colname = T2Missing
-        if iscell(T1.(colname{1}))
-            T2.(colname{1}) = cell(height(T2), 1);
-        end
-    end
-    for colname = T1Missing
-        if iscell(T2.(colname{1}))
-            T1.(colname{1}) = cell(height(T1), 1);
-        end
-    end
-    
-    
-    T1 = [T1; T2];
+logsGEN = dir([PATHS.FILES filesep '*GEN*.xlsx']);
+logsGEN = logsGEN(not(contains({logsGEN.name}, '~')));
+
+for i = 1:length(logsGEN)
+    path2log = [logsGEN(i).folder filesep (logsGEN(i).name)];
+    logscellGEN{i} = bv_log2Table(path2log);
 end
+T_GEN = createLogFromFile(logscellGEN);
 
-T_all = T1;
-T_all.wave(contains(T_all.wave, '3y')) = {'3y'};
-T_all.wave(contains(T_all.wave, '5m')) = {'5m'};
-T_all.wave(contains(T_all.wave, '10m')) = {'10m'};
+
+T_all = joinbasedonfirst(T_EEG, T_GEN, {'pseudo', 'wave'});
 
 switch class(subjectdatasummary)
     case 'table'
-        subjectdatasummary = innerjoin(subjectdatasummary, T_all, 'Keys', {'pseudo', 'wave'});
+        subjectdatasummary = joinbasedonfirst(subjectdatasummary, T_all, {'pseudo', 'wave'});
     case 'struct'
         T_subjectdatasummary = struct2table(subjectdatasummary);
-        T_subjectdatasummary = innerjoin(T_subjectdatasummary, T_all, 'Keys', {'pseudo', 'wave'});
+        T_subjectdatasummary = joinbasedonfirst(T_subjectdatasummary, T_all, {'pseudo', 'wave'});
         subjectdatasummary = table2struct(T_subjectdatasummary);
 end
 
 
+function T_join = joinbasedonfirst(T1, T2, Keys)
 
+T1_sel = T1{:,contains(T1.Properties.VariableNames, Keys)};
+T2_sel = T2{:,contains(T2.Properties.VariableNames, Keys)};
+
+for i = 1:height(T1)
+    T2Indx = find(all(ismember(T2_sel, T1_sel(i,:)),2));
+    
+    if T2Indx ~= 0
+        T_join(i,:) = innerjoin(T1(i,:), T2(T2Indx,:), 'Keys', Keys);
+    else
+        emptyTable = T2(1,:);
+        emptyTable.pseudo = T1_sel(i,1);
+        emptyTable.wave = T1_sel(i,2);
+        emptyTable(:,3:end) = {''};
+        
+        T_join(i,:) = innerjoin(T1(i,:), emptyTable, 'Keys', Keys);
+    end
+end
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    

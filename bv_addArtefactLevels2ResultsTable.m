@@ -18,7 +18,7 @@ for i = 1:height(T)
     artfcFields = fieldnames(artifactdef);
     for j = 1:length(artfcFields)
         if isa(artifactdef.(artfcFields{j}), 'struct')
-            T.(artfcFields{j}){i} = artifactdef.(artfcFields{j}).levels;
+            T.([artfcFields{j} '_' lower(artifactStr)]){i} = artifactdef.(artfcFields{j}).levels;
         end
 
     end

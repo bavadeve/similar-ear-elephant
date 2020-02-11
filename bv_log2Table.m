@@ -4,6 +4,7 @@ opts = detectImportOptions(path2log);
 opts = setvartype(opts, 'char');
 T_log = readtable(path2log, opts);
 T_log(ismember(T_log.pseudo, 'B'),:) = []; % removing log problems (empty subjects)
+T_log(cellfun(@isempty, T_log.submitdate),:) = [];
 varLib = {'YBEEGCHLABJGENEQ001', 'roomNumber'; 
     'YBEEGCHLABJGENEQ002', 'Temp'; 
     'YBEEGCHLABJGENEQ003', 'PrimaryAssistant';
@@ -53,6 +54,9 @@ varLib = {'YBEEGCHLABJGENEQ001', 'roomNumber';
     'YBEEGCHLABJFAEMQ011_LOOK_', 'Faceemo_Looking';
     'YBEEGCHLABJFAEMQ011_MOVE_', 'Faceemo_Moving';
     'YBEEGCHLABJFAEMQ012', 'Faceemo_Quality';
+    'YBGENGELABJGENEQ002', 'NormalDay'
+    'YBGENGELABJGENEQ002_other_', 'WhyNotNormalDay'
+    
     
     'YBEEGCHL03YGENEQ001', 'roomNumber'; 
     'YBEEGCHL03YGENEQ002', 'Temp'; 
@@ -100,12 +104,24 @@ varLib = {'YBEEGCHLABJGENEQ001', 'roomNumber';
     'YBEEGCHL03YFAEMQ011_CRYING_', 'Faceemo_Crying';
     'YBEEGCHL03YFAEMQ011_LOOK_', 'Faceemo_Looking';
     'YBEEGCHL03YFAEMQ011_MOVE_', 'Faceemo_Moving';
-    'YBEEGCHL03YFAEMQ012', 'Faceemo_Quality'};
+    'YBEEGCHL03YFAEMQ012', 'Faceemo_Quality'
+    'YBGENGEL03YGENEQ002', 'NormalDay'
+    'YBGENGEL03YGENEQ002_other_', 'WhyNotNormalDay'};
 
-codeVarsIndx = contains(T_log.Properties.VariableNames, 'YBEEG');
+taskNoABJ = sum(contains(T_log.Properties.VariableNames, 'YBGENGELABJGENEQ003'));
+tmpCellABJ = [strcat('YBGENGELABJGENEQ003_', sprintfc('%d',1:taskNoABJ), '_')', ...
+    strcat('TASK', sprintfc('%d',1:taskNoABJ))'];
+taskNo03Y = sum(contains(T_log.Properties.VariableNames, 'YBGENGEL03YGENEQ003'));
+tmpCell03Y = [strcat('YBGENGEL03YGENEQ003_', sprintfc('%d',1:taskNo03Y), '_')', ...
+    strcat('TASK', sprintfc('%d',1:taskNo03Y))'];
+
+varLib = cat(1,varLib, tmpCellABJ, tmpCell03Y);
+
+codeVarsIndx = contains(T_log.Properties.VariableNames, {'YBEEG', 'YBGEN'});
 T_out = table();
 T_out.pseudo = T_log.pseudo;
 T_out.wave = T_log.wave;
+T_out.submitdate = T_log.submitdate;
 
 for i = find(codeVarsIndx)
     currVar = T_log.Properties.VariableNames{i};

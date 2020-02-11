@@ -21,9 +21,8 @@ for i = 1:length(uniqueSubjects)
     subjectIndx = find(ismember(inTable.pseudo, currSubject));
     sessionIndxPerSubject = ismember(g_name, inTable.(groupingVarName)(subjectIndx));
     
-    
     if doCell
-        if length(subjectIndx) > 2
+        if length(subjectIndx) > length(g_name)
             [var2mplusOut{i,:}] = deal('');
         elseif length(subjectIndx) ~= sum(sessionIndxPerSubject)
             [var2mplusOut{i,:}] = deal('');
@@ -35,7 +34,7 @@ for i = 1:length(uniqueSubjects)
             end
         end
     else
-        if length(subjectIndx) > 2
+        if length(subjectIndx) > length(g_name)
             var2mplusOut(i,:) = NaN;
         elseif length(subjectIndx) ~= sum(sessionIndxPerSubject)
             var2mplusOut(i,:) = NaN;

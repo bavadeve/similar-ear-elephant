@@ -1,13 +1,10 @@
-function bv_plotDataOnTopoplot(Ws, lay, propThr, subplotlabels, weighted, color)
+function bv_plotDataOnTopoplot_tmp(Ws, lay, propThr, subplotlabels, weighted, color)
 
 if nargin < 4
     subplotlabels = strsplit(num2str(1:size(Ws,3)),' ');
 end
 if nargin < 5
     weighted = true;
-end
-if nargin < 6
-    color = [0 0 0];
 end
 
 addpath('~/MatlabToolboxes/Colormaps/')
@@ -23,16 +20,8 @@ if nargin < 3 || isempty(propThr)
 else
     doThresh = 1;
 end
-
 fprintf('preparing layout...')
 
-if weighted
-%     I = find(Ws);
-%     norm_data = (Ws(I) - min(Ws(I))) / ( max(Ws(I)) - min(Ws(I)) ) + 0.1;
-%     Ws(I) = norm_data;
-
-
-end
 % figure;
 for currW = 1:size(Ws,3)
     
@@ -54,14 +43,14 @@ for currW = 1:size(Ws,3)
     fprintf('creating topoplot %s...', num2str(currW))
     hold on
     
-%     if weighted
-%         I = find(W);
-%         
-%         norm_data = (W(I) - min(W(I))) / ( max(W(I)) - min(W(I)) ) + 0.1;
-%         
-%         W(I) = norm_data;
-%     end
-%     
+    if weighted
+        I = find(W);
+        
+        norm_data = (W(I) - min(W(I))) / ( max(W(I)) - min(W(I)) ) + 0.1;
+        
+        W(I) = norm_data;
+    end
+    
     if nansum(W(:))~=0
         counter = 0;
         for i = 1:size(W,1)
@@ -76,17 +65,17 @@ for currW = 1:size(Ws,3)
                     
                     radius = 0.025;
                     center = [lay.pos(i,1), (lay.pos(i,2) + radius)];
-                    circular_arrow(radius, center, W(i,j)*[1], (W(i,j)+0.25)*5, min([(W(i,j))/2+0.2 0.8]));
+                    circular_arrow(radius, center, W(i,j)*[1], (W(i,j)+0.25)*5, (W(i,j)-0.01)/2);
+
                 else
                     
                     x = lay.pos([i j],1);
                     y = lay.pos([i j],2);
                     
                     if ~weighted
-                        h(counter) = patch(x,y, color, 'LineWidth',3 ); %,'edgecolor','flat','linewidth',(weights(i,j)+0.25)*5);
+                        h(counter) = patch(x,y, [0 0 0], 'LineWidth',3 ); %,'edgecolor','flat','linewidth',(weights(i,j)+0.25)*5);
                     else
-                        h(counter) = patch(x,y, W(i,j)*[1 1], 'edgecolor','flat','linewidth', (W(i,j)+0.25)*5, 'edgealpha', min([(W(i,j))/2+0.2 0.8]));
-
+                        h(counter) = patch(x,y, W(i,j)*[1 1], 'edgecolor','flat','linewidth', (W(i,j)+0.25)*5, 'edgealpha', (W(i,j)-0.01)/2);
                     end
                 end
             end
@@ -130,7 +119,7 @@ function circular_arrow(radius, centre, colour, linewidth, edgealpha)
 
 % correct imputs for circular arrow
 arrow_angle = 90;
-angle = 300;
+angle = 330;
 direction = 2;
 head_style = 'vback2';
 head_size = 10;
@@ -197,6 +186,7 @@ while i < 3
     v{i} = v1*cos(a)+((norm(v1)/norm(v3))*v3)*sin(a); % Arc, center at (0,0)
     v_tmp(:,1) = v{i}(1,:)+xc;
     v_tmp(:,2) = v{i}(2,:)+yc;
+    
     h_patch = patch([v_tmp(:,1); NaN], [v_tmp(:,2); NaN], repmat(colour,1,length(v_tmp)+1), ...
         'EdgeColor', 'flat', 'FaceColor', 'none', 'linewidth',linewidth, 'edgealpha', edgealpha);
     
@@ -212,8 +202,8 @@ if direction == 1
 elseif direction == -1
     position{1} = [x1 y1 x1-(v{1}(1,2)+xc) y1-(v{1}(2,2)+yc)];
 elseif direction == 2
-    position{1} = [x2-0.001 y2-0.0005 x2-(v{2}(1,2)+xc) y2-(v{2}(2,2)+yc)];
-    position{2} = [x1+0.001 y1-0.0005 x1-(v{1}(1,2)+xc) y1-(v{1}(2,2)+yc)];  
+    position{1} = [x2 y2 x2-(v{2}(1,2)+xc) y2-(v{2}(2,2)+yc)];
+    position{2} = [x1 y1 x1-(v{1}(1,2)+xc) y1-(v{1}(2,2)+yc)];  
 elseif direction == 0
     % Do nothing
 else

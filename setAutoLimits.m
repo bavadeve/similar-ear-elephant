@@ -1,4 +1,4 @@
-function setAutoLimits(ax)
+function setAutoLimits(ax, lims)
 % finds the correct limits for a connectivity matrix based on the highest and
 % lowest values in the matrix (so ignores the diagonal)
 %
@@ -12,6 +12,12 @@ if nargin < 1
         error('current figure not found, please give handle ax as input')
     end
 end
+
+if nargin == 2
+    set(ax, 'CLim', lims);
+    return
+end
+
 
 dataObjs = get(ax, 'Children'); % handle to low-level graphics objects in axes
 
