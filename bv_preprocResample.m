@@ -107,7 +107,7 @@ rmChannels  = ft_getopt(cfg, 'rmChannels');
 dataset     = ft_getopt(cfg, 'dataset');
 hdrfile     = ft_getopt(cfg, 'hdrfile');
 overwrite   = ft_getopt(cfg, 'overwrite', 'no');
-
+removeChans = ft_getopt(cfg, 'removeChans', 'no');
 analysisOrd = {};
 
 if ~isempty(dataset) && ~isempty(hdrfile)
@@ -215,17 +215,19 @@ end
 
 fprintf('done! \n')
 
-if isfield(subjectdata, 'channels2remove')
-    if ~isempty(subjectdata.channels2remove)
-        fprintf(['\t the following channels will be interpolated ... ', ...
-            repmat('%s, ',1, length(subjectdata.channels2remove))], subjectdata.channels2remove{:})
-        cfg = [];
-        cfg.missingchannel = subjectdata.channels2remove';
-        cfg.method = 'weighted';
-        cfg.neighbours = neighbours;
-        cfg.layout = 'biosemi32.lay';
-        evalc('data = ft_channelrepair(cfg, data);');
-        fprintf('done! \n')
+if strcmpi(removeChans, 'yes')
+    if isfield(subjectdata, 'channels2remove')
+        if ~isempty(subjectdata.channels2remove)
+            fprintf(['\t the following channels will be interpolated ... ', ...
+                repmat('%s, ',1, length(subjectdata.channels2remove))], subjectdata.channels2remove{:})
+            cfg = [];
+            cfg.missingchannel = subjectdata.channels2remove';
+            cfg.method = 'weighted';
+            cfg.neighbours = neighbours;
+            cfg.layout = 'biosemi32.lay';
+            evalc('data = ft_channelrepair(cfg, data);');
+            fprintf('done! \n')
+        end
     end
 end
 data = bv_sortBasedOnTopo(data); % sorting data based on actual place of the electrodes. See function for more detail.
@@ -251,7 +253,7 @@ if ~isempty(resampleFs)
         removingSubjects(cfg, currSubject, 'preprocessing - empty bdf file')
         return
     end
-
+    
     analysisOrd = [analysisOrd, 'res']; % managing analysis order to be saved later
     fprintf('done! \n')
 end

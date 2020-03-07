@@ -11,16 +11,22 @@ end
 T_EEG = createLogFromFile(logcellEEG);
 
 logsGEN = dir([PATHS.FILES filesep '*GEN*.xlsx']);
-logsGEN = logsGEN(not(contains({logsGEN.name}, '~')));
-
-for i = 1:length(logsGEN)
-    path2log = [logsGEN(i).folder filesep (logsGEN(i).name)];
-    logscellGEN{i} = bv_log2Table(path2log);
+if ~isempty(logsGEN)
+    logsGEN = logsGEN(not(contains({logsGEN.name}, '~')));
+    
+    for i = 1:length(logsGEN)
+        path2log = [logsGEN(i).folder filesep (logsGEN(i).name)];
+        logscellGEN{i} = bv_log2Table(path2log);
+    end
+    T_GEN = createLogFromFile(logscellGEN);
+    
+    
+    T_all = joinbasedonfirst(T_EEG, T_GEN, {'pseudo', 'wave'});
+    
+else
+    T_all = T_EEG;
 end
-T_GEN = createLogFromFile(logscellGEN);
 
-
-T_all = joinbasedonfirst(T_EEG, T_GEN, {'pseudo', 'wave'});
 
 switch class(subjectdatasummary)
     case 'table'
@@ -51,14 +57,14 @@ for i = 1:height(T1)
         T_join(i,:) = innerjoin(T1(i,:), emptyTable, 'Keys', Keys);
     end
 end
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+
+
+
+
+
+
+
+
+
+
+

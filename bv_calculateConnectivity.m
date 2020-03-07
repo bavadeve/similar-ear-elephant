@@ -259,6 +259,8 @@ if strcmpi(saveData, 'yes')
     fprintf('\t saving subjectdata variable to Subject.mat ... ')
     save([subjectdata.PATHS.SUBJECTDIR filesep 'Subject.mat'], 'subjectdata')
     fprintf('done! \n')
+    bv_updateSubjectSummary([PATHS.SUMMARY filesep 'SubjectSummary'], subjectdata)
+    
 
 end
 

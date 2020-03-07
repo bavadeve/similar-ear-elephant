@@ -7,6 +7,7 @@ sDirs = dir([PATHS.SUBJECTS filesep '*' OPTIONS.sDirString '*']);
 sNames = {sDirs.name};
 
 for iSubjects = 1:length(sDirs)
+
     cSubject = sNames{iSubjects};
     disp(cSubject)
     
@@ -56,6 +57,12 @@ for iSubjects = 1:length(sDirs)
             fprintf('\t %s changed \n', addition)
         end
         
+    end
+    
+    fieldsRequired = {'SUBJECTDIR', 'DATAFILE', 'HDRFILE'};
+    if not(all(ismember(fieldsRequired, fieldnames(subjectdata.PATHS))))
+        removingSubjects([], subjectdata.subjectName, 'missing files')
+        continue
     end
     
     fprintf('\t saving Subject.mat file ...')

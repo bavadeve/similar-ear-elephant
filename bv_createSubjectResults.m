@@ -7,9 +7,9 @@ eval('setOptions')
 %     load([PATHS.SUMMARY filesep 'SubjectSummary'], 'subjectdatasummary')
 % else
     fprintf('\t SubjectSummary.mat not found, creating one based on Subject.mat files \n')
-    subjectdirflags1 = dir([PATHS.SUBJECTS filesep '*' OPTIONS.sDirString '*']);
-    subjectdirflags2 = dir([PATHS.REMOVED filesep '*' OPTIONS.sDirString '*']);
-    subjectdirflags = [subjectdirflags1; subjectdirflags2];
+    subjectdirflags = dir([PATHS.SUBJECTS filesep '*' OPTIONS.sDirString '*']);
+%     subjectdirflags2 = dir([PATHS.REMOVED filesep '*' OPTIONS.sDirString '*']);
+%     subjectdirflags = [subjectdirflags1; subjectdirflags2];
 
     for i = 1:length(subjectdirflags)
         if i ==1
@@ -84,10 +84,14 @@ if nargin > 0
                 if counter ~= 1
                     fnamesSummary = fieldnames(subjectresults);
                     fnamesTmp = fieldnames(subjectresultstmp);
-                    extraFields = fnamesTmp(find(not(ismember(fnamesTmp, fnamesSummary))));
-                    
-                    for j = 1:length(extraFields)
-                        subjectresultstmp = rmfield(subjectresultstmp, extraFields{j});
+                    extraFieldsTmp = fnamesTmp(find(not(ismember(fnamesTmp, fnamesSummary))));
+                    extraFieldsSummary = fnamesSummary(find(not(ismember(fnamesSummary, fnamesTmp))));
+
+                    for j = 1:length(extraFieldsTmp)
+                        subjectresultstmp = rmfield(subjectresultstmp, extraFieldsTmp{j});
+                    end
+                    for j = 1:length(extraFieldsSummary)
+                        subjectresults = rmfield(subjectresults, extraFieldsSummary{j});
                     end
                 end
             end

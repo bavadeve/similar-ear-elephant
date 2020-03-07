@@ -19,7 +19,7 @@ for i = 1:m
         case 'binary'
             [Ci(:,i),Q(i)] = community_louvain(W);
         case 'weighted'
-%             Wnrm = gr_normalizeW(W);
-            [Ci(:,i),Q(i)] = community_louvain(W);
+            Wnrm = gr_normalizeW(W);
+            [Ci(:,i),Q(i)] = community_louvain(Wnrm);
     end
 end

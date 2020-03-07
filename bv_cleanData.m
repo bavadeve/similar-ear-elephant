@@ -21,6 +21,7 @@ saveData        = ft_getopt(cfg, 'saveData');
 expectedtrials  = ft_getopt(cfg, 'expectedtrials');
 cleanDatafile   = ft_getopt(cfg, 'cleanDatafile');
 dataLossLabel   = ft_getopt(cfg, 'dataLossLabel', 'dataLoss');
+cutIntoTrials   = ft_getopt(cfg, 'cutIntoTrials');
 
 cfgIn = cfg;
 
@@ -35,6 +36,7 @@ if nargin < 2 % data loading
         eval(pathsFcn)
     end
     
+    disp(currSubject)
     subjectFolderPath = [PATHS.SUBJECTS filesep currSubject];
     [subjectdata, data, artefactdef] = bv_check4data(subjectFolderPath, inputStr, artfctdefStr);
     
@@ -66,9 +68,19 @@ subjectdata.(dataLossLabel) = (1 - min([nGoodTrials, expectedtrials]) / expected
 if strcmpi(cleanDatafile, 'yes')
     goodTrialIndx = find(sum(sum(out,3)>0) == 0);
     
-    cfg = [];
-    cfg.trl = [artefactdef.sampleinfo(goodTrialIndx,:), zeros(length(goodTrialIndx),1)];
-    data = ft_redefinetrial(cfg, data);
+    if strcmpi(cutIntoTrials, 'yes')
+        cfg = [];
+        cfg.trl = [artefactdef.sampleinfo(goodTrialIndx,:), zeros(length(goodTrialIndx),1)];
+        if isempty(cfg.trl)
+            removingSubjects([],currSubject, 'no clean trials found')
+            return
+        end
+        data = ft_redefinetrial(cfg, data);
+    else
+        cfg = [];
+        cfg.trials = goodTrialIndx;
+        data = ft_selectdata(cfg, data);
+    end
 end
 
 if strcmpi(saveData, 'yes')

@@ -43,9 +43,9 @@ if doRandomize
     fprintf('\tRandomizing matrices ... ')
     switch edgeType
         case 'weighted'
-            randWs = gr_randomizeWeightedMatrices(Ws, 20);
+            randWs = gr_randomizeWeightedMatrices(Ws, 10);
         case {'binary', 'mst'}
-            evalc('randWs = bv_randomizeBinaryMatrices(Ws, 20);');
+            evalc('randWs = bv_randomizeBinaryMatrices(Ws, 10);');
         otherwise
             error('unknown edgeType')
     end

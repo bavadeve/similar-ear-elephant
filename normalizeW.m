@@ -1,7 +1,7 @@
 function Wnrm = normalizeW(W, range)
 
 if nargin<2
-    range = [0.001 1];
+    range = [0 1];
 end
 
 diagTmp = diag(W);

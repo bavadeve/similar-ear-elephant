@@ -22,8 +22,9 @@ end
 subjectdata.removedreason = reason;
 
 bv_saveData(subjectdata)
-bv_updateSubjectSummary([PATHS.SUMMARY filesep 'SubjectSummary'], subjectdata)
-
+if exist([PATHS.SUMMARY filesep 'SubjectSummary'], 'file')
+    bv_updateSubjectSummary([PATHS.SUMMARY filesep 'SubjectSummary'], subjectdata)
+end
 subjectdata.PATHS.SUBJECTDIR = [PATHS.REMOVED filesep currSubject];
 
 movefile([PATHS.SUBJECTS filesep currSubject], PATHS.REMOVED)

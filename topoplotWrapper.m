@@ -1,17 +1,9 @@
-function [Zi, h] = topoplotWrapper(dat, chans, lim) 
+function [Zi, h] = topoplotWrapper(dat, lay, lim) 
 addpath('~/MatlabToolboxes/Colormaps/')
 
 if nargin < 3
     lim = [min(dat), max(dat)];
 end
-
-cfg = [];
-cfg.channel  = chans;
-cfg.layout   = 'EEG1010';
-cfg.feedback = 'no';
-cfg.skipcomnt  = 'yes';
-cfg.skipscale  = 'yes';
-evalc('lay = ft_prepare_layout(cfg);');
 
 chanX = lay.pos(:,1);
 chanY = lay.pos(:,2);

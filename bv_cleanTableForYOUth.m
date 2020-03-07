@@ -12,7 +12,7 @@ T.Temp(T.Temp<15) = NaN;
 % cleanup illumination log variable
 T.Illumination = cellfun(@(x) strrep(x, ',', '.'), T.Illumination, 'Un', 0);
 T.Illumination(cellfun(@isempty, T.Illumination)) = {'NaN'};
-T.Illumination(not(cellfun(@(x) all(ismember(x, '0123456789+-.eEdD')), T.Illumination))) = {'NaN'};
+T.Illumination(not(cellfun(@(x) all(ismember(x, '0123456789.eEdD')), T.Illumination))) = {'NaN'};
 T.Illumination = cellfun(@str2num, T.Illumination);
 T.Illumination(T.Illumination>350) = NaN;
 T.Illumination(T.Illumination<5) = NaN;

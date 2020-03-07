@@ -5,5 +5,5 @@ for i = 1:size(Ws,3)
     if sum(isnan(currW(:))) == numel(currW)
         WsTrh(:,:,i) = currW;
     end
-    WsTrh(:,:,i) = threshold_absolute(Ws(:,:,i), propThr);
+    WsTrh(:,:,i) = threshold_proportional(Ws(:,:,i), propThr);
 end
