@@ -1,5 +1,7 @@
 function subjectresults = bv_addQuestionnaires2results(subjectresults, questionnaireString)
 
+istable = contains(class(subjectresults), 'table');
+
 eval('setPaths')
 eval('setOptions')
 
@@ -42,9 +44,13 @@ if contains('IBQ', questionnaireString)
     allQuestionnaires.IBQ = removevars(allQuestionnaires.IBQ , 'IBQ2_1_SC'); % remove double question
 end
 
+if istable
+    subjectresults = table2struct(subjectresults);
+end
+
 for i = 1:length(subjectresults)
-    currSubject = subjectresults(i).Pseudo;
-    currSession = subjectresults(i).agegroup;
+    currSubject = subjectresults(i).pseudo;
+    currSession = subjectresults(i).wave;
     if strcmpi(currSession(1),'0')
         currSession(1) = [];
     end
@@ -53,21 +59,25 @@ for i = 1:length(subjectresults)
         
         switch questionnaireString{j}
             case 'ASQ'
-                fieldname2use = fieldnames{find(contains(fieldnames, questionnaireString) .* ...
-                    contains(fieldnames, currSession))};
-                currQuestionnaire = allQuestionnaires.(fieldname2use);
-                subjIndx = find(contains(currQuestionnaire.subject, ...
-                    currSubject));
-                
-                if isempty(subjIndx)
-                    subjectresults(i).ASQ_version = '';
+                if any(contains(fieldnames, currSession))
+                    fieldname2use = fieldnames{find(contains(fieldnames, questionnaireString) .* ...
+                        contains(fieldnames, currSession))};
+                    currQuestionnaire = allQuestionnaires.(fieldname2use);
+                    subjIndx = find(contains(currQuestionnaire.subject, ...
+                        currSubject));
+                    
+                    if isempty(subjIndx)
+                        subjectresults(i).ASQ_version = '';
+                        subjectresults(i).ASQ_score = NaN;
+                        continue
+                    end
+                    
+                    subjectresults(i).ASQ_version = currQuestionnaire.formversion(subjIndx);
+                    subjectresults(i).ASQ_score = bv_calculateASQscore(currQuestionnaire(subjIndx,:));
+                else
+                    subjectresults(i).ASQ_version ='';
                     subjectresults(i).ASQ_score = NaN;
-                    continue
                 end
-                
-                subjectresults(i).ASQ_version = currQuestionnaire.formversion(subjIndx);
-                subjectresults(i).ASQ_score = bv_calculateASQscore(currQuestionnaire(subjIndx,:));
-                
             case 'IBQ'
                 currQuestionnaire = allQuestionnaires.IBQ;
                 
@@ -81,7 +91,25 @@ for i = 1:length(subjectresults)
                             currSubject) .* contains(currQuestionnaire.visit, ...
                             '9 - 12 maanden'));
                     otherwise
-                        error('Unknown subject session')
+                        subjectresults(i).IBQ_version = '';
+                        subjectresults(i).IBQ_activityLevel = NaN;
+                        subjectresults(i).IBQ_approach = NaN;
+                        subjectresults(i).IBQ_cuddle = NaN;
+                        subjectresults(i).IBQ_distress = NaN;
+                        subjectresults(i).IBQ_fallingReactivity = NaN;
+                        subjectresults(i).IBQ_fear = NaN;
+                        subjectresults(i).IBQ_hiPleasure = NaN;
+                        subjectresults(i).IBQ_liPleasure = NaN;
+                        subjectresults(i).IBQ_orientingDuration = NaN;
+                        subjectresults(i).IBQ_percSensitivity = NaN;
+                        subjectresults(i).IBQ_sad = NaN;
+                        subjectresults(i).IBQ_smiling = NaN;
+                        subjectresults(i).IBQ_sooth = NaN;
+                        subjectresults(i).IBQ_vocalReactivity = NaN;
+                        subjectresults(i).IBQ_sur_score = NaN;
+                        subjectresults(i).IBQ_neg_score = NaN;
+                        subjectresults(i).IBQ_reg_score = NaN;
+                        continue
                 end
                 
                 if isempty(subjIndx)
@@ -119,4 +147,9 @@ for i = 1:length(subjectresults)
             otherwise
         end
     end
+    
+end
+
+if istable
+    subjectresults = struct2table(subjectresults);
 end

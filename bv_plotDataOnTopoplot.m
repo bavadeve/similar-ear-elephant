@@ -1,7 +1,7 @@
-function bv_plotDataOnTopoplot(Ws, lay, propThr, subplotlabels, weighted, color)
+function hout = bv_plotDataOnTopoplot(Ws, lay, propThr, globNorm, weighted, color)
 
 if nargin < 4
-    subplotlabels = strsplit(num2str(1:size(Ws,3)),' ');
+    globNorm = false;
 end
 if nargin < 5
     weighted = true;
@@ -9,7 +9,7 @@ end
 if nargin < 6
     color = [0 0 0];
 end
-
+subplotlabels = '';
 addpath('~/MatlabToolboxes/Colormaps/')
 
 if nargin < 1
@@ -24,42 +24,80 @@ else
     doThresh = 1;
 end
 
-fprintf('preparing layout...')
-
-if weighted
+if weighted && globNorm
     I = find(Ws);
     
+    absWs = abs(Ws);
+    
     widthRange = [0.2 8];
-    normdataWidth = zeros(size(Ws));
-    widthNrmA = (widthRange(2)-widthRange(1))/(max(Ws(I))-min(Ws(I)));
-    widthNrmB = widthRange(2) - widthNrmA * max(Ws(I));
-    normdataWidth(I) = widthNrmA * Ws(I) + widthNrmB;
+    normdataWidth = zeros(size(absWs));
+    widthNrmA = (widthRange(2)-widthRange(1))/(max(absWs(I))-min(absWs(I)));
+    widthNrmB = widthRange(2) - widthNrmA * max(absWs(I));
+    normdataWidth(I) = widthNrmA * absWs(I) + widthNrmB;
     
-    alphaRange = [0.1 0.8];
-    normdataAlpha = zeros(size(Ws));
-    alphaNrmA = (alphaRange(2)-alphaRange(1))/(max(Ws(I))-min(Ws(I)));
-    alphaNrmB = alphaRange(2) - alphaNrmA * max(Ws(I));
-    normdataAlpha(I) = alphaNrmA * Ws(I) + alphaNrmB;
+    alphaRange = [0.01 0.8];
+    normdataAlpha = zeros(size(absWs));
+    alphaNrmA = (alphaRange(2)-alphaRange(1))/(max(absWs(I))-min(absWs(I)));
+    alphaNrmB = alphaRange(2) - alphaNrmA * max(absWs(I));
+    normdataAlpha(I) = alphaNrmA * absWs(I) + alphaNrmB;
+    rng = minmax(absWs(I)');
+    nrmWs = abs(Ws ./ max(abs(Ws(:))));
 end
-% figure;
+
+
 for currW = 1:size(Ws,3)
-    
+%     if globNorm
+%         hout{currW} = figure;
+%     end
     W = squeeze(Ws(:,:,currW));
     W(isnan(W)) = 0;
     
     if doThresh
-        W = threshold_proportional(W, propThr);
+        W = bv_thresholdMultipleWs(W, propThr);
     end
     
-    if size(Ws,3) > 1
+    if weighted && ~globNorm
+        I = find(W);
+        absW = abs(W);
+        widthRange = [0.2 8];
+        alphaRange = [0.01 0.8];
+        
+        
+        if length(I) == 1
+            normdataWidth = zeros(size(absW));
+            normdataAlpha = zeros(size(absW));
+            normdataWidth(I) = mean(widthRange);
+            normdataAlpha(I) = mean(alphaRange);
+        elseif length(unique(abs(W(I)))) == 1
+            normdataWidth = zeros(size(absW));
+            normdataAlpha = zeros(size(absW));
+            normdataWidth(I) = 2;
+            normdataAlpha(I) = max(alphaRange);
+        else
+            normdataWidth = zeros(size(absW ));
+            widthNrmA = (widthRange(2)-widthRange(1))/(max(absW(I))-min(absW(I)));
+            widthNrmB = widthRange(2) - widthNrmA * max(absW(I));
+            normdataWidth(I) = widthNrmA * absW(I) + widthNrmB;
+            
+            normdataAlpha = zeros(size(absW));
+            alphaNrmA = (alphaRange(2)-alphaRange(1))/(max(absW(I))-min(absW(I)));
+            alphaNrmB = alphaRange(2) - alphaNrmA * max(absW(I));
+            normdataAlpha(I) = alphaNrmA * absW(I) + alphaNrmB;
+        end
+        nrmW = abs(W ./ max(W(:)));
+
+    end
+    
+    if size(Ws,3) > 1 %&& ~globNorm
         [subplotindx] = numSubplots(size(Ws,3));
         subplot(subplotindx(1), subplotindx(2), currW)
         cla;
+        
     end
     
     fprintf('creating topoplot %s...', num2str(currW))
     hold on
-    W = tril(W);
+%     W = tril(W);
     
     if nansum(W(:))~=0
         counter = 0;
@@ -67,16 +105,20 @@ for currW = 1:size(Ws,3)
             for j = 1:size(W,2)
                 if W(i,j)==0
                     continue
+                elseif j > i
+                    continue
                 end
                 
                 counter = counter + 1;
                 
                 if i==j
-                    
                     radius = 0.025;
                     center = [lay.pos(i,1), (lay.pos(i,2) + radius)];
                     if ~weighted
                         circular_arrow(radius, center, color, 3, 1, false);
+                    elseif globNorm
+                        circular_arrow(radius, center, W(i,j)*[1], ...
+                            normdataWidth(i,j,currW), normdataAlpha(i,j,currW), true);
                     else
                         circular_arrow(radius, center, W(i,j)*[1], ...
                             normdataWidth(i,j), normdataAlpha(i,j), true);
@@ -87,11 +129,21 @@ for currW = 1:size(Ws,3)
                     y = lay.pos([i j],2);
                     
                     if ~weighted
-                        h(counter) = patch('xdata', x, 'ydata', y, 'Edgecolor', color, 'LineWidth', 3, 'edgealpha', 0.3);
+                        h(counter) = patch('xdata', x, 'ydata', y, 'Edgecolor', color, 'LineWidth', 3, 'edgealpha', 1);
+                    elseif globNorm
+                        h(counter) = patch(x,y, W(i,j)*[1 1], 'edgecolor',...
+                            'flat','linewidth', normdataWidth(i,j,currW), 'edgealpha', ...
+                            normdataAlpha(i,j,currW));
                     else
                         h(counter) = patch(x,y, W(i,j)*[1 1], 'edgecolor',...
                             'flat','linewidth', normdataWidth(i,j), 'edgealpha', ...
                             normdataAlpha(i,j));
+%                         
+%                         p2 = [x(1) y(1)];
+%                         p1 = [x(2) y(2)];
+%                         dp = p2 - p1;
+%                         quiver(p1(1),p1(2),dp(1),dp(2),0, 'Color', [0 0 1])
+
                     end
                 end
             end
@@ -100,7 +152,9 @@ for currW = 1:size(Ws,3)
     end
     
     if weighted
-        colormap(viridis)
+        colormap(plasma)
+%         colorbar
+
     end
     
     scatter(lay.pos(:,1), lay.pos(:,2), 10, 'MarkerFaceColor', 'k', ...
@@ -113,10 +167,15 @@ for currW = 1:size(Ws,3)
     end
     axis equal
     axis off
-    colorbar
+    if globNorm
+        set(gca, 'CLim', rng)
+    end
+    %     colorbar
     fprintf('done \n')
     
 end
+
+
 
 function circular_arrow(radius, centre, colour, linewidth, edgealpha, weighted)
 % Adapted from: https://nl.mathworks.com/matlabcentral/fileexchange/59917-circular_arrow
@@ -137,11 +196,11 @@ function circular_arrow(radius, centre, colour, linewidth, edgealpha, weighted)
 
 % correct imputs for circular arrow
 arrow_angle = 90;
-angle = 300;
+angle = 240;
 direction = 2;
 head_style = 'vback2';
-head_size = 10;
-
+head_size = 6;
+edgealpha = 0.3;
 if nargin < 6
     weighted = true;
 end
@@ -188,7 +247,7 @@ P1{2} = [x2;y2]; % Point 1 - 2
 P2{1} = [x0;y0]; % Point 2 - 1
 P2{2} = [x0;y0]; % Point 2 - 1
 centre = [xc;yc]; % guarenteeing centre is the right dimension
-n = 1000; % The number of points in the arc
+n = 20; % The number of points in the arc
 v = struct([]);
 
 while i < 3
@@ -243,14 +302,14 @@ function [p,n]=numSubplots(n)
 %
 % Purpose
 % Calculate how many rows and columns of sub-plots are needed to
-% neatly display n subplots. 
+% neatly display n subplots.
 %
 % Inputs
-% n - the desired number of subplots.     
-%  
+% n - the desired number of subplots.
+%
 % Outputs
 % p - a vector length 2 defining the number of rows and number of
-%     columns required to show n plots.     
+%     columns required to show n plots.
 % [ n - the current number of subplots. This output is used only by
 %       this function for a recursive call.]
 %
@@ -258,15 +317,15 @@ function [p,n]=numSubplots(n)
 %
 % Example: neatly lay out 13 sub-plots
 % >> p=numSubplots(13)
-% p = 
+% p =
 %     3   5
-% for i=1:13; subplot(p(1),p(2),i), pcolor(rand(10)), end 
+% for i=1:13; subplot(p(1),p(2),i), pcolor(rand(10)), end
 %
 %
 % Rob Campbell - January 2010
-   
-    
-while isprime(n) & n>4, 
+
+
+while isprime(n) & n>4,
     n=n+1;
 end
 
@@ -286,13 +345,13 @@ while length(p)>2
     else
         p(1)=p(1)*p(2);
         p(2)=[];
-    end    
+    end
     p=sort(p);
 end
 
 
 %Reformat if the column/row ratio is too large: we want a roughly
-%square design 
+%square design
 while p(2)/p(1)>2.5
     N=n+1;
     [p,n]=numSubplots(N); %Recursive!

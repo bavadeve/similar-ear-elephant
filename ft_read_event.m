@@ -136,7 +136,7 @@ if iscell(filename)
 end
 
 % optionally get the data from the URL and make a temporary local copy
-filename = fetch_url(filename);
+% filename = fetch_url(filename);
 
 % get the options
 hdr              = ft_getopt(varargin, 'header');

@@ -107,7 +107,9 @@ rmChannels  = ft_getopt(cfg, 'rmChannels');
 dataset     = ft_getopt(cfg, 'dataset');
 hdrfile     = ft_getopt(cfg, 'hdrfile');
 overwrite   = ft_getopt(cfg, 'overwrite', 'no');
-removeChans = ft_getopt(cfg, 'removeChans', 'no');
+removechans = ft_getopt(cfg, 'removechans', 'no');
+maxbadchans = ft_getopt(cfg, 'maxbadchans', 3);
+
 analysisOrd = {};
 
 if ~isempty(dataset) && ~isempty(hdrfile)
@@ -171,6 +173,11 @@ cfg = []; % start new cfg file for loading data
 % only read in EEG data (without possible removed channels)
 if isfield(subjectdata, 'channels2remove')
     if ~isempty(subjectdata.channels2remove)
+        if length(subjectdata.channels2remove) > maxbadchans
+            removingSubjects([], currSubject, 'too many noisy channels')
+            data = [];
+            return
+        end
         cfg.layout = 'biosemi32.lay';
         cfg.method = 'triangulation';
         evalc('neighbours = ft_prepare_neighbours(cfg);');
@@ -215,7 +222,7 @@ end
 
 fprintf('done! \n')
 
-if strcmpi(removeChans, 'yes')
+if strcmpi(removechans, 'yes')
     if isfield(subjectdata, 'channels2remove')
         if ~isempty(subjectdata.channels2remove)
             fprintf(['\t the following channels will be interpolated ... ', ...

@@ -35,6 +35,8 @@ triallength = ft_getopt(cfg, 'triallength');
 outputStr   = ft_getopt(cfg, 'outputStr', ['triallength' num2str(triallength)]);
 saveData    = ft_getopt(cfg, 'saveData');
 ntrials     = ft_getopt(cfg, 'ntrials', 'all');
+overwrite   = ft_getopt(cfg, 'overwrite', 'no');
+
 cfgIn = cfg;
 
 if isempty(triallength)
@@ -48,6 +50,11 @@ if nargin < 2
     eval('setPaths');
     
     subjectFolderPath = [PATHS.SUBJECTS filesep currSubject];
+    [subjectdata] = bv_check4data(subjectFolderPath);
+    if exist(PATHS.(outputStr), 'file') & strcmpi(overwrite, 'no')
+        fprintf('\t file already exists, not overwriting ... \n')
+    end
+
     [subjectdata, dataOld] = bv_check4data(subjectFolderPath, inputStr);
 else
     saveData = 'no';

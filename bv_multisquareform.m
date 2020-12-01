@@ -25,7 +25,7 @@ if tovector
     end
     
 else
-    for i = 1:size(Ws, 2)
-        Wsq(:,:,i) = squareform(Ws(:,i));
+    for i = 1:size(Ws, 1)
+        Wsq(:,:,i) = squareform(Ws(i,:));
     end
 end

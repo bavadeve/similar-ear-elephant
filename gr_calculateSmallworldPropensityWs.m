@@ -37,7 +37,7 @@ for i = 1:m
         counter = counter + 1;
         continue
     end
-        currWnrm = gr_normalizeW(currW);
+        currWnrm = weight_conversion(currW, 'normalize');
     try
         [SWPs(i),delta_Cs(i),delta_Ls(i)] = small_world_propensity(currWnrm, 'O');
     catch

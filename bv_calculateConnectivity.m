@@ -45,7 +45,7 @@ function [ connectivity ] = bv_calculateConnectivity(cfg, data)
 %   cfg.keeptrials  = 'yes/no' (method = 'PLI' only). To keep trials in
 %                       output (default: 'no');
 %
-% See also BV_CUTAPPENDEDINTOTRIALS, BV_SAVEDATA, BV_CHECK4DATA, 
+% See also BV_CUTAPPENDEDINTOTRIALS, BV_SAVEDATA, BV_CHECK4DATA,
 % FT_CONNECTIVITYANALYSIS, BV_SETDIAG
 
 %%%%%% general check for inputs %%%%%%
@@ -65,7 +65,7 @@ if isempty(method)
     error('no cfg.method given')
 end
 
-if ~strcmpi(method, 'pli') && strcmpi(keeptrials, 'yes')
+if ~contains(method,{'pli', 'pte'}) && strcmpi(keeptrials, 'yes')
     error('cannot keep trials with method: %s', method)
 end
 
@@ -74,7 +74,7 @@ if nargin < 2
     disp(currSubject)
     eval(pathsFcn)
     eval(optionsFcn)
-
+    
     subjectFolderPath = [PATHS.SUBJECTS filesep currSubject];
     try
         [subjectdata, data] = bv_check4data(subjectFolderPath, inputStr);
@@ -84,13 +84,13 @@ if nargin < 2
         return
     end
     subjectdata.cfgs.(method) = cfg;
-
+    
 end
 
 %%%%%% start connectivity analysis based on given method %%%%%%
 switch(method)
     case {'wpli_debiased', 'wpli', 'coh'} % based on ft_connectivityanalysis with cfg.method = 'wpli_debiased'
-
+        
         % cut, if needed data into trials
         if ~isempty(triallength)
             cfg = [];
@@ -98,7 +98,7 @@ switch(method)
             cfg.triallength = triallength;
             [data] = bv_cutAppendedIntoTrials(cfg, data);
         end
-
+        
         % select data based on condition and select random trials
         cfg = [];
         if strcmpi(condition, 'all')
@@ -115,7 +115,7 @@ switch(method)
                 cfg.trials = itrl(randperm(numel(itrl),ntrials));
             end
         end
-
+        
         fprintf('\t connectivity analysis started for %s... \n', method)
         % frequency analysis
         cfg.method      = 'mtmfft';
@@ -124,28 +124,28 @@ switch(method)
         cfg.keeptrials  = 'yes';
         cfg.tapsmofrq   = 1;
         cfg.pad         = 'nextpow2';
-        cfg.foilim      = [1 45];
-
+        cfg.foilim      = [0 45];
+        
         evalc('freq = ft_freqanalysis(cfg, data);');
-
+        
         fprintf('\t\t with %1.0f trials ... ', size(freq.trialinfo,1))
-
+        
         % connectivity analysis
         cfg             = [];
         cfg.method      = method;
         evalc('connectivity = ft_connectivityanalysis(cfg, freq);');
         fprintf('done! \n')
-
+        
         fnames = fieldnames(connectivity);
         fnameindx = find(contains(fnames, 'spctrm'));
-
+        
         connectivity = renameStructField(connectivity, fnames{fnameindx}, 'spctrm');
-
+        
         connectivity.method = method;
         connectivity.label = freq.label;
         connectivity.trialinfo = freq.trialinfo;
         connectivity.dimord = 'chan_chan_freq';
-
+        
         % find removed channels and add a row of nans
         cfg = [];
         cfg.layout = 'biosemi32.lay';
@@ -156,30 +156,30 @@ switch(method)
         if not(isempty(rmChannels))
             connectivity = addRemovedChannels(connectivity, rmChannels);
         end
-
+        
         % set diagonal at zero if needed
         connectivity.spctrm = bv_setDiag(connectivity.spctrm, 0);
-
+        
     case 'pli' % based on PLI.m
-
+        
         freqLabel = {'delta', 'theta', 'alpha1', 'alpha2', 'beta', 'gamma'};
         freqRng = {[1 3], [3 6], [6 9], [9 12], [12 25], [25, 45]};
-
+        
         for iFreq = 1:length(freqLabel)
             currFreq = freqLabel{iFreq};
             currFreqRng = freqRng{iFreq};
-
+            
             fprintf('\t filtering to for %s Hz... \n' , currFreq)
-
+            
             cfg = [];
             cfg.lpfilter = 'yes';
             cfg.lpfreq = currFreqRng(2);
             cfg.hpfilter = 'yes';
             cfg.hpfreq = currFreqRng(1);
             cfg.hpinstabilityfix = 'reduce';
-
+            
             evalc('dataFilt = ft_preprocessing(cfg, data);');
-
+            
             % cut, if needed data into trials
             if ~isempty(triallength)
                 cfg = [];
@@ -194,7 +194,7 @@ switch(method)
             else
                 dataCut = dataFilt;
             end
-
+            
             if not(strcmpi(condition, 'all'))
                 cfg = [];
                 cfg.trials = find(ismember(dataCut.trialinfo, condition));
@@ -202,7 +202,7 @@ switch(method)
             end
             
             fprintf('\t %1.0f trials found\n', length(dataCut.trial));
-
+            
             fprintf('\t calculating PLI ... ')
             PLIs = PLI(dataCut.trial,1);
             PLIs = cat(3,PLIs{:});
@@ -216,7 +216,7 @@ switch(method)
                 connectivity.plispctrm(:,:,iFreq) = mean(PLIs,3);
                 connectivity.dimord = 'chan_chan_freq';
             end
-
+            
             fprintf('done!\n')
         end
         
@@ -235,33 +235,111 @@ switch(method)
         if not(isempty(rmChannels))
             connectivity = addRemovedChannels(connectivity, rmChannels);
         end
+        
+        case 'pte' % based on PhaseTE.m
+        
+        freqLabel = {'delta', 'theta', 'alpha1', 'alpha2', 'beta', 'gamma'};
+        freqRng = {[1 3], [3 6], [6 9], [9 12], [12 25], [25, 45]};
+        
+        for iFreq = 1:length(freqLabel)
+            currFreq = freqLabel{iFreq};
+            currFreqRng = freqRng{iFreq};
+            
+            fprintf('\t filtering to for %s Hz... \n' , currFreq)
+            
+            cfg = [];
+            cfg.lpfilter = 'yes';
+            cfg.lpfreq = currFreqRng(2);
+            cfg.hpfilter = 'yes';
+            cfg.hpfreq = currFreqRng(1);
+            cfg.hpinstabilityfix = 'reduce';
+            
+            evalc('dataFilt = ft_preprocessing(cfg, data);');
+            
+            % cut, if needed data into trials
+            if ~isempty(triallength)
+                cfg = [];
+                cfg.saveData = 'no';
+                cfg.triallength = triallength;
+                cfg.ntrials = ntrials;
+                [dataCut, finished] = bv_cutAppendedIntoTrials(cfg, dataFilt);
+                if ~finished
+                    connectivity = [];
+                    return;
+                end
+            else
+                dataCut = dataFilt;
+            end
+            
+            if not(strcmpi(condition, 'all'))
+                cfg = [];
+                cfg.trials = find(ismember(dataCut.trialinfo, condition));
+                evalc('dataCut = ft_selectdata(cfg, dataCut);');
+            end
+            
+            fprintf('\t %1.0f trials found\n', length(dataCut.trial));
+            
+            fprintf('\t calculating PTE ... ')
+            
+            for iTrl = 1:length(dataCut.trial)
+                evalc('PTEs(:,:,iTrl) = PhaseTE_MF(dataCut.trial{iTrl}'');');
+            end
 
+            if strcmpi(keeptrials, 'yes')
+                connectivity.ptespctrm(:,:,:, iFreq) = PTEs;
+                connectivity.dimord = 'chan_chan_trl_freq';
+                connectivity.sampleinfo = dataCut.sampleinfo;
+                connectivity.time = dataCut.time;
+            else
+                connectivity.ptespctrm(:,:,iFreq) = mean(PTEs,3);
+                connectivity.dimord = 'chan_chan_freq';
+            end
+            
+            fprintf('done!\n')
+        end
+        
+        connectivity.freq = freqLabel;
+        connectivity.freqRng = freqRng;
+        connectivity.label = dataCut.label;
+        connectivity.trialinfo = dataCut.trialinfo;
+        
+        % find removed channels and add a row of nans
+        cfg = [];
+        cfg.layout = 'biosemi32.lay';
+        cfg.skipcomnt = 'yes';
+        cfg.skipscale = 'yes';
+        evalc('layout = ft_prepare_layout(cfg);');
+        rmChannels = layout.label(not(ismember(layout.label, connectivity.label)));
+        if not(isempty(rmChannels))
+            connectivity = addRemovedChannels(connectivity, rmChannels);
+        end
 end
 
 %%%%%% save data %%%%%%
 if strcmpi(saveData, 'yes')
-
+    
     outputFilename = [subjectdata.subjectName '_' outputStr '.mat'];
     fieldname = upper(outputStr);
     subjectdata.PATHS.(fieldname) = [subjectdata.PATHS.SUBJECTDIR filesep ...
         outputFilename];
-
+    
     fprintf('\t saving %s ... ', outputFilename)
     save(subjectdata.PATHS.(fieldname), 'connectivity')
     fprintf('done! \n')
-
+    
     analysisOrder = strsplit(subjectdata.analysisOrder, '-');
     analysisOrder = [analysisOrder method];
     analysisOrder = unique(analysisOrder, 'stable');
     subjectdata.analysisOrder = strjoin(analysisOrder, '-');
-
-
+    
+    
     fprintf('\t saving subjectdata variable to Subject.mat ... ')
     save([subjectdata.PATHS.SUBJECTDIR filesep 'Subject.mat'], 'subjectdata')
     fprintf('done! \n')
-    bv_updateSubjectSummary([PATHS.SUMMARY filesep 'SubjectSummary'], subjectdata)
+    if isfield(PATHS, 'SUMMARY')
+        bv_updateSubjectSummary([PATHS.SUMMARY filesep 'SubjectSummary'], subjectdata)
+    end
     
-
 end
 
 %%%%%% extra functions %%%%%%
@@ -289,6 +367,6 @@ evalc('lay = ft_prepare_layout(cfg);');
 [~, indxSort] = ismember(lay.label, connectivity.label);
 indxSort = indxSort(any(indxSort,2));
 
-currSpctrm = currSpctrm(indxSort, indxSort,:);
+currSpctrm = currSpctrm(indxSort, indxSort,:,:);
 connectivity.label = connectivity.label(indxSort);
 connectivity.(fname2use) = currSpctrm;

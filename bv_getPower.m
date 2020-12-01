@@ -1,14 +1,11 @@
-function freq = bv_powerAnalysis(cfg, data)
+function freq = bv_getPower(cfg, data)
 
 inputStr 	= ft_getopt(cfg, 'inputStr');
 outputStr   = ft_getopt(cfg, 'outputStr');
 currSubject = ft_getopt(cfg, 'currSubject');
 optionsFcn  = ft_getopt(cfg, 'optionsFcn', 'setPaths');
-freqOutput  = ft_getopt(cfg, 'freqOutput','fourier');
 saveData    = ft_getopt(cfg, 'saveData');
-nTrials     = ft_getopt(cfg, 'nTrials','all');
-trigger     = ft_getopt(cfg, 'trigger')
-method      = ft_getopt(cfg, 'method');
+trigger     = ft_getopt(cfg, 'trigger');
 
 if nargin < 2
     disp(currSubject)
@@ -30,14 +27,23 @@ if nargin < 2
 end
 
 if ~isempty(trigger)
+    if ~any(ismember(trigger, data.trialinfo))
+        freq = [];
+        return
+    end
+    
     cfg = [];
     cfg.trials = find(data.trialinfo==trigger);
-    data = ft_selectdata(cfg, data);
+    evalc('data = ft_selectdata(cfg, data);');
 end
 
+cfg = [];
+cfg.method = 'wavelet';
+cfg.output = 'pow';
+cfg.foi = 1:20;
+cfg.toi = 1:60;
+evalc('freq = ft_freqanalysis(cfg, data);');
 
-tic
-freq = bvLL_frequencyanalysis(data, [1 20], 'fourier') 
-toc
-
-
+if strcmpi(saveData, 'yes')
+    bv_saveData(subjectdata, freq, outputStr)
+end

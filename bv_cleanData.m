@@ -75,11 +75,11 @@ if strcmpi(cleanDatafile, 'yes')
             removingSubjects([],currSubject, 'no clean trials found')
             return
         end
-        data = ft_redefinetrial(cfg, data);
+        evalc('data = ft_redefinetrial(cfg, data);');
     else
         cfg = [];
         cfg.trials = goodTrialIndx;
-        data = ft_selectdata(cfg, data);
+        evalc('data = ft_selectdata(cfg, data);');
     end
 end
 

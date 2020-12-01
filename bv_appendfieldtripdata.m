@@ -40,6 +40,7 @@ outputStr   = ft_getopt(cfg, 'outputStr');
 saveData    = ft_getopt(cfg, 'saveData');
 pathsFcn    = ft_getopt(cfg, 'pathsFcn', 'setPaths');
 optionsFcn  = ft_getopt(cfg, 'optionsFcn', 'setOptions');
+overwrite   = ft_getopt(cfg, 'overwrite', 'no');
 cfgIn = cfg;
 
 if nargin < 2
@@ -47,8 +48,16 @@ if nargin < 2
     eval(pathsFcn);
     disp(currSubject)
     subjectFolderPath = [PATHS.SUBJECTS filesep currSubject];
-    [subjectdata, dataOld] = bv_check4data(subjectFolderPath, inputStr);
-else
+    [subjectdata] = bv_check4data(subjectFolderPath);
+    if isfield(subjectdata.PATHS, upper(outputStr))
+        if exist(subjectdata.PATHS.(upper(outputStr)), 'file') & strcmpi(overwrite, 'no')
+            fprintf('\t file already exists, not overwriting ... \n')
+            data = [];
+            return
+        end
+    end
+    
+    [subjectdata, dataOld] = bv_check4data(subjectFolderPath, inputStr);else
     saveData = 'no';
 end
 

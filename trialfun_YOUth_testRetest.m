@@ -1,4 +1,4 @@
-function [trl, event] = trialfun_YOUth_resampled(cfg)
+function [trl, event] = trialfun_YOUth_testRetest(cfg)
 if ~isfield(cfg, 'trialdef')
     cfg.trialdef = [];
 end
@@ -16,14 +16,28 @@ EVtype = {event.type}';
 statusIndx = strcmp(EVtype, 'STATUS');
 event(~statusIndx) = [];
 
+% resample sampling rate, to rate used with data file
+EVvalue = [event.value]';
+
+% find overlapping triggers and remove
+startERPtaskIndx = find(EVvalue==1);
+endERPtaskIndx = find(EVvalue==15);
+startERPtaskIndx = startERPtaskIndx(1:length(endERPtaskIndx));
+
+rmVect = zeros(1,length(event));
+for k = 1:length(startERPtaskIndx)
+    rmVect(startERPtaskIndx(k):endERPtaskIndx(k)) = 1;
+end
+
+event = event(~rmVect);
+
+% resample sampling rate, to rate used with data file
 EVvalue = [event.value]';
 EVsample = [event.sample]';
 EVsample = ceil((cfg.Fs * EVsample) ./ hdr.Fs);
-% EVvalue = EVvalue(end-3:end);
-% EVsample = EVsample(end-3:end);
 
 % only select correct triggers based on cfg.triger
-triggerValues = [129 139];
+triggerValues = [11 12];
 [triggerIndx, i] = find(EVvalue == triggerValues);
 condition = triggerValues(i);
 
@@ -34,9 +48,8 @@ begsample = EVsample(triggerIndx) - preTrig;
 endsample = EVsample(triggerIndx) + postTrig;
 
 if ~isempty(begsample) && ~isempty(endsample)
-    maxSamples = ceil((cfg.Fs * hdr.nSamples) ./ hdr.Fs);
-    if endsample(end) > maxSamples
-        endsample(end) = maxSamples;
+    if endsample(end) > hdr.nSamples
+        endsample(end) = hdr.nSamples;
     end
 else
     trl = [];

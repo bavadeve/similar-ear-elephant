@@ -6,9 +6,9 @@ if isstruct(dataIn)
 else
     structbool = false;
 end
-
-eval('setPaths')
-eval('setOptions')
+% 
+% eval('setPaths')
+% eval('setOptions')
 
 ageGenderPath = ...
     '/Volumes/youth.data.uu.nl/research-grp-ydi-1911-01-velde/overig/Demo2.xlsx';
