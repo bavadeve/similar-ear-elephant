@@ -57,7 +57,8 @@ if nargin < 2
         end
     end
     
-    [subjectdata, dataOld] = bv_check4data(subjectFolderPath, inputStr);else
+    [subjectdata, dataOld] = bv_check4data(subjectFolderPath, inputStr);
+else
     saveData = 'no';
 end
 

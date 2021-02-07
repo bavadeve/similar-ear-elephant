@@ -1,4 +1,4 @@
-function hout = bv_plotDataOnTopoplot(Ws, lay, propThr, globNorm, weighted, color)
+function hout = bv_plotDataOnTopoplot(Ws, lay, propThr, globNorm, weighted, color, subplotlabels)
 
 if nargin < 4
     globNorm = false;
@@ -9,8 +9,15 @@ end
 if nargin < 6
     color = [0 0 0];
 end
-subplotlabels = '';
-addpath('~/MatlabToolboxes/Colormaps/')
+if nargin < 7
+    subplotlabels = '';
+end
+
+if ischar(color)
+    cmap = color;
+else
+    cmap = 'plasma';
+end
 
 if nargin < 1
     error('Input variable W not given')
@@ -129,7 +136,7 @@ for currW = 1:size(Ws,3)
                     y = lay.pos([i j],2);
                     
                     if ~weighted
-                        h(counter) = patch('xdata', x, 'ydata', y, 'Edgecolor', color, 'LineWidth', 3, 'edgealpha', 1);
+                        h(counter) = patch('xdata', x, 'ydata', y, 'Edgecolor', color, 'LineWidth', 3, 'edgealpha', 0.1);
                     elseif globNorm
                         h(counter) = patch(x,y, W(i,j)*[1 1], 'edgecolor',...
                             'flat','linewidth', normdataWidth(i,j,currW), 'edgealpha', ...
@@ -152,9 +159,11 @@ for currW = 1:size(Ws,3)
     end
     
     if weighted
-        colormap(plasma)
-%         colorbar
-
+        if isfolder('~/MatlabToolboxes/Colormaps/')
+            addpath('~/MatlabToolboxes/Colormaps/')
+            addpath('~/MatlabToolboxes/OwnColormaps/')
+            colormap(cmap)
+        end
     end
     
     scatter(lay.pos(:,1), lay.pos(:,2), 10, 'MarkerFaceColor', 'k', ...
@@ -170,7 +179,7 @@ for currW = 1:size(Ws,3)
     if globNorm
         set(gca, 'CLim', rng)
     end
-    %     colorbar
+    colorbar
     fprintf('done \n')
     
 end

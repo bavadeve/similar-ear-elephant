@@ -8,7 +8,11 @@ else
     doCell = false;
 end
 
-dm = ndims(inTable.(var2mplusIn));
+if any(ismember(size(inTable.(var2mplusIn)), 1))
+    dm = 1;
+else
+    dm = ndims(inTable.(var2mplusIn));
+end
 
 [g_indx, g_name] = findgroups(inTable.(groupingVarName));
 uniqueSubjects = unique(inTable.pseudo, 'stable');

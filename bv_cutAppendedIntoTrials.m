@@ -61,7 +61,7 @@ else
 end
 
 continuousSeconds = (diff(dataOld.sampleinfo') + 1) ./ dataOld.fsample;
-trialparts2use = find(continuousSeconds > triallength);
+trialparts2use = find(continuousSeconds >= triallength);
 
 if isempty(trialparts2use)
     fprintf('\t \t no trials found, skipping ... \n')
@@ -87,7 +87,6 @@ for i = 1:length(trialparts2use)
     end
 end
 
-fprintf('\t %1.0f trials found \n', length(trialinfo))
 
 trl = [sampleinfo zeros(size(sampleinfo,1),1) trialinfo];
 
@@ -96,6 +95,8 @@ cfg = [];
 cfg.trl = trl;
 evalc('data = ft_redefinetrial(cfg, dataOld);');
 fprintf('done! \n')
+
+fprintf('\t\t %1.0f trials created \n', length(trialinfo))
 
 if not(strcmpi(ntrials, 'all'))
     if length(data.trial) < ntrials

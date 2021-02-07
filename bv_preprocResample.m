@@ -112,6 +112,8 @@ maxbadchans = ft_getopt(cfg, 'maxbadchans', 3);
 
 analysisOrd = {};
 
+
+
 if ~isempty(dataset) && ~isempty(hdrfile)
     fprintf('running with raw \n \t dataset: %s and \n \t hdrfile: %s \n ', ...
         dataset, hdrfile)
@@ -162,6 +164,24 @@ if ~hasdata % check whether data needs to be loaded from subject.mat file
 end
 
 hdr = ft_read_header(hdrfile);
+
+if strcmpi(removechans, 'yes')
+    if isempty(subjectdata.channels2remove) & exist(subjectdata.PATHS.PREPROC, 'file')
+        subjectdata.PATHS.(outputStr) = subjectdata.PATHS.PREPROC;
+        fprintf('\t no channels found to remove, continueing...')
+        evalc('[~,data] = bv_check4data(subjectdata.PATHS.SUBJECTDIR, ''PREPROC'');');
+        fprintf('done!\n')
+        
+        if strcmpi(saveData, 'yes')
+                       
+            bv_saveData(subjectdata);              % save both data and subjectdata to the drive
+            bv_updateSubjectSummary([PATHS.SUMMARY filesep 'SubjectSummary'], subjectdata)
+        
+        end
+        
+        return
+    end
+end
 
 subjectdata.cfgs.(outputStr) = cfg; % save used config file in subjectdata
 subjectdata.rmChannels = rmChannels'; % save possible removed channels in subjectdata

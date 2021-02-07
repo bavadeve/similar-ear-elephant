@@ -1,4 +1,4 @@
-function [SWPs, delta_Cs, delta_Ls] = gr_calculateSmallworldPropensityWs(Ws)
+function [SWPs, delta_Cs, delta_Ls, currWnrms] = gr_calculateSmallworldPropensityWs(Ws)
 % Function to calculate small-worldness index on multiple adjecency
 % matrices.
 %
@@ -37,9 +37,11 @@ for i = 1:m
         counter = counter + 1;
         continue
     end
-        currWnrm = weight_conversion(currW, 'normalize');
+    
+%     currWnrms(:,:,i) = gr_normalizeW(currW);
+    
     try
-        [SWPs(i),delta_Cs(i),delta_Ls(i)] = small_world_propensity(currWnrm, 'O');
+        [SWPs(i),delta_Cs(i),delta_Ls(i)] = small_world_propensity(currW, 'O');
     catch
         SWPs(i) = NaN;
         delta_Cs(i) = NaN;

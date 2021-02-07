@@ -34,12 +34,12 @@ fprintf('\t starting frequency analysis ... ')
 cfg = [];
 cfg.method      = 'mtmfft';
 cfg.taper       = 'dpss';
-cfg.tapsmofrq   = 1;
-cfg.output      = 'powandcsd';
+cfg.tapsmofrq   = 2;
+cfg.output      = 'fourier';
 cfg.foilim      = [freqrange(1) freqrange(2)];
 cfg.pad         ='nextpow2';
-% cfg.keeptrials  = 'yes';
-% cfg.keeptapers  = 'yes';
+cfg.keeptrials  = 'yes';
+cfg.keeptapers  = 'yes';
 evalc('freq = ft_freqanalysis(cfg, data);');
 evalc('fd = ft_freqdescriptives(cfg, freq);');
 

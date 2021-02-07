@@ -141,6 +141,10 @@ switch(method)
         
         connectivity = renameStructField(connectivity, fnames{fnameindx}, 'spctrm');
         
+        if strcmpi(method, 'wpli')
+            connectivity.spctrm = abs(connectivity.spctrm);
+        end
+        
         connectivity.method = method;
         connectivity.label = freq.label;
         connectivity.trialinfo = freq.trialinfo;
@@ -225,16 +229,16 @@ switch(method)
         connectivity.label = dataCut.label;
         connectivity.trialinfo = dataCut.trialinfo;
         
-        % find removed channels and add a row of nans
-        cfg = [];
-        cfg.layout = 'biosemi32.lay';
-        cfg.skipcomnt = 'yes';
-        cfg.skipscale = 'yes';
-        evalc('layout = ft_prepare_layout(cfg);');
-        rmChannels = layout.label(not(ismember(layout.label, connectivity.label)));
-        if not(isempty(rmChannels))
-            connectivity = addRemovedChannels(connectivity, rmChannels);
-        end
+%         % find removed channels and add a row of nans
+%         cfg = [];
+%         cfg.layout = 'biosemi32.lay';
+%         cfg.skipcomnt = 'yes';
+%         cfg.skipscale = 'yes';
+%         evalc('layout = ft_prepare_layout(cfg);');
+%         rmChannels = layout.label(not(ismember(layout.label, connectivity.label)));
+%         if not(isempty(rmChannels))
+%             connectivity = addRemovedChannels(connectivity, rmChannels);
+%         end
         
         case 'pte' % based on PhaseTE.m
         

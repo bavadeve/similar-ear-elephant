@@ -21,7 +21,7 @@ saveData        = ft_getopt(cfg, 'saveData');
 maxpercbad      = ft_getopt(cfg, 'maxpercbad');
 expectedtrials  = ft_getopt(cfg, 'maxtrials');
 repairchans     = ft_getopt(cfg, 'repairchans');
-overwrite       = ft_getopt(cfg, 'overwrite', 'no');
+overwrite       = ft_getopt(cfg, 'overwrite');
 
 cfgIn = cfg;
 
