@@ -1,7 +1,7 @@
 function [freq, fd] = bvLL_frequencyanalysis(data, freqrange, output, redefinetrial)
 
 if nargin < 4
-    redefinetrial = 0;
+    redefinetrial = 1;
 end
 if nargin < 3
     output = 'fourier';
@@ -24,13 +24,13 @@ end
 
 cfg = [];
 cfg.method      = 'mtmfft';
-cfg.taper       = 'dpss';
+cfg.taper       = 'hanning';
 cfg.tapsmofrq   = 1;
 cfg.output      = output;
-cfg.foilim      = [freqrange(1) freqrange(2)];
+cfg.foi     = [freqrange];
 cfg.pad         ='nextpow2';
 cfg.keeptrials  = 'yes';
 cfg.keeptapers  = 'yes';
-evalc('freq = ft_freqanalysis(cfg, data);');
-evalc('fd = ft_freqdescriptives(cfg, freq);');
+freq = ft_freqanalysis(cfg, data);
+fd = ft_freqdescriptives(cfg, freq);
 

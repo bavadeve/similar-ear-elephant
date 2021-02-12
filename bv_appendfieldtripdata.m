@@ -82,7 +82,7 @@ fprintf('done! \n')
 
 if strcmpi(saveData, 'yes')
     
-    subjectdata.analysisOrder = bv_updateAnalysisOrder(subjectdata.analysisOrder, cfgIn);
+%     subjectdata.analysisOrder = bv_updateAnalysisOrder(subjectdata.analysisOrder, cfgIn);
     bv_updateSubjectSummary([PATHS.SUMMARY filesep 'SubjectSummary.mat'], subjectdata)
     
     bv_saveData(subjectdata, data, outputStr);

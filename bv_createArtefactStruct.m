@@ -62,6 +62,7 @@ end
 %         artefactdef.jump.levels(i,sel) = 1;
 %     end
 % end
+
 fprintf('done! \n')
 
 artefactdef.sampleinfo = data.sampleinfo;

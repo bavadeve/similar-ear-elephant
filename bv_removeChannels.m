@@ -115,7 +115,7 @@ if not(isempty(subjectdata.channels2remove))
 end
 
 if strcmpi(saveData, 'yes')
-    subjectdata.analysisOrder = bv_updateAnalysisOrder(subjectdata.analysisOrder, cfgIn);
+%     subjectdata.analysisOrder = bv_updateAnalysisOrder(subjectdata.analysisOrder, cfgIn);
     
     if strcmpi(repairchans, 'yes')
         bv_saveData(subjectdata, data, outputStr);              % save both data and subjectdata to the drive

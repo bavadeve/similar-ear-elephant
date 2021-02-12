@@ -18,6 +18,9 @@ for i = 1:length(unGroupnm)
     for j = 1:length(unAttnm)
         indx2 = find(ismember(nmGroupedGroup, unGroupnm{i}) & ...
             ismember(nmGroupedAtt, unAttnm{j}));
+        if isempty(indx2)
+            continue
+        end
         Tout.(['N_' unAttnm{j}])(i) = N_grp(indx2);
         Tout.(['%_' unAttnm{j}])(i) = round(Tout.(['N_' unAttnm{j}])(i) ./ Tout.N(i) * 100,1);
     end

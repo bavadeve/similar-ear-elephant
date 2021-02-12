@@ -84,7 +84,7 @@ if strcmpi(cleanDatafile, 'yes')
 end
 
 if strcmpi(saveData, 'yes')
-    subjectdata.analysisOrder = bv_updateAnalysisOrder(subjectdata.analysisOrder, cfgIn);
+%     subjectdata.analysisOrder = bv_updateAnalysisOrder(subjectdata.analysisOrder, cfgIn);
     
     if strcmpi(cleanDatafile, 'yes')
         bv_saveData(subjectdata, data, outputStr);              % save both data and subjectdata to the drive
