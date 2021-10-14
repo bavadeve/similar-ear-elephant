@@ -17,6 +17,9 @@ function [Ss, gamma, lambda] = gr_calculateSmallworldnessWs(Ws, edgeType, randWs
 % If options inputs are not given, they will be calculated in the function,
 % which makes the function take longer.
 
+if nargin<2
+    edgeType = 'weighted';
+end
 
 doRandomize = 0;
 if ~exist('randWs', 'var') 

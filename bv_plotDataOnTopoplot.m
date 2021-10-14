@@ -36,26 +36,26 @@ if weighted && globNorm
     
     absWs = abs(Ws);
     
-    widthRange = [0.2 8];
+    widthRange = [0.1 4];
     normdataWidth = zeros(size(absWs));
     widthNrmA = (widthRange(2)-widthRange(1))/(max(absWs(I))-min(absWs(I)));
     widthNrmB = widthRange(2) - widthNrmA * max(absWs(I));
     normdataWidth(I) = widthNrmA * absWs(I) + widthNrmB;
     
-    alphaRange = [0.01 0.8];
+    alphaRange = [0.2 0.7];
     normdataAlpha = zeros(size(absWs));
     alphaNrmA = (alphaRange(2)-alphaRange(1))/(max(absWs(I))-min(absWs(I)));
     alphaNrmB = alphaRange(2) - alphaNrmA * max(absWs(I));
     normdataAlpha(I) = alphaNrmA * absWs(I) + alphaNrmB;
-    rng = minmax(absWs(I)');
+    rng = [min(absWs(I)) max(absWs(I))];
     nrmWs = abs(Ws ./ max(abs(Ws(:))));
 end
 
 
 for currW = 1:size(Ws,3)
-%     if globNorm
-%         hout{currW} = figure;
-%     end
+    %     if globNorm
+    %         hout{currW} = figure;
+    %     end
     W = squeeze(Ws(:,:,currW));
     W(isnan(W)) = 0;
     
@@ -66,8 +66,8 @@ for currW = 1:size(Ws,3)
     if weighted && ~globNorm
         I = find(W);
         absW = abs(W);
-        widthRange = [0.2 8];
-        alphaRange = [0.01 0.8];
+        widthRange = [0.1 4];
+        alphaRange = [0.2 0.7];
         
         
         if length(I) == 1
@@ -75,11 +75,13 @@ for currW = 1:size(Ws,3)
             normdataAlpha = zeros(size(absW));
             normdataWidth(I) = mean(widthRange);
             normdataAlpha(I) = mean(alphaRange);
+            
         elseif length(unique(abs(W(I)))) == 1
             normdataWidth = zeros(size(absW));
             normdataAlpha = zeros(size(absW));
             normdataWidth(I) = 2;
             normdataAlpha(I) = max(alphaRange);
+            
         else
             normdataWidth = zeros(size(absW ));
             widthNrmA = (widthRange(2)-widthRange(1))/(max(absW(I))-min(absW(I)));
@@ -92,7 +94,6 @@ for currW = 1:size(Ws,3)
             normdataAlpha(I) = alphaNrmA * absW(I) + alphaNrmB;
         end
         nrmW = abs(W ./ max(W(:)));
-
     end
     
     if size(Ws,3) > 1 %&& ~globNorm
@@ -104,7 +105,7 @@ for currW = 1:size(Ws,3)
     
     fprintf('creating topoplot %s...', num2str(currW))
     hold on
-%     W = tril(W);
+    %     W = tril(W);
     
     if nansum(W(:))~=0
         counter = 0;
@@ -136,7 +137,7 @@ for currW = 1:size(Ws,3)
                     y = lay.pos([i j],2);
                     
                     if ~weighted
-                        h(counter) = patch('xdata', x, 'ydata', y, 'Edgecolor', color, 'LineWidth', 3, 'edgealpha', 0.1);
+                        h(counter) = patch('xdata', x, 'ydata', y, 'Edgecolor', color, 'LineWidth', 3, 'edgealpha', 0.5);
                     elseif globNorm
                         h(counter) = patch(x,y, W(i,j)*[1 1], 'edgecolor',...
                             'flat','linewidth', normdataWidth(i,j,currW), 'edgealpha', ...
@@ -145,12 +146,12 @@ for currW = 1:size(Ws,3)
                         h(counter) = patch(x,y, W(i,j)*[1 1], 'edgecolor',...
                             'flat','linewidth', normdataWidth(i,j), 'edgealpha', ...
                             normdataAlpha(i,j));
-%                         
-%                         p2 = [x(1) y(1)];
-%                         p1 = [x(2) y(2)];
-%                         dp = p2 - p1;
-%                         quiver(p1(1),p1(2),dp(1),dp(2),0, 'Color', [0 0 1])
-
+                        %
+                        %                         p2 = [x(1) y(1)];
+                        %                         p1 = [x(2) y(2)];
+                        %                         dp = p2 - p1;
+                        %                         quiver(p1(1),p1(2),dp(1),dp(2),0, 'Color', [0 0 1])
+                        
                     end
                 end
             end
@@ -179,7 +180,7 @@ for currW = 1:size(Ws,3)
     if globNorm
         set(gca, 'CLim', rng)
     end
-    colorbar
+%     colorbar
     fprintf('done \n')
     
 end

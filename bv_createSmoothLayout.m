@@ -1,5 +1,6 @@
 function bv_createSmoothLayout(labels, grpvector, grplabels, layoutname)
 
+ft_defaults();
 layoutfolder = fileparts(which('EEG1010.lay'));
 if isempty(layoutfolder)
     error('layout folder for fieldtrip not found')

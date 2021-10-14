@@ -24,12 +24,10 @@ for iS = 1:n
             weights(I) = weights(I(randperm(numel(I))));
             I = find(weights > 0);
         end
+        
         Wrandomized(:,:,iS,iM) = squareform(weights);
 
-        
 %         Wrandomized(:,:,iS,iM) = null_model_und_sign(currW, 5, 0.1);
-        
-        
     end
     counter = counter + 1;
     fprintf(repmat('\b', 1, lng))

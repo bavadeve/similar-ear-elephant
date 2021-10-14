@@ -96,19 +96,19 @@ switch(method)
             cfg = [];
             cfg.saveData = 'no';
             cfg.triallength = triallength;
-            [data] = bv_cutAppendedIntoTrials(cfg, data);
+            [dataCut] = bv_cutAppendedIntoTrials(cfg, data);
         end
         
         % select data based on condition and select random trials
         cfg = [];
         if strcmpi(condition, 'all')
             if strcmpi(ntrials, 'all')
-                cfg.trials = 1:length(data.trial);
+                cfg.trials = 1:length(dataCut.trial);
             else
-                cfg.trials = sort(randperm(length(data.trial), ntrials));
+                cfg.trials = sort(randperm(length(dataCut.trial), ntrials));
             end
         else
-            itrl = find(ismember(data.trialinfo, condition));
+            itrl = find(ismember(dataCut.trialinfo, condition));
             if strcmpi(ntrials, 'all')
                 cfg.trials = itrl;
             else
@@ -126,8 +126,10 @@ switch(method)
         cfg.pad         = 'nextpow2';
         cfg.foilim      = [0 45];
         
-        evalc('freq = ft_freqanalysis(cfg, data);');
-        
+        evalc('freq = ft_freqanalysis(cfg, dataCut);');
+        cfg = [];
+        evalc('fd = ft_freqdescriptives(cfg, freq);');
+
         fprintf('\t\t with %1.0f trials ... ', size(freq.trialinfo,1))
         
         % connectivity analysis
@@ -150,16 +152,16 @@ switch(method)
         connectivity.trialinfo = freq.trialinfo;
         connectivity.dimord = 'chan_chan_freq';
         
-        % find removed channels and add a row of nans
-        cfg = [];
-        cfg.layout = 'biosemi32.lay';
-        cfg.skipcomnt = 'yes';
-        cfg.skipscale = 'yes';
-        evalc('layout = ft_prepare_layout(cfg);');
-        rmChannels = layout.label(not(ismember(layout.label, connectivity.label)));
-        if not(isempty(rmChannels))
-            connectivity = addRemovedChannels(connectivity, rmChannels);
-        end
+        %         % find removed channels and add a row of nans
+        %         cfg = [];
+        %         cfg.layout = 'biosemi32.lay';
+        %         cfg.skipcomnt = 'yes';
+        %         cfg.skipscale = 'yes';
+        %         evalc('layout = ft_prepare_layout(cfg);');
+        %         rmChannels = layout.label(not(ismember(layout.label, connectivity.label)));
+        %         if not(isempty(rmChannels))
+        %             connectivity = addRemovedChannels(connectivity, rmChannels);
+        %         end
         
         % set diagonal at zero if needed
         connectivity.spctrm = bv_setDiag(connectivity.spctrm, 0);
@@ -229,18 +231,18 @@ switch(method)
         connectivity.label = dataCut.label;
         connectivity.trialinfo = dataCut.trialinfo;
         
-%         % find removed channels and add a row of nans
-%         cfg = [];
-%         cfg.layout = 'biosemi32.lay';
-%         cfg.skipcomnt = 'yes';
-%         cfg.skipscale = 'yes';
-%         evalc('layout = ft_prepare_layout(cfg);');
-%         rmChannels = layout.label(not(ismember(layout.label, connectivity.label)));
-%         if not(isempty(rmChannels))
-%             connectivity = addRemovedChannels(connectivity, rmChannels);
-%         end
+        %         % find removed channels and add a row of nans
+        %         cfg = [];
+        %         cfg.layout = 'biosemi32.lay';
+        %         cfg.skipcomnt = 'yes';
+        %         cfg.skipscale = 'yes';
+        %         evalc('layout = ft_prepare_layout(cfg);');
+        %         rmChannels = layout.label(not(ismember(layout.label, connectivity.label)));
+        %         if not(isempty(rmChannels))
+        %             connectivity = addRemovedChannels(connectivity, rmChannels);
+        %         end
         
-        case 'pte' % based on PhaseTE.m
+    case 'pte' % based on PhaseTE.m
         
         freqLabel = {'delta', 'theta', 'alpha1', 'alpha2', 'beta', 'gamma'};
         freqRng = {[1 3], [3 6], [6 9], [9 12], [12 25], [25, 45]};
@@ -288,7 +290,7 @@ switch(method)
             for iTrl = 1:length(dataCut.trial)
                 evalc('PTEs(:,:,iTrl) = PhaseTE_MF(dataCut.trial{iTrl}'');');
             end
-
+            
             if strcmpi(keeptrials, 'yes')
                 connectivity.ptespctrm(:,:,:, iFreq) = PTEs;
                 connectivity.dimord = 'chan_chan_trl_freq';

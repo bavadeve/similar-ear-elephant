@@ -38,7 +38,7 @@ for i = 1:m
         continue
     end
     
-%     currWnrms(:,:,i) = gr_normalizeW(currW);
+    currWnrm = gr_normalizeW(currW);
     
     try
         [SWPs(i),delta_Cs(i),delta_Ls(i)] = small_world_propensity(currW, 'O');

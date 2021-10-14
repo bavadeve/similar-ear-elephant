@@ -9,8 +9,8 @@ chanX = lay.pos(:,1);
 chanY = lay.pos(:,2);
 
 opt = {'interpmethod','v4','interplim','mask','gridscale',1000,'outline',lay.outline, ...
-    'shading','flat','isolines',10,'mask', lay.mask ,'style','isofill', 'conv', 'off', 'datmask', [], ...
-    'clim', [min(dat) max(dat)]};
+    'flat','interp','isolines',10,'mask', lay.mask ,'style','isofill', 'conv', 'off', 'datmask', [], ...
+    'clim', lim};
 
 [Zi, h] = ft_plot_topo(chanX,chanY,dat,opt{:});
 

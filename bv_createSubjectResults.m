@@ -6,6 +6,9 @@ eval('setOptions')
 fprintf('Creating subject results \n')
 fprintf('\t Creating subjectsummary ... ')
 subjectdirflags = dir([PATHS.SUBJECTS filesep '*' OPTIONS.sDirString '*']);
+subjectrmflags = dir([PATHS.REMOVED filesep '*' OPTIONS.sDirString '*']);
+
+subjectdirflags = [subjectdirflags; subjectrmflags];
 
 for i = 1:length(subjectdirflags)
     lng = printPercDone(length(subjectdirflags), i);
