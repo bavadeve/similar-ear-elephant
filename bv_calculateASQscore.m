@@ -9,16 +9,7 @@ switch asqTable.form{1}
         if length(negatives) ~= size(answers,2)
             error('Hardcoding does not match given asqTable')
         end
-        for i = 1:size(answers,2)
-            if negatives(i)
-                answerScores(:, i) = strcmpi(answers(:,i), 'A') * 10 + strcmpi(answers(:,i), 'B') * 5;
-            else
-                answerScores(:, i) = strcmpi(answers(:,i), 'C') * 10 + strcmpi(answers(:,i), 'B') * 5;
-            end
-        end
-        worriesScores = strcmpi(worries, '1') * 5;
-        scores = sum(answerScores + worriesScores,2);
-        
+
     case 'ASQ10mnd'
         negatives = logical([0 0 0 0 0 1 0 0 1 0 0 1 0 1 1 0 0 1 0 0 1 0 0 0 0 0 1]);
         answers = asqTable{:,contains(asqTable.Properties.VariableNames, '_SC')};
@@ -26,13 +17,11 @@ switch asqTable.form{1}
         if length(negatives) ~= size(answers,2)
             error('Hardcoding does not match given asqTable')
         end
-        for i = 1:size(answers,2)
-            if negatives(i)
-                answerScores(:, i) = strcmpi(answers(:,i), 'A') * 10 + strcmpi(answers(:,i), 'B') * 5;
-            else
-                answerScores(:, i) = strcmpi(answers(:,i), 'C') * 10 + strcmpi(answers(:,i), 'B') * 5;
-            end
-        end
-        worriesScores = strcmpi(worries, '1') * 5;
-        scores = sum(answerScores + worriesScores,2);
+        
+
 end
+
+answerScores = (contains(answers, 'A') & negatives) .*10 + (contains(answers, 'B') .*5);
+worriesScores = strcmpi(worries, '1') .*5;
+
+scores = sum(answerScores + worriesScores,2);
