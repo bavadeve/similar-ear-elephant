@@ -6,18 +6,19 @@ counter = 0;
 while 1
     counter = counter + 1;
     line = fgetl(fid);
-    
+
     if line==-1
         fclose all;
         break
     end
-    
+
     dat{counter} = line;
 end
 a = cellfun(@strsplit, dat(find(contains(dat, ...
     '           ESTIMATED CORRELATION MATRIX FOR THE LATENT VARIABLES'))+1), 'Un',0);
 labels = unique(cat(2,a{:}), 'stable');
 labels(1) = [];
+fitout.varlabels = labels;
 
 a = regexp(dat,'\d.*','Match');
 c = cellfun(@(x) strsplit(x{:},' '), a,'un',0);
@@ -44,7 +45,7 @@ fitout.input = dat(startInd:endInd)';
 
 %% Find and label seperate models
 indx = contains(dat, 'ESTIMATED SAMPLE STATISTICS FOR');
-fitout.label = cellfun(@(x) x{end}, cellfun(@strsplit, dat(indx),'un',0), 'un',0);
+fitout.group = cellfun(@(x) x{end}, cellfun(@strsplit, dat(indx),'un',0), 'un',0);
 
 %% Read Model Fit Information
 startInd = find(contains(dat, 'MODEL FIT INFORMATION'));
@@ -82,9 +83,9 @@ fitout.fitinfo.chi2.p = bv_getNumbers(chiSquareInfo{contains(chiSquareInfo, ' P-
 fitout.fitinfo.chi2.scaling = bv_getNumbers(chiSquareInfo{contains(chiSquareInfo, ' Scaling')});
 
 % If doing groups -> Chi-square contribution
-if length(fitout.label) > 1
-    for i = 1:length(fitout.label)
-        fitout.fitinfo.chi2contribution.(fitout.label{i}) = bv_getNumbers(fitInfo{contains(fitInfo, [' ' fitout.label{i}])});
+if length(fitout.group) > 1
+    for i = 1:length(fitout.group)
+        fitout.fitinfo.chi2contribution.(fitout.group{i}) = bv_getNumbers(fitInfo{contains(fitInfo, [' ' fitout.group{i}])});
     end
 end
 
@@ -97,6 +98,108 @@ fitout.fitinfo.RMSEA.est = bv_getNumbers(fitInfo{contains(fitInfo, ' Estimate')}
 % CFI/TLI
 fitout.fitinfo.CFI = bv_getNumbers(fitInfo{contains(fitInfo, ' CFI')});
 fitout.fitinfo.TLI = bv_getNumbers(fitInfo{contains(fitInfo, ' TLI')});
+
+startInd = find(ismember(dat, 'STANDARDIZED MODEL RESULTS'));
+endInd = find(ismember(dat, 'QUALITY OF NUMERICAL RESULTS'))-1;
+
+dat2use = dat(startInd:endInd);
+counter = 0;
+est = zeros(length(fitout.varlabels), length(fitout.varlabels), length(fitout.group));
+se = zeros(length(fitout.varlabels), length(fitout.varlabels), length(fitout.group));
+p = zeros(length(fitout.varlabels), length(fitout.varlabels), length(fitout.group));
+while counter < length(dat2use)
+    counter = counter + 1;
+    line = dat2use{counter};
+
+    if isempty(line)
+        continue
+    end
+
+    linesplit = strsplit(line);
+    linesplit(cellfun(@isempty, linesplit)) =[];
+    if contains(line, fitout.group)
+        groupIndx = find(contains(fitout.group, linesplit));
+        continue
+
+    elseif contains(line, {'ON', 'WITH'})
+        tovar = find(contains(fitout.varlabels, linesplit));
+
+        while 1
+            counter = counter + 1;
+            line = dat2use{counter};
+
+            if isempty(line)
+                break
+            end
+
+            linesplit = strsplit(line);
+            linesplit(cellfun(@isempty, linesplit)) =[];
+            fromvar = find(contains(fitout.varlabels, linesplit));
+            a = cellfun(@(x) ismember(1,regexp(x, '^-?\d.*')), linesplit, 'Un',0);
+            b = linesplit([a{:}]);
+            c = regexp(b, '^-?\d.*', 'Match');
+            c = [c{:}];
+            d = sscanf(sprintf('%s', [c{:}]), '%f');
+
+            fitout.params.est(fromvar,tovar,groupIndx) = d(1);
+            fitout.params.se(fromvar,tovar,groupIndx) = d(2);
+            fitout.params.p(fromvar,tovar,groupIndx) = d(4);
+        end
+
+    elseif contains(line, {'Means', 'Intercepts'})
+        while 1
+            counter = counter + 1;
+            line = dat2use{counter};
+
+            if isempty(line)
+                break
+            end
+
+            linesplit = strsplit(line);
+            linesplit(cellfun(@isempty, linesplit)) =[];
+            fromvar = find(contains(fitout.varlabels, linesplit));
+            a = cellfun(@(x) ismember(1,regexp(x, '^-?\d.*')), linesplit, 'Un',0);
+            b = linesplit([a{:}]);
+            c = regexp(b, '^-?\d.*', 'Match');
+            c = [c{:}];
+            d = sscanf(sprintf('%s', [c{:}]), '%f');
+
+            fitout.means.est(fromvar,groupIndx) = d(1);
+            fitout.means.se(fromvar,groupIndx) = d(2);
+            fitout.means.p(fromvar,groupIndx) = d(4);
+        end
+
+    elseif contains(line, {'Variances'})
+        while 1
+            counter = counter + 1;
+            line = dat2use{counter};
+
+            if isempty(line)
+                break
+            end
+
+            linesplit = strsplit(line);
+            linesplit(cellfun(@isempty, linesplit)) =[];
+            fromvar = find(contains(fitout.varlabels, linesplit));
+            a = cellfun(@(x) ismember(1,regexp(x, '^-?\d.*')), linesplit, 'Un',0);
+            b = linesplit([a{:}]);
+            c = regexp(b, '^-?\d.*', 'Match');
+            c = [c{:}];
+            d = sscanf(sprintf('%s', [c{:}]), '%f');
+
+            fitout.var.est(fromvar,groupIndx) = d(1);
+            fitout.var.se(fromvar,groupIndx) = d(2);
+            fitout.var.p(fromvar,groupIndx) = d(4);
+        end
+    end
+end
+
+for i = 1:groupIndx
+    fitout.params.est(:,:,i) = rot90(flipud(triu(fitout.params.est(:,:,i))),-1) + tril(fitout.params.est(:,:,i));
+    fitout.params.se(:,:,i) = rot90(flipud(triu(fitout.params.se(:,:,i))),-1) + tril(fitout.params.se(:,:,i));
+    fitout.params.p(:,:,i) = rot90(flipud(triu(fitout.params.p(:,:,i))),-1) + tril(fitout.params.p(:,:,i));
+end
+
 
 %% Read Correlation Matrices
 fitout.corr.vals = addMatrices(dat, ...
@@ -119,6 +222,8 @@ fitout.cov.P = addMatrices(dat, ...
     '           TWO-TAILED P-VALUE FOR ESTIMATED COVARIANCE MATRIX FOR THE LATENT VARIABLES', ...
     lengthMatrix, noVarsWidth, labels);
 
+
+
 function matOut = addMatrices(dat, str, lengthMatrix, noVarsWidth, labels)
 
 mat = nan(length(labels));
@@ -132,16 +237,16 @@ for i = 1:length(startInd)
     b = dat(startInd(i):endInd(i))';
     b(not(cellfun(@isempty, regexp(b, '^  ')))) = [];
     b(cellfun(@isempty, b)) = [];
-    
+
     a = regexp(b,'\d.*','Match');
     c = cellfun(@(x) strsplit(x{:},' '), a,'un',0);
     d = cellfun(@(x) sscanf(sprintf('%s',x{2:end}), '%f'),c,'un',0);
-    
+
     ind = find(cellfun(@length, d)==1);
     mat1 = d(ind(1):ind(2)-1);
     mat2 = d(ind(2):ind(3)-1);
     mat3 = d(ind(3):end);
-    
+
     for j = 1:length(mat1)
         mat(j,1:length(mat1{j})) = mat1{j};
     end
@@ -153,3 +258,6 @@ for i = 1:length(startInd)
     end
     matOut(:,:,i) = mat;
 end
+bv_setDiag(matOut, 1);
+
+

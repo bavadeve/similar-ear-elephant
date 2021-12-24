@@ -24,4 +24,4 @@ end
 answerScores = (contains(answers, 'A') & negatives) .*10 + (contains(answers, 'B') .*5);
 worriesScores = strcmpi(worries, '1') .*5;
 
-scores = sum(answerScores + worriesScores,2);
+scores = mean(answerScores + worriesScores,2);
