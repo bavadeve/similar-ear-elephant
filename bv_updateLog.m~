@@ -37,7 +37,7 @@ if exist(logIn, 'file')
     fclose(fidold); fclose(fidnew);
     
     
-    if ~isempty(fieldnames(strct))
+    if isempty(fieldnames(strct))
         nameCoding = {'bv_createSubjectFolders', ...
             'SUBJECT FOLDER CREATION', 'bv_preprocResample', 'PREPROCESSING'};
         

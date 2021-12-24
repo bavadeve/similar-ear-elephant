@@ -1,5 +1,5 @@
 %% SET THE SUBJECT RANGE BEFORE RUNNING
-startSubject =  1;
+startSubject = 1;
 endSubject = 'end';
 
 clear PATHS
@@ -13,24 +13,23 @@ subjectFolders = dir([PATHS.SUBJECTS filesep '*' OPTIONS.sDirString '*']);
 subjectFolderNames = {subjectFolders.name};
 
 if ischar(startSubject)
-    startSubject = find(~cellfun(@isempty, strfind(subjectFolderNames, startSubject)));
+    startSubject = find(contains(subjectFolderNames, startSubject));
 end
 if ischar(endSubject)
     if strcmp(endSubject, 'end')
         endSubject = length(subjectFolderNames);
     else
-        endSubject = find(~cellfun(@isempty, strfind(subjectFolderNames, endSubject)));
+        endSubject = find(contains(subjectFolderNames, endSubject));
     end
 end
 
 save([PATHS.CONFIG filesep 'OptionsAndPaths.mat'], 'OPTIONS', 'PATHS')
 
-%% PREPROCESSING AND RESAMPLING
+%% PREPROCESSING AND RESAMPLING COHERENCE
 clear OPTIONS
 eval('setOptions')
 
 cfg             = OPTIONS.PREPROC;
-
 % save options to preproc folder
 if strcmpi(cfg.saveData, 'yes')
     preproc_cfg = cfg;
@@ -40,112 +39,113 @@ if strcmpi(cfg.saveData, 'yes')
     save([PATHS.PREPROC filesep 'configfile.mat'], 'preproc_cfg')
 end
 
-counter = 0;
+updateWaitbar = waitbarParfor(length(startSubject:endSubject), "Preprocessing...");
 for iSubjects = startSubject:endSubject
-    counter = counter + 1;
-    fprintf('%1.0f/%1.0f\n', counter, length(startSubject:endSubject))    currSubject = subjectFolderNames{iSubjects};
     
-    cfg.currSubject = currSubject;
-    
-    data = bv_preprocResample(cfg);
-    
+        currSubject = subjectFolderNames{iSubjects};
+        cfg             = OPTIONS.PREPROC;
+        cfg.currSubject = currSubject;
+        cfg.quiet       = 'no';
+        data = bv_preprocResample(cfg);
+        updateWaitbar(); 
 end
 
 
-%% COMPONENT CALCULATION
+%% CALCULATE ARTEFACTS IN PREPROC DATA
+setupSubjects
+updateWaitbar = waitbarParfor(length(startSubject:endSubject), "Artefact detection (preprocessed data)...");
 eval('setOptions')
-counter = 0;
-for iSubjects = startSubject:endSubject
-    counter = counter + 1;
-    fprintf('%1.0f/%1.0f\n', counter, length(startSubject:endSubject))    currSubject = subjectFolderNames{iSubjects};
+parfor iSubjects = startSubject:endSubject
+    currSubject = subjectFolderNames{iSubjects};
     
-    cfg             = OPTIONS.COMP;
+    cfg             = OPTIONS.ARTFCTPREPROC;
+    cfg.quiet       = 'yes';
     cfg.currSubject = currSubject;
     
-    comp = bv_compAnalysis(cfg);
+    artefactdef = bv_createArtefactStruct(cfg);
+    updateWaitbar(); 
 end
 
-%% COMPONENT REMOVAL
-eval('setOptions')
-counter = 0;
-for iSubjects = startSubject:endSubject
-    counter = counter + 1;
-    fprintf('%1.0f/%1.0f\n', counter, length(startSubject:endSubject))    currSubject = subjectFolderNames{iSubjects};
-    
-    cfg             = OPTIONS.COMPREMOVED;
-    cfg.currSubject = currSubject;
-    
-    data = bv_removeComps(cfg);
-end
 
-%% REMOVING POOR CHANNELS
+%% SET CHANNELS TO REMOVE
+setupSubjects
+updateWaitbar = waitbarParfor(length(startSubject:endSubject), "Find channels to remove...");
 eval('setOptions')
-counter = 0;
-for iSubjects = startSubject:endSubject
-    counter = counter + 1;
-    fprintf('%1.0f/%1.0f\n', counter, length(startSubject:endSubject))    currSubject = subjectFolderNames{iSubjects};
+parfor iSubjects = startSubject:endSubject
+    currSubject = subjectFolderNames{iSubjects};
     
     cfg             = OPTIONS.RMCHANNELS;
     cfg.currSubject = currSubject;
+    cfg.quiet       = 'yes';
+    cfg.overwrite = 'yes';
     
-    data = bv_artefactRejection(cfg);
+    data = bv_removeChannels(cfg);
+    updateWaitbar();
+    
 end
 
-
-%% REREFERENCING
+%% PREPROCESSING AGAIN WITH REREF AND WITHOUT REMOVED CHANNELS
 eval('setOptions')
-counter = 0;
-for iSubjects = startSubject:endSubject
-    counter = counter + 1;
-    fprintf('%1.0f/%1.0f\n', counter, length(startSubject:endSubject))    currSubject = subjectFolderNames{iSubjects};
+setupSubjects
+updateWaitbar = waitbarParfor(length(startSubject:endSubject), "Preprocess (without removed channels)...");
+parfor iSubjects = startSubject:endSubject
+    currSubject = subjectFolderNames{iSubjects};
     
     cfg             = OPTIONS.REREF;
     cfg.currSubject = currSubject;
+    cfg.quiet = 'yes';
     
-    data = bv_averageReref(cfg);
+    data = bv_preprocResample(cfg);
+    updateWaitbar();
+
 end
 
-
-%% REMOVING POOR TRIALS
+%% CALCULATE ARTEFACTS IN RMCHANNELS DATA
 eval('setOptions')
-counter = 0;
-for iSubjects = startSubject:endSubject
-    counter = counter + 1;
-    fprintf('%1.0f/%1.0f\n', counter, length(startSubject:endSubject))    currSubject = subjectFolderNames{iSubjects};
-    
-    cfg                 = OPTIONS.CLEANED;
-    cfg.currSubject     = currSubject;
-    
-    data = bv_artefactRejection(cfg);
-end
+setupSubjects
+updateWaitbar = waitbarParfor(length(startSubject:endSubject), "Artefact detection (clean preprocessed data)...");
 
-
-%% APPEND BASED ON SAMPLEINFO
-eval('setOptions')
-counter = 0;
 for iSubjects = startSubject:endSubject
-    counter = counter + 1;
-    fprintf('%1.0f/%1.0f\n', counter, length(startSubject:endSubject))    currSubject = subjectFolderNames{iSubjects};
     
+    currSubject = subjectFolderNames{iSubjects};
+    
+    cfg             = OPTIONS.ARTFCTRMCHANNELS;
     cfg.currSubject = currSubject;
-    cfg.inputStr    = 'CLEANED';
-    cfg.outputStr   = 'appended';
-    cfg.saveData    = 'yes';
+    cfg.quiet = 'yes';
+    artefactdef = bv_createArtefactStruct(cfg);
+    updateWaitbar();
     
-    data = bv_appendCleanedData(cfg);
 end
 
-
-%% CUT APPENDED DATA INTO TRIALS
+%% CALCULATE DATALOSS BASED ON ARTFCTAFTER
 eval('setOptions')
-counter = 0;
+setupSubjects
+updateWaitbar = waitbarParfor(length(startSubject:endSubject), "Remove poor trials...");
+
 for iSubjects = startSubject:endSubject
-    counter = counter + 1;
-    fprintf('%1.0f/%1.0f\n', counter, length(startSubject:endSubject))    currSubject = subjectFolderNames{iSubjects};
+
+    currSubject = subjectFolderNames{iSubjects};
     
-    cfg = OPTIONS.DATACUT;
+    cfg             = OPTIONS.CLEANED;
     cfg.currSubject = currSubject;
+    cfg.quiet       = 'yes';
     
-    data = bv_cutAppendedIntoTrials(cfg);
+    data = bv_cleanData(cfg);
+    updateWaitbar();
 end
 
+%% APPEND DATA
+eval('setOptions')
+setupSubjects
+updateWaitbar = waitbarParfor(length(startSubject:endSubject), "Append data...");
+
+parfor iSubjects = startSubject:endSubject
+
+    cfg = OPTIONS.APPENDED;
+    cfg.currSubject = subjectFolderNames{iSubjects};
+    cfg.quiet = 'yes';
+    
+    data = bv_appendfieldtripdata(cfg);
+    updateWaitbar();
+    
+end
