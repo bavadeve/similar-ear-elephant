@@ -12,13 +12,13 @@ function data = bv_appendfieldtripdata(cfg, dataOld)
 % INPUTS:
 % needs the following fields in cfg-structure in the case of no data-input:
 %   cfg.currSubject = 'string', subject folder name to analyze
-%   cfg.inputStr    = 'string', data to be loaded in, using bv_check4data,
+%   cfg.inputName    = 'string', data to be loaded in, using bv_check4data,
 %                       based on subjectdata.PATHS field name (f.e.
 %                       'APPENDED')%
 %   cfg.saveData    = 'yes/no', determines whether data is saved to disk in
-%                       subjectfolder, based on cfg.outputStr with
+%                       subjectfolder, based on cfg.outputName with
 %                       bv_saveData
-%   cfg.outputStr   = 'string', used to save data to unique file, with
+%   cfg.outputName   = 'string', used to save data to unique file, with
 %                       unique entry into subjectdata.PATHS
 %   cfg.pathsFcn    = path to paths function needed to run
 %                       analysis-pipeline (default: './setPaths')
@@ -35,35 +35,55 @@ function data = bv_appendfieldtripdata(cfg, dataOld)
 
 %%%% get general options and load in data if necessary %%%%
 currSubject = ft_getopt(cfg, 'currSubject');
-inputStr    = ft_getopt(cfg, 'inputStr');
-outputStr   = ft_getopt(cfg, 'outputStr');
+inputName    = ft_getopt(cfg, 'inputName');
+outputName   = ft_getopt(cfg, 'outputName');
 saveData    = ft_getopt(cfg, 'saveData');
 pathsFcn    = ft_getopt(cfg, 'pathsFcn', 'setPaths');
 optionsFcn  = ft_getopt(cfg, 'optionsFcn', 'setOptions');
 overwrite   = ft_getopt(cfg, 'overwrite', 'no');
+quiet       = ft_getopt(cfg, 'quiet', 'no');
+
 cfgIn = cfg;
+
+if strcmpi(quiet, 'yes')
+    quiet = true;
+else
+    quiet = false;
+end
 
 if nargin < 2
     eval(optionsFcn);
     eval(pathsFcn);
-    disp(currSubject)
+    
     subjectFolderPath = [PATHS.SUBJECTS filesep currSubject];
-    [subjectdata] = bv_check4data(subjectFolderPath);
-    if isfield(subjectdata.PATHS, upper(outputStr))
-        if exist(subjectdata.PATHS.(upper(outputStr)), 'file') & strcmpi(overwrite, 'no')
-            fprintf('\t file already exists, not overwriting ... \n')
-            data = [];
-            return
+    
+    if strcmpi(overwrite, 'no') & strcmpi(saveData, 'yes') & ...
+            exist([subjectFolderPath filesep currSubject '_' upper(outputName) '.mat'])
+        if ~quiet
+            fprintf('\t !!!%s already found, not overwriting ... \n', upper(outputName))
         end
+        data = [];
+        return
     end
     
-    [subjectdata, dataOld] = bv_check4data(subjectFolderPath, inputStr);
+    if ~quiet
+        disp(currSubject)
+        [subjectdata] = bv_check4data(subjectFolderPath);
+    else
+        evalc('[subjectdata] = bv_check4data(subjectFolderPath);');
+    end
+
+    if ~quiet
+        [subjectdata, ~, dataOld] = bv_check4data(subjectFolderPath, inputName);
+    else
+        evalc('[subjectdata, ~, dataOld] = bv_check4data(subjectFolderPath, inputName);');
+    end
 else
     saveData = 'no';
 end
 
 %%%% calculating own trl for appending data %%%%
-fprintf('\t appending cleaned data based on data.sampleinfo ... ')
+if ~quiet; fprintf('\t appending cleaned data based on data.sampleinfo ... '); end
 fsample = dataOld.fsample;
 triallength = size(dataOld.trial{1},2) ./ 512;
 startTrial = dataOld.sampleinfo(:,1);
@@ -78,12 +98,12 @@ trl = [tmptrl zeros(length(tmptrialinfo),1) tmptrialinfo];
 cfg = [];
 cfg.trl = trl;
 evalc('data = ft_redefinetrial(cfg, dataOld);');
-fprintf('done! \n')
+if ~quiet; fprintf('done! \n'); end
 
 if strcmpi(saveData, 'yes')
-    
-%     subjectdata.analysisOrder = bv_updateAnalysisOrder(subjectdata.analysisOrder, cfgIn);
-    bv_updateSubjectSummary([PATHS.SUMMARY filesep 'SubjectSummary.mat'], subjectdata)
-    
-    bv_saveData(subjectdata, data, outputStr);
+    if ~quiet
+        bv_saveData(subjectdata, data, outputName);
+    else
+        evalc('bv_saveData(subjectdata, data, outputName);');
+    end
 end

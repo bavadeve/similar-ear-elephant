@@ -1,12 +1,12 @@
-function [var2mplusOut, uniqueSubjects] = bv_prepareForMPlus(inTable, groupingVarName, var2mplusIn, nanval, zshare)
+function [var2mplusOut, uniqueSubjects] = bv_prepareForMPlus(inTable, groupingVarName, var2mplusIn, nanval, zscoring)
 %  usage:
 %   [ outVar ] = bv_prepareForMPlus( inVar, groupingVar )
 
 if nargin < 4
-    nanval = -999;
+    nanval = NaN;
 end
 if nargin < 5
-    zshare = true;
+    zscoring = false;
 end
 
 
@@ -87,9 +87,11 @@ for i = 1:length(uniqueSubjects)
         end
     end
 end
-if zshare
+if zscoring
     var2mplusOut = bv_nanZScore(var2mplusOut);
 end
-var2mplusOut(isnan(var2mplusOut)) = nanval;
+if ~iscell(var2mplusOut)
+    var2mplusOut(isnan(var2mplusOut)) = nanval;
+end
 
 

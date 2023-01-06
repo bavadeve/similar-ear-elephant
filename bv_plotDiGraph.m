@@ -1,4 +1,4 @@
-function hout = bv_plotDataOnTopoplot(Ws, lay, propThr, globNorm, weighted, color, subplotlabels)
+function hout = bv_plotDiGraph(Ws, lay, propThr, globNorm, weighted, color, subplotlabels)
 
 if nargin < 4
     globNorm = false;
@@ -113,8 +113,8 @@ for currW = 1:size(Ws,3)
             for j = 1:size(W,2)
                 if W(i,j)==0
                     continue
-                    %                 elseif j > i
-                    %                     continue
+                elseif j > i
+                    continue
                 end
                 
                 counter = counter + 1;
@@ -137,13 +137,13 @@ for currW = 1:size(Ws,3)
                     y = lay.pos([i j],2);
                     
                     if ~weighted
-                        h(counter) = patch('xdata', x, 'ydata', y, 'Edgecolor', color, 'LineWidth', 3, 'edgealpha', 0.1);
+                        h(counter) = arrows('xdata', x, 'ydata', y, 'Edgecolor', color, 'LineWidth', 3, 'edgealpha', 0.5);
                     elseif globNorm
-                        h(counter) = patch(x,y, W(i,j)*[1 1], 'edgecolor',...
+                        h(counter) = arrows(x,y, W(i,j)*[1 1], 0,'edgecolor',...
                             'flat','linewidth', normdataWidth(i,j,currW), 'edgealpha', ...
                             normdataAlpha(i,j,currW));
                     else
-                        h(counter) = patch(x,y, W(i,j)*[1 1], 'edgecolor',...
+                        h(counter) = arrows(x,y, W(i,j)*[1 1], 0,'edgecolor',...
                             'flat','linewidth', normdataWidth(i,j), 'edgealpha', ...
                             normdataAlpha(i,j));
                         %
@@ -167,8 +167,8 @@ for currW = 1:size(Ws,3)
         end
     end
     
-    scatter(lay.pos(:,1), lay.pos(:,2), (sum(W)+1/50)*50, 'MarkerFaceColor', 'k', ...
-        'MarkerFaceAlpha', 0.5, 'MarkerEdgeAlpha', 0.2)
+    scatter(lay.pos(:,1), lay.pos(:,2), 10, 'MarkerFaceColor', 'k', ...
+        'MarkerEdgeColor', 'k')
     line(lay.outline{1}(:,1), lay.outline{1}(:,2), 'LineWidth', 3, 'color', ...
         [0.5 0.5 0.5])
     
@@ -180,12 +180,12 @@ for currW = 1:size(Ws,3)
     if globNorm
         set(gca, 'CLim', rng)
     end
-    if weighted
-        colorbar
-    end
+    colorbar
     fprintf('done \n')
     
 end
+
+
 
 function circular_arrow(radius, centre, colour, linewidth, edgealpha, weighted)
 % Adapted from: https://nl.mathworks.com/matlabcentral/fileexchange/59917-circular_arrow
@@ -271,7 +271,7 @@ while i < 3
     v_tmp(:,1) = v{i}(1,:)+xc;
     v_tmp(:,2) = v{i}(2,:)+yc;
     if weighted
-        h_patch = patch([v_tmp(:,1); NaN], [v_tmp(:,2); NaN], repmat(colour,1,length(v_tmp)+1), ...
+        h_patch = arrows([v_tmp(:,1); NaN], [v_tmp(:,2); NaN], repmat(colour,1,length(v_tmp)+1), ...
             'EdgeColor', 'flat', 'FaceColor', 'none', 'linewidth',linewidth, 'edgealpha', edgealpha);
     else
         plot(v{i}(1,:)+xc,v{i}(2,:)+yc,'Color', colour, 'LineWidth',3) % Plot arc, centered at P0

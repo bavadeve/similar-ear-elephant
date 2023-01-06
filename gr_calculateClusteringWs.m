@@ -39,7 +39,7 @@ for i = 1:m
             C(i) = mean(clustering_coef_bu(W));
         case 'weighted'
             Wnrm = gr_normalizeW(W);
-            C(i) = mean(clustering_coef_wu_sign(Wnrm,2));
+            C(i) = mean(clustering_coef_wu(Wnrm));
         case 'mst'
             Wnrm = double(W>0);
             C(i) = mean(clustering_coef_bu(Wnrm));

@@ -31,7 +31,7 @@ eval('setOptions')
 
 cfg             = OPTIONS.PREPROC;
 % save options to preproc folder
-if strcmpi(cfg.saveData, 'yes')
+if strcmpi(cfg.saveData, 'no')
     preproc_cfg = cfg;
     preproc_cfg.date = clock;
     preproc_cfg.subjects = subjectFolderNames(startSubject:endSubject);
@@ -46,6 +46,7 @@ for iSubjects = startSubject:endSubject
         cfg             = OPTIONS.PREPROC;
         cfg.currSubject = currSubject;
         cfg.quiet       = 'no';
+        
         data = bv_preprocResample(cfg);
         updateWaitbar(); 
 end
@@ -55,11 +56,11 @@ end
 setupSubjects
 updateWaitbar = waitbarParfor(length(startSubject:endSubject), "Artefact detection (preprocessed data)...");
 eval('setOptions')
-parfor iSubjects = startSubject:endSubject
+for iSubjects = startSubject:endSubject
     currSubject = subjectFolderNames{iSubjects};
     
     cfg             = OPTIONS.ARTFCTPREPROC;
-    cfg.quiet       = 'yes';
+    cfg.quiet       = 'no';
     cfg.currSubject = currSubject;
     
     artefactdef = bv_createArtefactStruct(cfg);
@@ -71,13 +72,12 @@ end
 setupSubjects
 updateWaitbar = waitbarParfor(length(startSubject:endSubject), "Find channels to remove...");
 eval('setOptions')
-parfor iSubjects = startSubject:endSubject
+for iSubjects = startSubject:endSubject
     currSubject = subjectFolderNames{iSubjects};
     
     cfg             = OPTIONS.RMCHANNELS;
     cfg.currSubject = currSubject;
-    cfg.quiet       = 'yes';
-    cfg.overwrite = 'yes';
+    cfg.quiet       = 'no';
     
     data = bv_removeChannels(cfg);
     updateWaitbar();
@@ -88,12 +88,12 @@ end
 eval('setOptions')
 setupSubjects
 updateWaitbar = waitbarParfor(length(startSubject:endSubject), "Preprocess (without removed channels)...");
-parfor iSubjects = startSubject:endSubject
+for iSubjects = startSubject:endSubject
     currSubject = subjectFolderNames{iSubjects};
     
     cfg             = OPTIONS.REREF;
     cfg.currSubject = currSubject;
-    cfg.quiet = 'yes';
+    cfg.quiet = 'no';
     
     data = bv_preprocResample(cfg);
     updateWaitbar();
@@ -111,7 +111,7 @@ for iSubjects = startSubject:endSubject
     
     cfg             = OPTIONS.ARTFCTRMCHANNELS;
     cfg.currSubject = currSubject;
-    cfg.quiet = 'yes';
+    cfg.quiet = 'no';
     artefactdef = bv_createArtefactStruct(cfg);
     updateWaitbar();
     
@@ -128,7 +128,7 @@ for iSubjects = startSubject:endSubject
     
     cfg             = OPTIONS.CLEANED;
     cfg.currSubject = currSubject;
-    cfg.quiet       = 'yes';
+    cfg.quiet       = 'no';
     
     data = bv_cleanData(cfg);
     updateWaitbar();
@@ -139,11 +139,11 @@ eval('setOptions')
 setupSubjects
 updateWaitbar = waitbarParfor(length(startSubject:endSubject), "Append data...");
 
-parfor iSubjects = startSubject:endSubject
+for iSubjects = startSubject:endSubject
 
     cfg = OPTIONS.APPENDED;
     cfg.currSubject = subjectFolderNames{iSubjects};
-    cfg.quiet = 'yes';
+    cfg.quiet = 'no';
     
     data = bv_appendfieldtripdata(cfg);
     updateWaitbar();

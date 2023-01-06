@@ -1,24 +1,40 @@
-function [subjectdata, varargout] = bv_check4data(subjectFolderPath, varargin)
+function [subjectdata, check, varargout] = bv_check4data(subjectFolderPath, varargin)
 
 nArgs = length(varargin);
-try
+
+check = true;
+if exist ([subjectFolderPath filesep 'Subject.mat'],'file')
     fprintf('\t loading Subject.mat ... ')
     load([subjectFolderPath filesep 'Subject.mat'])
     fprintf('done! \n')
-catch
-    error('No Subject.mat file found')
+else
+    warning('No Subject.mat file found')
+    check = false;
+    varargout = [];
+    return
 end
 
-for i = 1:nArgs
-    try
-        [~, filename, ext] = fileparts(subjectdata.PATHS.(upper(varargin{i})));
-        fprintf('\t loading %s%s ... ', filename, ext) 
-        output = load(subjectdata.PATHS.(upper(varargin{i})));
-        fprintf('done! \n')
-        fields = fieldnames(output);
-        eval('varargout{i} = output.(fields{1});');
-    catch
-        error('No data found for inputStr %s', varargin{i})
+[~, subjectName] = fileparts(subjectFolderPath);
+if ~isempty(varargin)
+    for i = 1:nArgs
+        if isfield(subjectdata.PATHS, upper(varargin{i}))
+            [~, filename, ext] = fileparts(subjectdata.PATHS.(upper(varargin{i})));
+            if exist(subjectdata.PATHS.(upper(varargin{i})),'file')
+                fprintf('\t loading %s%s ... ', filename, ext)
+                output = load(subjectdata.PATHS.(upper(varargin{i})));
+                fprintf('done! \n')
+                fields = fieldnames(output);
+                eval('varargout{i} = output.(fields{1});');
+            else
+                warning('%s: %s not found', subjectName, upper(varargin{i}))
+                check = false;
+                varargout{i} = [];
+            end
+        else
+            warning('%s: %s is no field in subjectdata.PATHS', subjectName, upper(varargin{i}))
+            check = false;
+            varargout{i} = [];
+        end
     end
 end
 

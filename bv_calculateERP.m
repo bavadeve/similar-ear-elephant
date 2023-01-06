@@ -3,32 +3,59 @@ function ERPdata = bv_calculateERP(cfg, data)
 pathsFcn        = ft_getopt(cfg, 'pathsFcn', 'setPaths');
 currSubject     = ft_getopt(cfg, 'currSubject');
 overwrite       = ft_getopt(cfg, 'overwrite');
-inputStr        = ft_getopt(cfg, 'inputStr');
-outputStr       = ft_getopt(cfg, 'outputStr');
+outputName      = ft_getopt(cfg, 'outputName');
 saveData        = ft_getopt(cfg, 'saveData');
+quiet           = ft_getopt(cfg, 'quiet');
+resampleFs      = ft_getopt(cfg, 'resampleFs');
+lpfreq          = ft_getopt(cfg, 'lpfreq');
+hpfreq          = ft_getopt(cfg, 'hpfreq');
+trialfun        = ft_getopt(cfg, 'trialfun');
+
+if strcmpi(quiet, 'yes')
+    quiet = true;
+else
+    quiet = false;
+end
 
 if nargin < 2 % data preprocessing + loading
-    
-    if isempty(pathsFcn)
-        error('please add options function cfg.pathsFcn')
-    else
-        eval(pathsFcn)
-    end
-    
+    evalc(pathsFcn)
     disp(currSubject)
     subjectFolderPath = [PATHS.SUBJECTS filesep currSubject];
     [subjectdata] = bv_check4data(subjectFolderPath);
     if strcmpi(overwrite, 'no')
-        if isfield(subjectdata.PATHS, upper(outputStr))
-            if exist(subjectdata.PATHS.(upper(outputStr)), 'file')
-                fprintf('\t !!!%s already found, not overwriting ... \n', upper(outputStr))
-                artefactdef = [];
+        if isfield(subjectdata.PATHS, upper(outputName))
+            if exist(subjectdata.PATHS.(upper(outputName)), 'file')
+                fprintf('\t !!!%s already found, not overwriting ... \n', upper(outputName))
+                ERPdata = [];
                 return
             end
         end
     end
+
+    cfg = [];
+    cfg.resampleFs      = resampleFs; % [ number ]: resampling frequency.
+    cfg.trialfun        = 'trialfun_YOUth_ERP'; % 'string': filename of trialfun to be used (please add trialfun to your path)
+    cfg.hpfreq          = hpfreq; % [ number ]: high-pass filter frequency cut-off
+    cfg.lpfreq          = lpfreq; % [ number ]: low-pass filter frequency cut-off
+    cfg.pathsFcn        = pathsFcn;
+    cfg.saveData        = 'no';
+    cfg.reref           = 'yes'; % 'string': 'yes' to rereference data (default: 'no')
+    cfg.refelec         = 'all'; % rereference electrode (string / number / cell of strings)
+    cfg.interpolate     = 'yes';
+    cfg.rmChannels      = 'yes';
+    cfg.currSubject     = currSubject;
+    cfg.quiet           = quiet;
+    [ data ] = bv_preprocResample(cfg);
     
-    [~, data] = bv_check4data(subjectFolderPath, inputStr);
+    
+else
+    cfg = [];
+    cfg.hpfilter = 'yes';
+    cfg.hpfreq = hpfreq;
+    cfg.lpfilter = 'yes';
+    cfg.lpfreq = lpfreq;
+    data = ft_preprocessing(cfg, data);
+
 end
 
 if isempty(data.trial)
@@ -71,7 +98,10 @@ ERPdata.dimord = 'chan_time_trig';
 % **** saving data
 if strcmpi(saveData, 'yes')
        
-    bv_saveData(subjectdata, ERPdata, outputStr);              % save both data and subjectdata to the drive
-    bv_updateSubjectSummary([PATHS.SUMMARY filesep 'SubjectSummary'], subjectdata)
+    bv_saveData(subjectdata, ERPdata, outputName);              % save both data and subjectdata to the drive
+    
+    if ~quiet
+        bv_updateSubjectSummary([PATHS.SUMMARY filesep 'SubjectSummary'], subjectdata)
+    end
     
 end

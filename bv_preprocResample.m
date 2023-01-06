@@ -5,9 +5,12 @@ function [ data, subjectdata ] = bv_preprocResample(cfg)
 % subject information (stored in an individual Subject.mat file) gathered
 % with the BV_CREATESUBJECTFOLDERS, so please run that function first.
 % Order of preprocessing:
-%           1) resampling
-%           2) filtering
+%           1) reading-in data
+%           2) resampling
 %           3) rereferencing
+%           4) interpolating bad channels
+%           5) filtering
+%           6) cut data in trials
 %
 % Use as
 % [ data ] = bv_preprocResample( cfg )
@@ -15,36 +18,42 @@ function [ data, subjectdata ] = bv_preprocResample(cfg)
 % The input argument cfg is a configuration structure, which contains all
 % details for the preprocessing of the dataset.
 %
-% This function can be ran in two different ways. 1) Running after
-% BV_CREATESUBJECTFOLDERS has been ran, which creates unique subject
-% folders for each participant and saves a unique Subject.mat file in each
-% folder with subjectdata pertaining the experiment. 2) Running with a
-% dataset and hdrfile input. *IMPORTANT*, since there is in this case, no
-% personal subject folder. The data wil not be automatically saved. The
-% output data-file needs to be saved afterwards.
+% This function can be ran in two different ways. 1) After running
+% BV_CREATESUBJECTFOLDERS, which creates unique subject folders for each
+% participant and saves a unique Subject.mat file in each folder with
+% subjectdata pertaining the experiment. 2) Running with a
+% dataset and hdrfile input.
 %
 % For the first option the configuration structure needs to contain:
 %   cfg.currSubject     = 'string': subject folder name of the subject to
-%                           be analyzed
+%                           be analyzed (found in PATHS.SUBJECTS)
 %   cfg.pathsFcn        = 'string': filename of m-file to be read with all
 %                           necessary paths to run this function (default:
 %                           'setPaths'). Take care to add your trialfun
-%                           to your matlab path). For an example options
+%                           to your matlab path). For an example paths
 %                           fcn see setPaths.m
-%   cfg.saveData        = 'string': specifies whether data needs to be
-%                           saved to personal folder ('yes' or 'no',
-%                           default: 'no')
-%   cfg.outputStr       = 'string': addition to filename when saving, so
+%   cfg.saveData        = 'yes/no': specifies whether data needs to be
+%                           saved to personal folder (default: 'no')
+%   cfg.outputName      = 'string': addition to filename when saving, so
 %                           that the output filename becomes [currSubject
-%                           outputStr .mat]. Outputstr is also used used to
+%                           outputName .mat]. outputName is also used used to
 %                           save path two outputfile in the individuals
 %                           Subject.mat file (default: 'preproc')
+%   cfg.quiet           = true/false: set to true to prevent additional
+%                           details in command window (default: false)
 %
 % For the second option the configuration structure needs to contain:
 %   cfg.dataset         = 'string': filename of the dataset to be used
 %   cfg.headerfile      = 'string': filename of the headerfile to be used
 %
-% Input arguments that can be specified in both cases
+%
+% Optional arguments that can be specified in both use cases
+%   cfg.quiet           = true/false: set to true to prevent additional
+%                           details in command window (default: false)
+%   cfg.overwrite       = 'yes/no': set to 'yes' if already existing data
+%                           should not be overwritten (default: 'no')
+%
+% Input arguments that should be specified when cutting data in trials
 %   cfg.trialfun        = 'string': filename of trialfun to be used for
 %                           the preprocessing (take care to add your
 %                           trialfun to your matlab path). See for example
@@ -57,29 +66,36 @@ function [ data, subjectdata ] = bv_preprocResample(cfg)
 %
 % Input arguments that should be specified when filtering data
 %   cfg.hpfreq          = [ double ]: high-pass filter frequency cut-off,
-%                           (default: no high-pass filtering)
+%                           (default: [])
 %   cfg.lpfreq          = [ double ]: low-pass filter frequency cut-off,
-%                           (default: no low-pass filtering)
-%   cfg.notchfreq       = [ double ]: notch filter frequency, (default: no
-%                           notch filter)
+%                           (default: [])
+%   cfg.notchfreq       = [ double ]: notch filter frequency, (default: [])
 %   cfg.filttype        = 'string': filter type, possible options 'but'
 %                           (two-pass butterworth filter) or 'firws' (fir
 %                           windowed sync). (default: 'but')
 %
 % Input arguments that should be specified when referencing data
-%   cfg.reref           = 'string': specifies whether data needs to be
-%                           rereferenced ('yes' or 'no', default: 'no')
+%   cfg.reref           = 'yes/no': specifies whether data needs to be
+%                           rereference (default: 'no')
 %   cfg.refelec         = 'string' or { cell }: with EEG rereference
 %                           channel(s), can be 'all' for common average
 %                           reference (default: 'all')
 %
 %
-% Optional input arguments
-%   cfg.rmChannels      = 'string' or { cell }: Nx1 cell-array with
-%                           channels to be removed before preprocessing
-%                           (default = {}), see FT_CHANNELSELECTION for
-%                           extra details
-%
+% Input arguments that should be specificied when removing channels
+%   cfg.rmChannels      = 'yes/no': Set to yes if channels need to be
+%                           removed (default: 'no').
+%   cfg.channels2remove = 'string': or {cell} with strings. Labels of
+%                           channels to be removed. If empty (''), channels
+%                           will be removed based on
+%                           subjectdata.channels2remove. In that case,
+%                           make sure you run bv_removeChannels first
+%   cfg.interpolate     = 'yes/no': specifies whether missing channels need
+%                           to be interpolated (triangulation neighbors,
+%                           weighted method)
+%   cfg.mandatoryChans  = { cell }, with all channel labels that are
+%                           mandatory (subject will be removed if these
+%                           are absent), (default: {})
 %
 % See also BV_CREATESUBJECTFOLDERS, BV_SORTBASEDONTOPO,
 % BV_RESAMPLEEEGDATA, BV_SAVEDATA, BV_FILTEREEGDATA, FT_CHANNELSELECTION,
@@ -88,37 +104,39 @@ function [ data, subjectdata ] = bv_preprocResample(cfg)
 global PATHS
 
 % read in data from configuration file and (if necessary) set defaults
-currSubject = ft_getopt(cfg, 'currSubject');
-pathsFcn    = ft_getopt(cfg, 'pathsFcn');
-trialfun    = ft_getopt(cfg, 'trialfun');
-triggervalue = ft_getopt(cfg, 'triggervalue');
-prestim     = ft_getopt(cfg, 'prestim');
-poststim    = ft_getopt(cfg, 'poststim');
-saveData    = ft_getopt(cfg, 'saveData', 'no');
-outputStr   = ft_getopt(cfg, 'outputStr', 'preproc');
-resampleFs  = ft_getopt(cfg, 'resampleFs');
-hpfreq      = ft_getopt(cfg, 'hpfreq');
-lpfreq      = ft_getopt(cfg, 'lpfreq');
-notchfreq   = ft_getopt(cfg, 'notchfreq');
-filttype    = ft_getopt(cfg, 'filttype');
-reref       = ft_getopt(cfg, 'reref', 'no');
-refelec     = ft_getopt(cfg, 'refelec', 'all');
-rmChannels  = ft_getopt(cfg, 'rmChannels');
-dataset     = ft_getopt(cfg, 'dataset');
-hdrfile     = ft_getopt(cfg, 'hdrfile');
-overwrite   = ft_getopt(cfg, 'overwrite', 'no');
-removechans = ft_getopt(cfg, 'removechans', 'no');
-maxbadchans = ft_getopt(cfg, 'maxbadchans', 3);
+currSubject         = ft_getopt(cfg, 'currSubject');
+pathsFcn            = ft_getopt(cfg, 'pathsFcn');
+trialfun            = ft_getopt(cfg, 'trialfun');
+pretrig             = ft_getopt(cfg, 'pretrig');
+posttrig            = ft_getopt(cfg, 'pretrig');
+saveData            = ft_getopt(cfg, 'saveData', 'no');
+outputName          = ft_getopt(cfg, 'outputName', 'preproc');
+resampleFs          = ft_getopt(cfg, 'resampleFs');
+hpfreq              = ft_getopt(cfg, 'hpfreq');
+lpfreq              = ft_getopt(cfg, 'lpfreq');
+notchfreq           = ft_getopt(cfg, 'notchfreq');
+filttype            = ft_getopt(cfg, 'filttype');
+reref               = ft_getopt(cfg, 'reref', 'no');
+refelec             = ft_getopt(cfg, 'refelec', 'all');
+rmChannels          = ft_getopt(cfg, 'rmChannels', 'no');
+channels2remove     = ft_getopt(cfg, 'channels2remove');
+mandatoryChans      = ft_getopt(cfg, 'mandatoryChans', {});
+dataset             = ft_getopt(cfg, 'dataset');
+hdrfile             = ft_getopt(cfg, 'hdrfile');
+overwrite           = ft_getopt(cfg, 'overwrite', 'no');
+interpolate         = ft_getopt(cfg, 'interpolate', 'no');
+maxbadchans         = ft_getopt(cfg, 'maxbadchans', 3);
+quiet               = ft_getopt(cfg, 'quiet', 'no');
 
-analysisOrd = {};
-
-
+quiet = strcmpi(quiet, 'yes');
 
 if ~isempty(dataset) && ~isempty(hdrfile)
-    fprintf('running with raw \n \t dataset: %s and \n \t hdrfile: %s \n ', ...
-        dataset, hdrfile)
-    fprintf('**********************************************************\n')
-    fprintf('\n')
+    if ~quiet
+        fprintf('running with raw \n \t dataset: %s and \n \t hdrfile: %s \n ', ...
+            dataset, hdrfile)
+        fprintf('**********************************************************\n')
+        fprintf('\n')
+    end
     hasdata = 1;
     if strcmpi(saveData, 'yes')
         warning('data can not be saved when given dataset and hdrfile inputs, not saving ... ')
@@ -135,7 +153,17 @@ end
 if ~hasdata % check whether data needs to be loaded from subject.mat file
     
     eval(pathsFcn) % get paths necessary to run function
+    if ~quiet; disp(currSubject); end
     
+    if strcmpi(overwrite, 'no') & strcmpi(saveData, 'yes') & ...
+            exist([PATHS.SUBJECTS filesep currSubject filesep currSubject '_' upper(outputName) '.mat'])
+        if ~quiet
+            fprintf('\t !!!%s already found, not overwriting ... \n', upper(outputName))
+        end
+        data = [];
+        return
+    end
+
     % Try to load in individuals Subject.mat. If unknown --> throw error.
     try
         load([PATHS.SUBJECTS filesep currSubject filesep 'Subject.mat'], 'subjectdata')
@@ -143,55 +171,80 @@ if ~hasdata % check whether data needs to be loaded from subject.mat file
         error('Subject.mat file not found')
     end
     
-    disp(subjectdata.subjectName)
-    if strcmpi(overwrite, 'no')
-        if isfield(subjectdata.PATHS, upper(outputStr))
-            if exist(subjectdata.PATHS.(upper(outputStr)), 'file')
-                fprintf('\t !!!%s already found, not overwriting ... \n', upper(outputStr))
-                data = [];
-                return
-            end
-        end
-    end
-    
-    
-    fprintf('\t Setting up for preprocessing ... ')
+    if ~quiet; fprintf('\t Setting up for preprocessing ... '); end
     
     hdrfile = subjectdata.PATHS.HDRFILE;
     dataset = subjectdata.PATHS.DATAFILE;
     
-    fprintf('done! \n')
+    fid = fopen(dataset, 'r');
+    ln1 = fgetl(fid);
+    ln2 = fgetl(fid);
+    
+    if ln2 == -1
+        if ~quiet; fprintf('\n \t \t bdf file incomplete, removing subject and continueing ... \n'); end
+        subjectdata.nTrialsPreproc = 0;
+        
+        if ~quiet
+            bv_saveData(subjectdata)
+        else
+            evalc('bv_saveData(subjectdata);');
+        end
+        cfg = [];
+        cfg.optionsFcn = 'setOptions';
+        cfg.pathsFcn = 'setPaths';
+        removingSubjects(cfg, currSubject, 'preprocessing - incomplete bdf file')
+        data = [];
+        return
+    end
+else
+    
+    if ~quiet; fprintf('done! \n'); end
 end
 
 hdr = ft_read_header(hdrfile);
 
-if strcmpi(removechans, 'yes')
+removingChans = strcmpi(rmChannels, 'yes');
+if removingChans && ~isempty(channels2remove)
+    if isfield(subjectdata, 'channels2remove')
+        if ~isempty(subjectdata.channels2remove)
+            warning('\t overwriting subjectdata.channels2remove with given cfg.channels2remove \n')
+        end
+    end
+    subjectdata.channels2remove = channels2remove;
+end
+
+% If channels should be interpolated, but no channels are to be removed, no
+% new file will be created (compared to already existing file). Therefore,
+% skip this subject
+if strcmpi(interpolate, 'yes')
     if isempty(subjectdata.channels2remove) & exist(subjectdata.PATHS.PREPROC, 'file')
-        subjectdata.PATHS.(outputStr) = subjectdata.PATHS.PREPROC;
-        fprintf('\t no channels found to remove, continueing...')
+        subjectdata.PATHS.(outputName) = subjectdata.PATHS.PREPROC;
+        if ~quiet; fprintf('\t no channels found to remove, continueing...'); end
         evalc('[~,data] = bv_check4data(subjectdata.PATHS.SUBJECTDIR, ''PREPROC'');');
-        fprintf('done!\n')
         
         if strcmpi(saveData, 'yes')
-                       
-            bv_saveData(subjectdata);              % save both data and subjectdata to the drive
-            bv_updateSubjectSummary([PATHS.SUMMARY filesep 'SubjectSummary'], subjectdata)
-        
+            
+            if ~quiet
+                bv_saveData(subjectdata);              % save both data and subjectdata to the drive
+                bv_updateSubjectSummary([PATHS.SUMMARY filesep 'SubjectSummary'], subjectdata)
+            else
+                evalc('bv_saveData(subjectdata);');
+            end
         end
         
         return
     end
 end
 
-subjectdata.cfgs.(outputStr) = cfg; % save used config file in subjectdata
-subjectdata.rmChannels = rmChannels'; % save possible removed channels in subjectdata
+subjectdata.cfgs.(outputName) = cfg; % save used config file in subjectdata
 subjectdata.trialfun = trialfun;
 
-fprintf('\t loading in data  ')
-cfg = []; % start new cfg file for loading data
+if ~quiet; fprintf('\t loading in data  '); end
+
+cfg = [];
 
 % only read in EEG data (without possible removed channels)
-if isfield(subjectdata, 'channels2remove')
+if removingChans && isfield(subjectdata, 'channels2remove')
     if ~isempty(subjectdata.channels2remove)
         if length(subjectdata.channels2remove) > maxbadchans
             removingSubjects([], currSubject, 'too many noisy channels')
@@ -211,78 +264,57 @@ if isfield(subjectdata, 'channels2remove')
 else
     cfg.channel = {'EEG'};
 end
+
 cfg.dataset = dataset;
 cfg.headerfile = hdrfile;
 cfg.continuous = 'yes';
 
 if strcmpi(reref, 'yes')
-    fprintf('and rereferencing...');
-    fprintf('\n \t \t rereferencing to %s electrode ... ', refelec)
+    if ~quiet; fprintf('and rereferencing... \n \t \t rereferencing to %s electrode ... ', refelec); end
+    
     cfg.reref = 'yes';
     cfg.refchannel = refelec;
     
-    analysisOrd = [analysisOrd, 'reref'];
 end
 
-try
-    evalc('data = ft_preprocessing(cfg);');
-catch
-    fprintf('\n \t \t bdf file incomplete, removing subject and continueing ... \n')
-    
-    subjectdata.nTrialsPreproc = 0;
-    subjectdata.analysisOrder = strjoin(analysisOrd, '-');  % add analysis order so far to subjectdata
-    bv_saveData(subjectdata)
-    cfg = [];
-    cfg.optionsFcn = 'setOptions';
-    cfg.pathsFcn = 'setPaths';
-    removingSubjects(cfg, currSubject, 'preprocessing - incomplete bdf file')
-    data = [];
-    return
-end
+evalc('data = ft_preprocessing(cfg);');
 
-fprintf('done! \n')
+if ~quiet; fprintf('done! \n'); end
 
-if strcmpi(removechans, 'yes')
+if strcmpi(interpolate, 'yes')
     if isfield(subjectdata, 'channels2remove')
         if ~isempty(subjectdata.channels2remove)
-            fprintf(['\t the following channels will be interpolated ... ', ...
-                repmat('%s, ',1, length(subjectdata.channels2remove))], subjectdata.channels2remove{:})
+            if ~quiet
+                fprintf(['\t the following channels will be interpolated ... ', ...
+                    repmat('%s, ',1, length(subjectdata.channels2remove))], subjectdata.channels2remove{:})
+            end
+            
             cfg = [];
             cfg.missingchannel = subjectdata.channels2remove';
             cfg.method = 'weighted';
             cfg.neighbours = neighbours;
             cfg.layout = 'biosemi32.lay';
             evalc('data = ft_channelrepair(cfg, data);');
-            fprintf('done! \n')
+            if ~quiet; fprintf('done! \n'); end
         end
     end
 end
-data = bv_sortBasedOnTopo(data); % sorting data based on actual place of the electrodes. See function for more detail.
 
+if ~quiet
+    data = bv_sortBasedOnTopo(data); % sorting data based on actual place of the electrodes. See function for more detail.
+else
+    evalc('data = bv_sortBasedOnTopo(data);');
+end
 % *** Resampling (if a resampleFs is given)
 if ~isempty(resampleFs)
     
-    fprintf('\t Resampling data from %s to %s ... ', num2str(data.fsample), num2str(resampleFs))
+    if ~quiet; fprintf('\t Resampling data from %s to %s ... ', num2str(data.fsample), num2str(resampleFs)); end
     cfg = [];
     cfg.resamplefs  = resampleFs;
     % cfg.detrend     = 'yes';
-    try
-        evalc('data = ft_resampledata(cfg, data);');
-    catch
-        fprintf('\n \t \t bdf file empty, removing subject and continueing ... \n')
-        
-        subjectdata.nTrialsPreproc = 0;
-        subjectdata.analysisOrder = strjoin(analysisOrd, '-');  % add analysis order so far to subjectdata
-        bv_saveData(subjectdata)
-        cfg = [];
-        cfg.optionsFcn = 'setOptions';
-        cfg.pathsFcn = 'setPaths';
-        removingSubjects(cfg, currSubject, 'preprocessing - empty bdf file')
-        return
-    end
+    evalc('data = ft_resampledata(cfg, data);');
     
-    analysisOrd = [analysisOrd, 'res']; % managing analysis order to be saved later
-    fprintf('done! \n')
+    if ~quiet; fprintf('done! \n'); end
 end
 
 % *** Filtering data (if a hpfreq, lpfreq, or notchfreq is given).
@@ -294,9 +326,11 @@ if ~isempty(hpfreq) || isempty(lpfreq) || isempty(notchfreq)
     cfg.notchfreq   = notchfreq;
     cfg.filttype    = filttype;
     
-    data = bv_filterEEGdata(cfg, data);
-    
-    analysisOrd = [analysisOrd, 'filt']; % managing analysis order to save later
+    if ~quiet
+        data = bv_filterEEGdata(cfg, data);
+    else
+        evalc('data = bv_filterEEGdata(cfg, data);');
+    end
 end
 
 % *** cut data into trials based on trialfun
@@ -307,49 +341,60 @@ end
 % converted to resampled values. These are used in ft_redefinetrial to
 % redefine the trialstructure of the data file
 if ~isempty(trialfun)
-    fprintf('\t Redefining trialstructure based on %s ... \n', trialfun)
+    if ~quiet; fprintf('\t Redefining trialstructure based on %s ... \n', trialfun); end
     
     subjectdata.trialfun = trialfun;
+    
+    
     
     cfg = [];
     cfg.dataset = dataset;
     cfg.headerfile = hdrfile;
     cfg.trialfun = trialfun;
+    cfg.trialdef.pretrig = pretrig; % when to make a cut before stim presentation
+    cfg.trialdef.posttrig = posttrig; % when to make a cut after stim presentation
     if isempty(resampleFs)
         cfg.Fs = hdr.Fs;
     else
         cfg.Fs = resampleFs;
     end
     
-    try
-        evalc('cfg = ft_definetrial(cfg)');
-        
-    catch
-        fprintf('\n \t \t no trials found, removing subject and continueing ... \n')
-        
+    eval(['[trl] = ' trialfun '(cfg);'])
+    
+    if isempty(trl)
+        if ~quiet; fprintf('\n \t \t no trials found, removing subject and continueing ... \n'); end
         subjectdata.nTrialsPreproc = 0;
-        subjectdata.analysisOrder = strjoin(analysisOrd, '-');  % add analysis order so far to subjectdata
-        bv_saveData(subjectdata)
+        if ~quiet
+            bv_saveData(subjectdata)
+        else
+            evalc('bv_saveData(subjectdata);');
+        end
         cfg = [];
         cfg.optionsFcn = 'setOptions';
         cfg.pathsFcn = 'setPaths';
         removingSubjects(cfg, currSubject, 'preprocessing - no trials found')
         return
+    else
+        evalc('cfg = ft_definetrial(cfg);');
     end
-    
-    trlCount = bv_showTrialAmount(cfg);
+            
+    if~quiet
+        trlCount = bv_showTrialAmount(cfg);
+    else
+        evalc('trlCount = bv_showTrialAmount(cfg);');
+    end
     subjectdata.nTrialsPreproc = sum(trlCount);
     evalc('data = ft_redefinetrial(cfg, data);');
     
-    analysisOrd = [analysisOrd, 'trial']; % managing analysis order to save later
     
 end
 
 % **** saving data
 if strcmpi(saveData, 'yes')
     
-    subjectdata.analysisOrder = strjoin(analysisOrd, '-');  % add analysis order so far to subjectdata
-    
-    bv_saveData(subjectdata, data, outputStr);              % save both data and subjectdata to the drive
-    bv_updateSubjectSummary([PATHS.SUMMARY filesep 'SubjectSummary'], subjectdata)
+    if ~quiet
+        bv_saveData(subjectdata, data, outputName);              % save both data and subjectdata to the drive
+    else
+        evalc('bv_saveData(subjectdata, data, outputName);');              % save both data and subjectdata to the drive
+    end
 end

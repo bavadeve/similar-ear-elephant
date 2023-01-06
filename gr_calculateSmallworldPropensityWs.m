@@ -25,30 +25,18 @@ delta_Cs = zeros(m, 1);
 delta_Ls = zeros(m, 1);
 
 counter = 0;
-fprintf('\tCalculating small-world-propensity ... ')
 for i = 1:m
-    lng = printPercDone(m, counter);
     currW = Ws(:,:,i);
-    if all(all(isnan(currW)))
+    if any(any(isnan(currW)))
         SWPs(i) = NaN;
         delta_Cs(i) = NaN;
         delta_Ls(i) = NaN;
-        fprintf(repmat('\b', 1, lng))
         counter = counter + 1;
         continue
     end
     
-    currWnrm = gr_normalizeW(currW);
-    
-    try
-        [SWPs(i),delta_Cs(i),delta_Ls(i)] = small_world_propensity(currW, 'O');
-    catch
-        SWPs(i) = NaN;
-        delta_Cs(i) = NaN;
-        delta_Ls(i) = NaN;
-    end
-    fprintf(repmat('\b', 1, lng))
-    counter = counter + 1;
+    currW = gr_normalizeW(currW);
+    [SWPs(i),delta_Cs(i),delta_Ls(i)] = small_world_propensity(currW, 'O');
+        
 end
-fprintf('done! \n')
 

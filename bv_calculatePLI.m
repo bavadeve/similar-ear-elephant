@@ -4,36 +4,54 @@ function [ connectivity ] = bv_calculatePLI(cfg, data)
 ntrials     = ft_getopt(cfg, 'ntrials','all');
 condition   = ft_getopt(cfg, 'condition', 'all');
 currSubject = ft_getopt(cfg, 'currSubject');
-inputStr    = ft_getopt(cfg, 'inputStr');
+inputName   = ft_getopt(cfg, 'inputName');
 saveData    = ft_getopt(cfg, 'saveData', 'no');
-outputStr   = ft_getopt(cfg, 'outputStr');
+outputName  = ft_getopt(cfg, 'outputName');
 pathsFcn    = ft_getopt(cfg, 'pathsFcn', 'setPaths');
 optionsFcn  = ft_getopt(cfg, 'optionsFcn', 'setOptions');
 triallength = ft_getopt(cfg, 'triallength');
 keeptrials  = ft_getopt(cfg, 'keeptrials', 'no');
+quiet       = ft_getopt(cfg, 'quiet');
+
+if strcmpi(quiet, 'yes')
+    quiet = true;
+else
+    quiet = false;
+end
 
 % load in data if no input data is given
 if nargin < 2
-    disp(currSubject)
+    if ~quiet; disp(currSubject); end
     eval(pathsFcn)
     eval(optionsFcn)
     
     subjectFolderPath = [PATHS.SUBJECTS filesep currSubject];
-    try
-        [subjectdata, data] = bv_check4data(subjectFolderPath, inputStr);
-    catch
-        fprintf('\t previous data not found, skipping ... \n')
-        connectivity = [];
-        return
+    
+    if ~quiet
+        try
+            [subjectdata, ~, data] = bv_check4data(subjectFolderPath, inputName);
+        catch
+            fprintf('\t previous data not found, skipping ... \n'); 
+            connectivity = [];
+            return
+        end
+    else
+        try
+            evalc('[subjectdata, ~, data] = bv_check4data(subjectFolderPath, inputName);');
+        catch
+            connectivity = [];
+            return
+        end
     end
-    subjectdata.cfgs.(outputStr) = cfg;
+        
+    subjectdata.cfgs.(outputName) = cfg;
     
 end
 
-freqLabel = {'theta', 'alpha1'};
-freqRng = {[3 6], [6 9]};
+freqLabel = {'delta', 'theta', 'alpha1', 'alpha2','beta', 'gamma1', 'gamma2'};
+freqRng = {[0.2 2.9], [3 5.9], [6 8.9], [9 11.9], [12 25], [25 45], [55 70]};
 
-fprintf('\t loading in raw data ... \n')
+if ~quiet; fprintf('\t loading in raw data ... \n'); end
 cfg = [];
 cfg.headerfile = subjectdata.PATHS.HDRFILE;
 cfg.dataset = subjectdata.PATHS.DATAFILE;
@@ -42,9 +60,11 @@ cfg.reref = 'yes';
 cfg.refchannel = 'all';
 evalc('origdata = ft_preprocessing(cfg);');
 
-fprintf(['\t repairing bad channels: ', ...
+if ~quiet
+    fprintf(['\t repairing bad channels: ', ...
     repmat('%s ', 1, length(subjectdata.channels2remove)), '\n'], ...
     subjectdata.channels2remove{:})
+end
 cfg = [];
 cfg.layout = 'biosemi32.lay';
 cfg.method = 'triangulation';
@@ -57,23 +77,27 @@ cfg.neighbours = neighbours;
 cfg.layout = 'biosemi32.lay';
 evalc('origdata = ft_channelrepair(cfg, origdata);');
 
-origdata = bv_sortBasedOnTopo(origdata);
+if ~quiet
+    origdata = bv_sortBasedOnTopo(origdata);
+else
+    evalc('origdata = bv_sortBasedOnTopo(origdata);');
+end
 
-fprintf('\t resampling original data to %1.0f Hz... \n', data.fsample)
+if ~quiet; fprintf('\t resampling original data to %1.0f Hz... \n', data.fsample); end
 cfg = [];
 cfg.resamplefs = data.fsample;
 evalc('origdata = ft_resampledata(cfg, origdata);');
     
-% fprintf('\t rereferencing original data ... \n')
-% cfg = [];
-% cfg.reref = 'yes';
-% cfg.refchannel = 'all';
-% evalc('origdata = ft_preprocessing(cfg, origdata);');
+if ~quiet; fprintf('\t rereferencing original data ... \n'); end
+cfg = [];
+cfg.reref = 'yes';
+cfg.refchannel = 'all';
+evalc('origdata = ft_preprocessing(cfg, origdata);');
 
 for iFreq = 1:length(freqLabel)
     currFreq = freqLabel{iFreq};
     currFreqRng = freqRng{iFreq};
-    fprintf('\t ******* filtering for %s ... ******* \n' , currFreq)
+    if ~quiet; fprintf('\t ******* filtering for %s ... ******* \n' , currFreq); end
     cfg = [];
     cfg.lpfilter = 'yes';
     cfg.lpfreq = currFreqRng(2);
@@ -82,7 +106,7 @@ for iFreq = 1:length(freqLabel)
     cfg.hpinstabilityfix = 'reduce';
     evalc('origdata_filt = ft_preprocessing(cfg, origdata);');
     
-    fprintf('\t cut out clean data according to input file ... \n')
+    if ~quiet; fprintf('\t cut out clean data according to input file ... \n'); end
     trl = [data.sampleinfo, zeros(size(data.sampleinfo,1),1), data.trialinfo];
     cfg = [];
     cfg.trl = trl;
@@ -94,7 +118,12 @@ for iFreq = 1:length(freqLabel)
         cfg.saveData = 'no';
         cfg.triallength = triallength;
         cfg.ntrials = ntrials;
-        [dataCut, finished] = bv_cutAppendedIntoTrials(cfg, origdata_filt);
+        if ~quiet
+            [dataCut, finished] = bv_cutAppendedIntoTrials(cfg, origdata_filt);
+        else
+            evalc('[dataCut, finished] = bv_cutAppendedIntoTrials(cfg, origdata_filt);');
+        end
+        
         if ~finished
             connectivity = [];
             return;
@@ -109,7 +138,7 @@ for iFreq = 1:length(freqLabel)
         evalc('dataCut = ft_selectdata(cfg, dataCut);');
     end
         
-    fprintf('\t calculating PLI ... ')
+    if ~quiet; fprintf('\t calculating PLI ... '); end
     PLIs = PLI(dataCut.trial,1);
     PLIs = cat(3,PLIs{:});
     
@@ -123,7 +152,7 @@ for iFreq = 1:length(freqLabel)
         connectivity.dimord = 'chan_chan_freq';
     end
     
-    fprintf('done!\n')
+    if ~quiet; fprintf('done!\n'); end
 end
 
 connectivity.freq = freqLabel;
@@ -145,28 +174,26 @@ connectivity.trialinfo = dataCut.trialinfo;
 %%%%%% save data %%%%%%
 if strcmpi(saveData, 'yes')
     
-    outputFilename = [subjectdata.subjectName '_' outputStr '.mat'];
-    fieldname = upper(outputStr);
+    outputFilename = [subjectdata.subjectName '_' outputName '.mat'];
+    fieldname = upper(outputName);
     subjectdata.PATHS.(fieldname) = [subjectdata.PATHS.SUBJECTDIR filesep ...
         outputFilename];
     
-    fprintf('\t saving %s ... ', outputFilename)
-    save(subjectdata.PATHS.(fieldname), 'connectivity')
-    fprintf('done! \n')
-    
-    analysisOrder = strsplit(subjectdata.analysisOrder, '-');
-    analysisOrder = [analysisOrder outputStr];
-    analysisOrder = unique(analysisOrder, 'stable');
-    subjectdata.analysisOrder = strjoin(analysisOrder, '-');
-    
-    
-    fprintf('\t saving subjectdata variable to Subject.mat ... ')
-    save([subjectdata.PATHS.SUBJECTDIR filesep 'Subject.mat'], 'subjectdata')
-    fprintf('done! \n')
-    if isfield(PATHS, 'SUMMARY')
-        bv_updateSubjectSummary([PATHS.SUMMARY filesep 'SubjectSummary'], subjectdata)
-    end
-    
+    if ~quiet
+        fprintf('\t saving %s ... ', outputFilename);
+        save(subjectdata.PATHS.(fieldname), 'connectivity')
+        fprintf('done! \n')
+        fprintf('\t saving subjectdata variable to Subject.mat ... ')
+        save([subjectdata.PATHS.SUBJECTDIR filesep 'Subject.mat'], 'subjectdata')
+        fprintf('done! \n')
+        if isfield(PATHS, 'SUMMARY')
+            bv_updateSubjectSummary([PATHS.SUMMARY filesep 'SubjectSummary'], subjectdata)
+        end
+    else
+        save(subjectdata.PATHS.(fieldname), 'connectivity')
+        save([subjectdata.PATHS.SUBJECTDIR filesep 'Subject.mat'], 'subjectdata')
+    end    
+
 end
 
 %%%%%% extra functions %%%%%%

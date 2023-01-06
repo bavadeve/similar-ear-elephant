@@ -45,12 +45,12 @@ if israw
     
 else
     
-    [~, data] = bv_check4data(subjectFolderPath, upper(filestr));
+    [~, ~, data] = bv_check4data(subjectFolderPath, upper(filestr));
     cfg.viewmode = 'vertical';
-    cfg.blocksize = 8;
+    cfg.blocksize = 0.9;
     cfg.continuous = 'yes';
     
-    cfg.ylim = [-100 100];
+    cfg.ylim = [-5 5];
     fprintf('\t showing %s data \n', upper(filestr))
     evalc('ft_databrowser(cfg, data)');
 end

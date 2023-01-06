@@ -376,13 +376,13 @@ switch eventformat
         flank_cmrange = diff([0 cmrange]);
         flank_battery = diff([0 battery]);
         
-        %%%%%%%%%% HACK ADDED BY BAUKE VAN DER VELDE 20160218 %%%%%%%%%%
-        
-        trigger = bitand( sdata, byte1 );           % convert to 8bit numbers
-        flank_trigger = abs( flank_trigger );       % take the absolute value of flank_trigger to also register down-flanks
-        flank_trigger( trigger==0 ) = 0;            % ignore 0 trigger resets in trigger data
-        
-        %%%%%%%%%% HACK ADDED BY BAUKE VAN DER VELDE 20160218 %%%%%%%%%%
+%         %%%%%%%%%% HACK ADDED BY BAUKE VAN DER VELDE 20160218 %%%%%%%%%%
+%         
+%         trigger = bitand( sdata, byte1 );           % convert to 8bit numbers
+%         flank_trigger = abs( flank_trigger );       % take the absolute value of flank_trigger to also register down-flanks
+%         flank_trigger( trigger==0 ) = 0;            % ignore 0 trigger resets in trigger data
+% %         
+%         %%%%%%%%%% HACK ADDED BY BAUKE VAN DER VELDE 20160218 %%%%%%%%%%
         
         
         for i=find(flank_trigger>0)

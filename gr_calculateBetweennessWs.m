@@ -1,4 +1,4 @@
-function [L, eff, rad] = gr_calculatePathlengthWs(Ws, edgeType)
+function [L, eff, rad] = gr_calculateBetweennessWs(Ws, edgeType)
 % Function to calculate characteristic path length on multiple adjecency
 % matrices. 
 %

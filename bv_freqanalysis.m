@@ -29,6 +29,9 @@ if nargin < 2
     end
 end
 
+cfg = [];
+cfg.triallength = 3;
+data = bv_cutAppendedIntoTrials(cfg, data);
 
 fprintf('\t starting frequency analysis ... ')
 cfg = [];

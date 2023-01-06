@@ -1,4 +1,8 @@
-function dataOut = bv_addAgeAndGenderToStruct(dataIn)
+function dataOut = bv_addAgeAndGenderToStruct(dataIn, removeSubjects)
+
+if nargin < 2
+    removeSubjects = false;
+end
 
 if isstruct(dataIn)
     structbool = true;
@@ -6,18 +10,15 @@ if isstruct(dataIn)
 else
     structbool = false;
 end
-% 
-% eval('setPaths')
-% eval('setOptions')
 
-ageGenderPath = ...
-    '/Volumes/youth.data.uu.nl/research-grp-ydi-1911-01-velde/overig/Demo2.xlsx';
-ageGenderPresent = ...
-    exist(ageGenderPath, 'file');
-if not(ageGenderPresent)
-    error('Demo2.xlsx not found')
+eval('setPaths')
+eval('setOptions')
+
+ageGenderPath = dir([PATHS.FILES filesep '*demo*']);
+if isempty(ageGenderPath)
+    error('age gender file not found')
 else
-    ageGenderVar = readtable(ageGenderPath);
+    ageGenderVar = readtable([ageGenderPath.folder filesep ageGenderPath.name]);
 end
 
 ageGenderVar(:,not(contains(ageGenderVar.Properties.VariableNames, ...
@@ -31,17 +32,24 @@ ageGenderVar.Properties.VariableNames{...
     contains(ageGenderVar.Properties.VariableNames, 'geslacht')} = ...
     'gender';
 
-for i = 1:height(dataIn)
-    ag_indx = contains(ageGenderVar.pseudo, dataIn.pseudo{i}) & ...
-        contains(ageGenderVar.wave, dataIn.wave{i});
+subjectNamesAG = strcat(ageGenderVar.pseudo, '_', ageGenderVar.wave);
+subjectNamesDI = strcat(dataIn.pseudo, '_', dataIn.wave);
 
-    if ~isempty(find(ag_indx))
-        dataIn.age(i) = ageGenderVar.age(ag_indx);
-        dataIn.gender{i} = ageGenderVar.gender{ag_indx};
-    else
-        dataIn.age(i) = NaN;
-        dataIn.gender{i} = '';
-    end
+[~, loc] = ismember(subjectNamesDI, subjectNamesAG);
+loc(loc==0) = [];
+
+ageGenderVar2 = ageGenderVar(loc,:);
+subjectNamesAG2 = strcat(ageGenderVar2.pseudo, '_', ageGenderVar2.wave);
+[~, loc2] = ismember(subjectNamesAG2, subjectNamesDI);
+
+dataIn.age(loc2) = ageGenderVar2.age;
+dataIn.gender(loc2) = ageGenderVar2.gender;
+
+if removeSubjects
+    dataIn.age(dataIn.age==0 | cellfun(@isempty, dataIn.gender), : ) = [];
+else
+    dataIn.age(dataIn.age==0) = NaN;
+    dataIn.gender(cellfun(@isempty, dataIn.gender)) = {'Unknown'};
 end
 
 if structbool

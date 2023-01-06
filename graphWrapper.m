@@ -1,6 +1,6 @@
 clear all
 
-str = 'coh5';
+str = 'pli5';
 
 a = dir([str '_*.mat']);
 resultStr = {a.name};

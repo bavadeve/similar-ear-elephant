@@ -61,48 +61,108 @@ for i = 1:length(subjectdirflags)
 end
 fprintf('done! \n')
 % end
+subjectdatasummary = struct2table(subjectdatasummary);
 
 if nargin > 0
-    counter = 0;
     fprintf('\t loading results into subjectsummary ... ')
-    for i = 1:length(subjectdatasummary)
-        lng = printPercDone(length(subjectdatasummary), i);
-%         if not(subjectdatasummary(i).removed)
-            counter = counter + 1;
-            subjectresultstmp = subjectdatasummary(i);
-            try
-                evalc('resultsStruct = bv_quickloadData(subjectdatasummary(i).subjectName, inputStr);');
-            catch
-%                 fprintf('\t inputStr not found, skipping \n')
+    startIndx = 1;
+    while 1
+        for i = startIndx
+            subjectresultstmp = subjectdatasummary(i,:);
+            
+            evalc('[resultsStruct, succeed] = bv_quickloadData(subjectdatasummary.subjectName{i}, inputStr);');
+            
+            if ~succeed
                 fprintf(repmat('\b', 1, lng))
-                continue
+                startIndx = startIndx + 1;
+                break
             end
             if keepstruct
                 subjectresultstmp.(inputStr) = resultsStruct;
             else
                 fnames = fieldnames(resultsStruct);
                 for j = 1:length(fnames)
-                    subjectresultstmp.(fnames{j}) = resultsStruct.(fnames{j});
-                end
-                if counter ~= 1
-                    fnamesSummary = fieldnames(subjectresults);
-                    fnamesTmp = fieldnames(subjectresultstmp);
-                    extraFieldsTmp = fnamesTmp(find(not(ismember(fnamesTmp, fnamesSummary))));
-                    extraFieldsSummary = fnamesSummary(find(not(ismember(fnamesSummary, fnamesTmp))));
-                    
-                    for j = 1:length(extraFieldsTmp)
-                        subjectresultstmp = rmfield(subjectresultstmp, extraFieldsTmp{j});
-                    end
-                    for j = 1:length(extraFieldsSummary)
-                        subjectresults = rmfield(subjectresults, extraFieldsSummary{j});
+                    switch class(resultsStruct.(fnames{j}))
+                        case 'double'
+                            if length(resultsStruct.(fnames{j}))==1
+                                subjectresultstmp.(fnames{j})(1) = resultsStruct.(fnames{j});
+                            else
+                                subjectresultstmp.(fnames{j}){1} = resultsStruct.(fnames{j});
+                            end
+                        otherwise
+                            subjectresultstmp.(fnames{j}){1} = resultsStruct.(fnames{j});
                     end
                 end
             end
-            subjectresults(counter) = subjectresultstmp;
+        end
+        
+        if exist('subjectresultstmp', 'var')
+            break
+        end
+        
+    end
+    vartypes = varfun(@class,subjectresultstmp,'OutputFormat','cell');
+    [subjectresultstmp(1,ismember(vartypes, 'cell'))] = {''};
+    subjectresultstmp{1,ismember(vartypes, 'double')} = NaN;
+    [subjectresultstmp{1,ismember(vartypes, 'logical')}] = false;
+    
+    
+    updateWaitbar = waitbarParfor(height(subjectdatasummary), 'Adding to subjectsummary ...');
+    parfor i = 1:height(subjectdatasummary)
+%         if subjectdatasummary(i,:).removed
+%             continue
 %         end
-        fprintf(repmat('\b', 1, lng))
+        subjectresults(i,:) = add2subjectresults(subjectdatasummary(i,:), subjectresultstmp, inputStr, keepstruct);
+        updateWaitbar();
     end
     fprintf('done! \n')
+    subjectresults(ismissing(subjectresults.pseudo),:) =[];
 else
     subjectresults = subjectdatasummary;
 end
+
+% HELPER FUNCTIONS
+function subjectresults = add2subjectresults(subjectdatasummary, subjectresults, inputStr, keepstruct)
+subjectresultstmp = subjectdatasummary;
+
+if subjectdatasummary.removed
+    return
+end
+
+evalc('[resultsStruct, succeed] = bv_quickloadData(subjectdatasummary.subjectName, inputStr);');
+
+if ~(succeed)
+    % fprintf('\t inputStr not found, skipping \n')
+    return
+end
+if keepstruct
+    subjectresultstmp.(inputStr) = resultsStruct;
+else
+    fnames = fieldnames(resultsStruct);
+    for j = 1:length(fnames)
+        subjectresultstmp.(fnames{j}){1} = resultsStruct.(fnames{j});
+    end
+    fnamesSummary = fieldnames(subjectresults);
+    fnamesTmp = fieldnames(subjectresultstmp);
+    extraFieldsTmp = fnamesTmp(find(not(ismember(fnamesTmp, fnamesSummary))));
+    extraFieldsSummary = fnamesSummary(find(not(ismember(fnamesSummary, fnamesTmp))));
+    
+    for j = 1:length(extraFieldsTmp)
+        if isstruct(subjectresultstmp)
+            subjectresultstmp = rmfield(subjectresultstmp, extraFieldsTmp{j});
+        elseif istable(subjectresultstmp)
+            subjectresultstmp(:, ismember(subjectresultstmp.Properties.VariableNames, extraFieldsTmp{j})) = [];
+        end
+        
+    end
+    for j = 1:length(extraFieldsSummary)
+        if isstruct(subjectresultstmp)
+            subjectresults = rmfield(subjectresults, extraFieldsSummary{j});
+        elseif istable(subjectresultstmp)
+            subjectresults(:, ismember(subjectresults.Properties.VariableNames, extraFieldsTmp{j})) = [];
+        end
+        
+    end
+    
+end
+subjectresults = subjectresultstmp;

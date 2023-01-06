@@ -1,4 +1,4 @@
-function [artefactdef] = bv_createArtefactStruct(cfg, data)
+function [artefactdef] = bv_createArtifactStruct(cfg, data)
 % bv_createArtefactStruct is a helper function to detect levels used of 
 % artifacts in EEG data. Data can be input as arg2 or by giving subject
 % folder name (cfg.currSubject = {}). Can be used to remove channels using
@@ -29,7 +29,7 @@ function [artefactdef] = bv_createArtefactStruct(cfg, data)
 %                                               normality of trials
 %                               'range'     -> gives trial uV range
 %                               'flatline'  -> measure for flatlining based
-%                                               on 1/variance
+%                                               on 1/range
 %                               'abs'       -> gives trial max(abs(uV))
 %                               'jump'      -> detects jumps in trial based on 
 %                                               ft_artifact_jump
@@ -119,9 +119,9 @@ if nargin < 2
     end
     
     if ~quiet
-        [~, ~, data] = bv_check4data(subjectFolderPath, inputName);
+        [~, data] = bv_check4data(subjectFolderPath, inputName);
     else
-        evalc('[~, ~, data] = bv_check4data(subjectFolderPath, inputName);');
+        evalc('[~, data] = bv_check4data(subjectFolderPath, inputName);');
     end
     
 else
@@ -133,7 +133,7 @@ if strcmpi(cutintrials, 'yes')
     cfg = [];
     cfg.length = triallength;
     cfg.overlap = 0;
-    evalc('data = ft_redefinetrial(cfg, data);');
+    data = ft_redefinetrial(cfg, data);
 end
 
 if ~quiet; fprintf('\t calculating artefact levels ... '); end
@@ -147,15 +147,15 @@ for i = 1:length(data.trial)
     if contains('flatline', analyses)
         artefactdef.flatline.levels(:,i) = 1./(abs(max(data.trial{i},[],2) - min(data.trial{i},[],2)));
     end
-    if contains('range', analyses)
+    if contains('range',analyses)
         artefactdef.range.levels(:,i) = max(data.trial{i}, [], 2) - min(data.trial{i}, [], 2);
     end
-    if contains('abs', analyses)
+    if contains('abs',analyses)
         artefactdef.abs.levels(:,i) = max(abs(data.trial{i}), [],2);
     end
 end
 
-if contains('jump', analyses)
+if contains('jump',analyses)
     artefactdef.jump.levels = zeros(length(data.label), length(data.trial));
     counter = 0;
     for i = 1:length(data.label)

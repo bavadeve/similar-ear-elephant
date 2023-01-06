@@ -1,6 +1,6 @@
 function removingSubjects(cfg, currSubject, reason)
 
-fprintf('\t removing for the following reason: %s\n', reason)
+fprintf('\t %s: removing for the following reason: %s ... \n', currSubject, reason)
 
 cfg.optionsFcn = ft_getopt(cfg, 'optionsFcn', 'setOptions');
 cfg.pathsFcn = ft_getopt(cfg, 'pathsFcn', 'setPaths');
@@ -9,7 +9,7 @@ eval(cfg.optionsFcn)
 eval(cfg.pathsFcn)
 
 subjectFolderPath = [PATHS.SUBJECTS filesep currSubject];
-subjectdata = bv_check4data(subjectFolderPath);
+evalc('subjectdata = bv_check4data(subjectFolderPath);');
 
 lastCalled = dbstack('-completenames',1);
 
@@ -21,13 +21,13 @@ else
 end
 subjectdata.removedreason = reason;
 
-bv_saveData(subjectdata)
+evalc('bv_saveData(subjectdata);');
+
 if exist([PATHS.SUMMARY filesep 'SubjectSummary'], 'file')
     bv_updateSubjectSummary([PATHS.SUMMARY filesep 'SubjectSummary'], subjectdata)
 end
 subjectdata.PATHS.SUBJECTDIR = [PATHS.REMOVED filesep currSubject];
 
 movefile([PATHS.SUBJECTS filesep currSubject], PATHS.REMOVED)
-fprintf('\t \t moved to PATHS.REMOVED folders \n')
-
+fprintf('done! \n')
 end
