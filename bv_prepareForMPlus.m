@@ -33,7 +33,7 @@ else
         var2mplusOut = nan(length(uniqueSubjects), size(inTable.(var2mplusIn), 2),length(g_name));
     elseif dm==3
         var2mplusOut = nan(length(uniqueSubjects), size(inTable.(var2mplusIn), 2), size(inTable.(var2mplusIn), 2),length(g_name));
-        
+
     else
         error('Variable to split has too many dimensions')
     end
@@ -43,7 +43,7 @@ for i = 1:length(uniqueSubjects)
     currSubject = uniqueSubjects{i};
     subjectIndx = find(ismember(inTable.pseudo, currSubject));
     sessionIndxPerSubject = ismember(g_name, inTable.(groupingVarName)(subjectIndx));
-    
+
     if doCell
         if length(subjectIndx) > length(g_name)
             [var2mplusOut{i,:}] = deal('');
@@ -81,7 +81,7 @@ for i = 1:length(uniqueSubjects)
                         squeeze(inTable.(var2mplusIn)(subjectIndx(j),:,:));
                 end
             end
-            
+
         else
             error('Variable to split has too many dimensions')
         end
