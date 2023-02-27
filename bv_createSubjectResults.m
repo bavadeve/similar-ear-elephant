@@ -109,8 +109,11 @@ if nargin > 0
     
     updateWaitbar = waitbarParfor(height(subjectdatasummary), 'Adding to subjectsummary ...');
     parfor i = 1:height(subjectdatasummary)
-%         if subjectdatasummary(i,:).removed
-%             continue
+%         %         if subjectdatasummary(i,:).removed
+%         %             continue
+% %         %         end
+%         if i==58
+%             pause
 %         end
         subjectresults(i,:) = add2subjectresults(subjectdatasummary(i,:), subjectresultstmp, inputStr, keepstruct);
         updateWaitbar();
@@ -140,8 +143,14 @@ if keepstruct
 else
     fnames = fieldnames(resultsStruct);
     for j = 1:length(fnames)
-        subjectresultstmp.(fnames{j}){1} = resultsStruct.(fnames{j});
+        switch class(subjectresults.(fnames{j}))
+            case 'double'
+                subjectresultstmp.(fnames{j})(1) = resultsStruct.(fnames{j});
+            otherwise
+                subjectresultstmp.(fnames{j}){1} = resultsStruct.(fnames{j});
+        end
     end
+    
     fnamesSummary = fieldnames(subjectresults);
     fnamesTmp = fieldnames(subjectresultstmp);
     extraFieldsTmp = fnamesTmp(find(not(ismember(fnamesTmp, fnamesSummary))));
@@ -157,12 +166,25 @@ else
     end
     for j = 1:length(extraFieldsSummary)
         if isstruct(subjectresultstmp)
-            subjectresults = rmfield(subjectresults, extraFieldsSummary{j});
+            subjectresultstmp = rmfield(subjectresultstmp, extraFieldsSummary{j});
         elseif istable(subjectresultstmp)
-            subjectresults(:, ismember(subjectresults.Properties.VariableNames, extraFieldsTmp{j})) = [];
+            
+            switch class(subjectresults.(extraFieldsSummary{j}))
+                case 'double'
+                    subjectresultstmp.(extraFieldsSummary{j})(1) = subjectresults.(extraFieldsSummary{j});
+                otherwise
+                    subjectresultstmp.(extraFieldsSummary{j}){1} = subjectresults.(extraFieldsSummary{j});
+            end
+            
         end
         
     end
+    
+    n1 = subjectresults.Properties.VariableNames;
+    n2 = subjectresultstmp.Properties.VariableNames;    
+    [~,y] = ismember(n1, n2);
+    subjectresultstmp = subjectresultstmp(:,y);
+
     
 end
 subjectresults = subjectresultstmp;

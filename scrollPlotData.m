@@ -13,7 +13,7 @@ function fig_handle = scrollPlotData(cfg, data)
 %       Boolean matrix with zeros for each trial and each channel if data is
 %       artifact-free or ones if artifact is present. For more information,
 %       check bvLL_artifactDetection
-%   cfg.horzLim     = [ number or 'full'], blocksize of shown block in seconds
+%   cfg.horzLim     = [ number or 'full' ], blocksize of shown block in seconds
 %       (default: 'full')
 %   cfg.scroll      = 'yes/no', determines whether keyboard inputs can scroll
 %       through data. Warning: psychtoolbox needs to be installed and added to

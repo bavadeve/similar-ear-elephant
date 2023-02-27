@@ -22,15 +22,10 @@ else
 end
 
 ageGenderVar(:,not(contains(ageGenderVar.Properties.VariableNames, ...
-    {'pseudo', 'wave', 'geslacht', 'leeftijd'}))) = [];
+    {'pseudo', 'wave', 'gender', 'age'}))) = [];
 
-ageGenderVar.Properties.VariableNames{...
-    contains(ageGenderVar.Properties.VariableNames, 'leeftijd')} = ...
-    'age';
-
-ageGenderVar.Properties.VariableNames{...
-    contains(ageGenderVar.Properties.VariableNames, 'geslacht')} = ...
-    'gender';
+ageGenderVar.wave(contains(ageGenderVar.wave, '10')) = {'10m'};
+ageGenderVar.wave(contains(ageGenderVar.wave, '5')) = {'5m'};
 
 subjectNamesAG = strcat(ageGenderVar.pseudo, '_', ageGenderVar.wave);
 subjectNamesDI = strcat(dataIn.pseudo, '_', dataIn.wave);
@@ -44,6 +39,13 @@ subjectNamesAG2 = strcat(ageGenderVar2.pseudo, '_', ageGenderVar2.wave);
 
 dataIn.age(loc2) = ageGenderVar2.age;
 dataIn.gender(loc2) = ageGenderVar2.gender;
+
+if iscell(dataIn.age(1))
+    dataIn.age(cellfun(@isempty, dataIn.age)) = {'0'};
+    dataIn.age(contains(dataIn.age,'NA')) = {'0'};
+    dataIn.age(contains(dataIn.age,'NaN')) = {'0'};
+    dataIn.age = sscanf(sprintf(' %s',dataIn.age{:}),'%f',[1,Inf])';
+end
 
 if removeSubjects
     dataIn.age(dataIn.age==0 | cellfun(@isempty, dataIn.gender), : ) = [];

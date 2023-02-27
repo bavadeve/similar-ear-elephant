@@ -118,7 +118,7 @@ notchfreq           = ft_getopt(cfg, 'notchfreq');
 filttype            = ft_getopt(cfg, 'filttype');
 reref               = ft_getopt(cfg, 'reref', 'no');
 refelec             = ft_getopt(cfg, 'refelec', 'all');
-rmChannels          = ft_getopt(cfg, 'rmChannels', 'no');
+removechans         = ft_getopt(cfg, 'removechans', 'no');
 channels2remove     = ft_getopt(cfg, 'channels2remove');
 mandatoryChans      = ft_getopt(cfg, 'mandatoryChans', {});
 dataset             = ft_getopt(cfg, 'dataset');
@@ -127,6 +127,7 @@ overwrite           = ft_getopt(cfg, 'overwrite', 'no');
 interpolate         = ft_getopt(cfg, 'interpolate', 'no');
 maxbadchans         = ft_getopt(cfg, 'maxbadchans', 3);
 quiet               = ft_getopt(cfg, 'quiet', 'no');
+waveletThresh       = ft_getopt(cfg, 'waveletThresh', 'no');
 
 quiet = strcmpi(quiet, 'yes');
 
@@ -153,8 +154,8 @@ end
 if ~hasdata % check whether data needs to be loaded from subject.mat file
     
     eval(pathsFcn) % get paths necessary to run function
-    if ~quiet; disp(currSubject); end
     
+    if ~quiet; disp(currSubject); end
     if strcmpi(overwrite, 'no') & strcmpi(saveData, 'yes') & ...
             exist([PATHS.SUBJECTS filesep currSubject filesep currSubject '_' upper(outputName) '.mat'])
         if ~quiet
@@ -163,6 +164,7 @@ if ~hasdata % check whether data needs to be loaded from subject.mat file
         data = [];
         return
     end
+
 
     % Try to load in individuals Subject.mat. If unknown --> throw error.
     try
@@ -196,6 +198,7 @@ if ~hasdata % check whether data needs to be loaded from subject.mat file
         data = [];
         return
     end
+    if ~quiet; fprintf('done! \n'); end
 else
     
     if ~quiet; fprintf('done! \n'); end
@@ -203,7 +206,7 @@ end
 
 hdr = ft_read_header(hdrfile);
 
-removingChans = strcmpi(rmChannels, 'yes');
+removingChans = strcmpi(removechans, 'yes');
 if removingChans && ~isempty(channels2remove)
     if isfield(subjectdata, 'channels2remove')
         if ~isempty(subjectdata.channels2remove)
@@ -216,30 +219,30 @@ end
 % If channels should be interpolated, but no channels are to be removed, no
 % new file will be created (compared to already existing file). Therefore,
 % skip this subject
-if strcmpi(interpolate, 'yes')
-    if isempty(subjectdata.channels2remove) & exist(subjectdata.PATHS.PREPROC, 'file')
-        subjectdata.PATHS.(outputName) = subjectdata.PATHS.PREPROC;
-        if ~quiet; fprintf('\t no channels found to remove, continueing...'); end
-        evalc('[~,data] = bv_check4data(subjectdata.PATHS.SUBJECTDIR, ''PREPROC'');');
-        
-        if strcmpi(saveData, 'yes')
-            
-            if ~quiet
-                bv_saveData(subjectdata);              % save both data and subjectdata to the drive
-                bv_updateSubjectSummary([PATHS.SUMMARY filesep 'SubjectSummary'], subjectdata)
-            else
-                evalc('bv_saveData(subjectdata);');
-            end
-        end
-        
-        return
-    end
-end
+% if strcmpi(interpolate, 'yes')
+%     if isempty(subjectdata.channels2remove) & exist(subjectdata.PATHS.PREPROC, 'file')
+%         subjectdata.PATHS.(outputName) = subjectdata.PATHS.PREPROC;
+%         if ~quiet; fprintf('\t no channels found to remove, continueing...'); end
+%         evalc('[~,~, data] = bv_check4data(subjectdata.PATHS.SUBJECTDIR, ''PREPROC'');');
+%         
+%         if strcmpi(saveData, 'yes')
+%             
+%             if ~quiet
+%                 bv_saveData(subjectdata);              % save both data and subjectdata to the drive
+%                 bv_updateSubjectSummary([PATHS.SUMMARY filesep 'SubjectSummary'], subjectdata)
+%             else
+%                 evalc('bv_saveData(subjectdata);');
+%             end
+%         end
+%         
+%         return
+%     end
+% end
 
 subjectdata.cfgs.(outputName) = cfg; % save used config file in subjectdata
 subjectdata.trialfun = trialfun;
 
-if ~quiet; fprintf('\t loading in data  '); end
+if ~quiet; fprintf('\t loading in data ... '); end
 
 cfg = [];
 
@@ -255,6 +258,8 @@ if removingChans && isfield(subjectdata, 'channels2remove')
         cfg.method = 'triangulation';
         evalc('neighbours = ft_prepare_neighbours(cfg);');
         
+        if ~quiet; fprintf(['\n \t\t skipping following channel(s): ' ...
+            repmat('%s, ', 1,length(subjectdata.channels2remove))], subjectdata.channels2remove{:}); end
         cfg = [];
         cfg.channel = cat(2,'EEG', strcat('-',subjectdata.channels2remove'));
         
@@ -268,14 +273,6 @@ end
 cfg.dataset = dataset;
 cfg.headerfile = hdrfile;
 cfg.continuous = 'yes';
-
-if strcmpi(reref, 'yes')
-    if ~quiet; fprintf('and rereferencing... \n \t \t rereferencing to %s electrode ... ', refelec); end
-    
-    cfg.reref = 'yes';
-    cfg.refchannel = refelec;
-    
-end
 
 evalc('data = ft_preprocessing(cfg);');
 
@@ -305,6 +302,7 @@ if ~quiet
 else
     evalc('data = bv_sortBasedOnTopo(data);');
 end
+
 % *** Resampling (if a resampleFs is given)
 if ~isempty(resampleFs)
     
@@ -331,6 +329,43 @@ if ~isempty(hpfreq) || isempty(lpfreq) || isempty(notchfreq)
     else
         evalc('data = bv_filterEEGdata(cfg, data);');
     end
+end
+
+
+if strcmpi(reref, 'yes')
+    if ~quiet; fprintf('\t rereferencing to %s electrode ... ', refelec); end
+    
+    cfg = [];
+    cfg.reref = 'yes';
+    cfg.refchannel = refelec;
+    evalc('data = ft_preprocessing(cfg, data);');
+    
+    if ~quiet; fprintf('done!\n'); end
+end
+
+wavelet_thresholding = strcmpi(waveletThresh, 'yes');
+if wavelet_thresholding
+    if ~quiet; fprintf('\t Wavelet thresholding, based on HAPPE_v3 ...'); end
+    
+    wavFam = 'bior4.4' ;
+    if data.fsample > 500
+        wavLvl = 10;
+    elseif data.fsample > 250 && data.fsample <= 500 
+        wavLvl = 9;
+    elseif data.fsample <=250 
+        wavLvl = 8;
+    end
+    
+    ThresholdRule = 'Hard' ;
+    
+    artfcs = wdenoise(data.trial{1}', wavLvl, ...
+        'Wavelet', wavFam, 'DenoisingMethod', 'Bayes', 'ThresholdRule', ...
+        ThresholdRule, 'NoiseEstimate', 'LevelDependent')' ;
+    
+    preEEG = reshape(data.trial{1}, size(data.trial{1},1), []) ;
+    postEEG = preEEG - artfcs;
+    data.trial{1} = postEEG;
+    if ~quiet; fprintf('done! \n'); end
 end
 
 % *** cut data into trials based on trialfun

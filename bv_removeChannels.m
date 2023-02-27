@@ -138,6 +138,8 @@ for i = 1:length(limFields)
     
 end
 
+allOut = any(out,3);
+
 % badchannel calculation
 badchans = data.label(((sum(sum(out,3)>0,2) / expectedtrials) * 100 ) > maxpercbad);
 subjectdata.channels2remove = badchans;

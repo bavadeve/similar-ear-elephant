@@ -378,9 +378,9 @@ switch eventformat
         
 %         %%%%%%%%%% HACK ADDED BY BAUKE VAN DER VELDE 20160218 %%%%%%%%%%
 %         
-%         trigger = bitand( sdata, byte1 );           % convert to 8bit numbers
-%         flank_trigger = abs( flank_trigger );       % take the absolute value of flank_trigger to also register down-flanks
-%         flank_trigger( trigger==0 ) = 0;            % ignore 0 trigger resets in trigger data
+        trigger = bitand( sdata, byte1 );           % convert to 8bit numbers
+        flank_trigger = abs( flank_trigger );       % take the absolute value of flank_trigger to also register down-flanks
+        flank_trigger( trigger==0 ) = 0;            % ignore 0 trigger resets in trigger data
 % %         
 %         %%%%%%%%%% HACK ADDED BY BAUKE VAN DER VELDE 20160218 %%%%%%%%%%
         
