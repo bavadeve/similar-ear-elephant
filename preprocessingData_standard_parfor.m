@@ -1,6 +1,11 @@
-%% BEFORE WE START
+%% BEFORE WE START'
 % This is an overview script of all the preprocessing steps needed to be
 % taken before analyzing EEG data. 
+%% setup subject folders
+clear OPTIONS; setOptions
+
+cfg = OPTIONS.CREATEFOLDERS;
+bv_createSubjectFolders_YOUth(cfg);
 
 %% PREPROCESSING AND RESAMPLING
 clear OPTIONS; setOptions
@@ -9,16 +14,17 @@ clear OPTIONS; setOptions
 updateWaitbar = waitbarParfor(length(startSubject:endSubject), "Preprocessing...");
 parfor iSubjects = startSubject:endSubject
     
+        
         currSubject = subjectFolderNames{iSubjects};
         cfg             = OPTIONS.PREPROC;
         cfg.currSubject = currSubject;
         cfg.quiet       = 'yes';
+        cfg.overwrite   = 'no';
         
         data = bv_preprocResample(cfg);
-        updateWaitbar(); 
+        updateWaitbar();
+        
 end
-
-
 %% CALCULATE ARTEFACTS IN PREPROC DATA
 clear OPTIONS; setOptions
 
@@ -28,8 +34,8 @@ parfor iSubjects = startSubject:endSubject
     currSubject = subjectFolderNames{iSubjects};
     
     cfg             = OPTIONS.ARTFCTPREPROC;
-    cfg.quiet       = 'yes';
     cfg.currSubject = currSubject;
+    cfg.quiet       = 'yes';
     
     artefactdef = bv_createArtefactStruct(cfg);
     updateWaitbar(); 
@@ -63,7 +69,7 @@ parfor iSubjects = startSubject:endSubject
     
     cfg             = OPTIONS.REREF;
     cfg.currSubject = currSubject;
-    cfg.quiet = 'yes';
+    cfg.quiet       = 'yes';
     
     data = bv_preprocResample(cfg);
     updateWaitbar();
@@ -81,7 +87,8 @@ parfor iSubjects = startSubject:endSubject
     
     cfg             = OPTIONS.ARTFCTRMCHANNELS;
     cfg.currSubject = currSubject;
-    cfg.quiet = 'yes';
+    cfg.quiet       = 'yes';
+    
     artefactdef = bv_createArtefactStruct(cfg);
     updateWaitbar();
     
@@ -111,11 +118,29 @@ clear OPTIONS; setOptions
 updateWaitbar = waitbarParfor(length(startSubject:endSubject), "Append data...");
 parfor iSubjects = startSubject:endSubject
 
-    cfg = OPTIONS.APPENDED;
+    cfg             = OPTIONS.APPENDED;
     cfg.currSubject = subjectFolderNames{iSubjects};
-    cfg.quiet = 'yes';
+    cfg.quiet       = 'yes';
     
     data = bv_appendfieldtripdata(cfg);
     updateWaitbar();
     
 end
+
+
+
+%% Calculate PLI connectivity
+clear OPTIONS; setOptions
+
+[startSubject, endSubject, subjectFolderNames] = bv_getSubjectRange(1, 'end');
+updateWaitbar = waitbarParfor(length(startSubject:endSubject), "Append data...");
+parfor iSubjects = startSubject:endSubject
+
+    cfg             = OPTIONS.PLICONNECTIVITY;
+    cfg.currSubject = subjectFolderNames{iSubjects};
+    cfg.quiet       = 'yes';
+    
+    [ connectivity ] = bv_calculatePLI(cfg);
+    updateWaitbar();
+end
+

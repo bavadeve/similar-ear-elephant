@@ -1,61 +1,32 @@
-%% SET THE SUBJECT RANGE BEFORE RUNNING
-startSubject = 1;
-endSubject = 'end';
+%% BEFORE WE START'
+% This is an overview script of all the preprocessing steps needed to be
+% taken before analyzing EEG data. 
+%% setup subject folders
+clear OPTIONS; setOptions
+cfg = OPTIONS.CREATEFOLDERS;
+bv_createSubjectFolders_YOUth(cfg);
 
-clear PATHS
-global PATHS
+%% PREPROCESSING AND RESAMPLING
+clear OPTIONS; setOptions
 
-eval('setPaths')
-eval('setOptions')
-
-
-subjectFolders = dir([PATHS.SUBJECTS filesep '*' OPTIONS.sDirString '*']);
-subjectFolderNames = {subjectFolders.name};
-
-if ischar(startSubject)
-    startSubject = find(contains(subjectFolderNames, startSubject));
-end
-if ischar(endSubject)
-    if strcmp(endSubject, 'end')
-        endSubject = length(subjectFolderNames);
-    else
-        endSubject = find(contains(subjectFolderNames, endSubject));
-    end
-end
-
-save([PATHS.CONFIG filesep 'OptionsAndPaths.mat'], 'OPTIONS', 'PATHS')
-
-%% PREPROCESSING AND RESAMPLING COHERENCE
-clear OPTIONS
-eval('setOptions')
-
-cfg             = OPTIONS.PREPROC;
-% save options to preproc folder
-if strcmpi(cfg.saveData, 'no')
-    preproc_cfg = cfg;
-    preproc_cfg.date = clock;
-    preproc_cfg.subjects = subjectFolderNames(startSubject:endSubject);
-    
-    save([PATHS.PREPROC filesep 'configfile.mat'], 'preproc_cfg')
-end
-
+[startSubject, endSubject, subjectFolderNames] = bv_getSubjectRange(1, 'end');
 updateWaitbar = waitbarParfor(length(startSubject:endSubject), "Preprocessing...");
 for iSubjects = startSubject:endSubject
-    
         currSubject = subjectFolderNames{iSubjects};
+        
         cfg             = OPTIONS.PREPROC;
         cfg.currSubject = currSubject;
         cfg.quiet       = 'no';
         
         data = bv_preprocResample(cfg);
-        updateWaitbar(); 
+        updateWaitbar();
+        
 end
-
-
 %% CALCULATE ARTEFACTS IN PREPROC DATA
-setupSubjects
-updateWaitbar = waitbarParfor(length(startSubject:endSubject), "Artefact detection (preprocessed data)...");
-eval('setOptions')
+clear OPTIONS; setOptions
+
+[startSubject, endSubject, subjectFolderNames] = bv_getSubjectRange(1, 'end');
+updateWaitbar = waitbarfor(length(startSubject:endSubject), "Artefact detection (preprocessed data)...");
 for iSubjects = startSubject:endSubject
     currSubject = subjectFolderNames{iSubjects};
     
@@ -69,9 +40,10 @@ end
 
 
 %% SET CHANNELS TO REMOVE
-setupSubjects
-updateWaitbar = waitbarParfor(length(startSubject:endSubject), "Find channels to remove...");
-eval('setOptions')
+clear OPTIONS; setOptions
+
+[startSubject, endSubject, subjectFolderNames] = bv_getSubjectRange(1, 'end');
+updateWaitbar = waitbarfor(length(startSubject:endSubject), "Find channels to remove...");
 for iSubjects = startSubject:endSubject
     currSubject = subjectFolderNames{iSubjects};
     
@@ -85,43 +57,45 @@ for iSubjects = startSubject:endSubject
 end
 
 %% PREPROCESSING AGAIN WITH REREF AND WITHOUT REMOVED CHANNELS
-eval('setOptions')
-setupSubjects
-updateWaitbar = waitbarParfor(length(startSubject:endSubject), "Preprocess (without removed channels)...");
+clear OPTIONS; setOptions
+
+[startSubject, endSubject, subjectFolderNames] = bv_getSubjectRange(1, 'end');
+updateWaitbar = waitbarfor(length(startSubject:endSubject), "Preprocess (without removed channels)...");
 for iSubjects = startSubject:endSubject
     currSubject = subjectFolderNames{iSubjects};
     
     cfg             = OPTIONS.REREF;
     cfg.currSubject = currSubject;
-    cfg.quiet = 'no';
+    cfg.quiet       = 'no';
     
     data = bv_preprocResample(cfg);
     updateWaitbar();
 
 end
 
-%% CALCULATE ARTEFACTS IN RMCHANNELS DATA
-eval('setOptions')
-setupSubjects
-updateWaitbar = waitbarParfor(length(startSubject:endSubject), "Artefact detection (clean preprocessed data)...");
+%% CALCULATE ARTEFACTS IN EEG DATA WITHOUT POOR CHANNELS
+clear OPTIONS; setOptions
 
+[startSubject, endSubject, subjectFolderNames] = bv_getSubjectRange(1, 'end');
+updateWaitbar = waitbarfor(length(startSubject:endSubject), "Artefact detection (clean preprocessed data)...");
 for iSubjects = startSubject:endSubject
     
     currSubject = subjectFolderNames{iSubjects};
     
     cfg             = OPTIONS.ARTFCTRMCHANNELS;
     cfg.currSubject = currSubject;
-    cfg.quiet = 'no';
-    artefactdef = bv_createArtefactStruct(cfg);
+    cfg.quiet       = 'no';
+    
+    artefactdef     = bv_createArtefactStruct(cfg);
     updateWaitbar();
     
 end
 
-%% CALCULATE DATALOSS BASED ON ARTFCTAFTER
-eval('setOptions')
-setupSubjects
-updateWaitbar = waitbarParfor(length(startSubject:endSubject), "Remove poor trials...");
+%% REMOVE TRIALS 
+clear OPTIONS; setOptions
 
+[startSubject, endSubject, subjectFolderNames] = bv_getSubjectRange(1, 'end');
+updateWaitbar = waitbarfor(length(startSubject:endSubject), "Remove poor trials...");
 for iSubjects = startSubject:endSubject
 
     currSubject = subjectFolderNames{iSubjects};
@@ -135,17 +109,35 @@ for iSubjects = startSubject:endSubject
 end
 
 %% APPEND DATA
-eval('setOptions')
-setupSubjects
-updateWaitbar = waitbarParfor(length(startSubject:endSubject), "Append data...");
+clear OPTIONS; setOptions
 
+[startSubject, endSubject, subjectFolderNames] = bv_getSubjectRange(1, 'end');
+updateWaitbar = waitbarfor(length(startSubject:endSubject), "Append data...");
 for iSubjects = startSubject:endSubject
 
-    cfg = OPTIONS.APPENDED;
+    cfg             = OPTIONS.APPENDED;
     cfg.currSubject = subjectFolderNames{iSubjects};
-    cfg.quiet = 'no';
+    cfg.quiet       = 'no';
     
     data = bv_appendfieldtripdata(cfg);
     updateWaitbar();
     
 end
+
+
+
+%% Calculate PLI connectivity
+clear OPTIONS; setOptions
+
+[startSubject, endSubject, subjectFolderNames] = bv_getSubjectRange(1, 'end');
+updateWaitbar = waitbarfor(length(startSubject:endSubject), "Append data...");
+for iSubjects = startSubject:endSubject
+
+    cfg             = OPTIONS.PLICONNECTIVITY;
+    cfg.currSubject = subjectFolderNames{iSubjects};
+    cfg.quiet       = 'no';
+    
+    [ connectivity ] = bv_calculatePLI(cfg);
+    updateWaitbar();
+end
+
