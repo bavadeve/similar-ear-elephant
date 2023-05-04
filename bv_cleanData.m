@@ -144,7 +144,11 @@ if isempty(cfg.trl)
     return
 end
 evalc('data = ft_redefinetrial(cfg, data);');
-    
+
+if ~isfield(data, 'trialinfo')
+    data.trialinfo = ones(length(data.trial),1);
+end
+
 cfg = [];
 cfg.trl = data.cfg.trl;
 cfg.trl(:,4) = data.trialinfo;

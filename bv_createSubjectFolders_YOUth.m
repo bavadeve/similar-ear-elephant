@@ -54,7 +54,7 @@ rawdelim        = ft_getopt(cfg, 'rawdelim');
 sfolderstruct   = ft_getopt(cfg, 'sfoldername');
 inputnames      = ft_getopt(cfg, 'rawlabel');
 sDirString      = ft_getopt(cfg, 'sDirString', 'no');
-dataType        = ft_getopt(cfg, 'dataType', 'no');
+dataType        = ft_getopt(cfg, 'dataType');
 overwrite       = ft_getopt(cfg, 'overwrite', 'no');
 
 % load in standard options and paths
@@ -125,11 +125,11 @@ for subjIndex = 1:length(fileNames)
             end
             
             
-        case 'bdf'
+        case {'edf', 'bdf'}
             israw = 1;
             
-            dataFile = [PATHS.RAWS filesep cFile  '.bdf'];
-            hdrFile = [PATHS.RAWS filesep cFile  '.bdf'];
+            dataFile = [PATHS.RAWS filesep cFile '.' dataType];
+            hdrFile = [PATHS.RAWS filesep cFile '.' dataType];
             
             if ~exist(dataFile, 'file')
                 error('dataFile: %s not found!', dataFile)

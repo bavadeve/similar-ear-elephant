@@ -25,7 +25,7 @@ data = dataObjs.CData;
 minlim = min(data(data~=0));
 maxlim = max(data(data~=0));
 
-if minlim == maxlim
+if minlim == maxlim || (isnan(minlim) || isnan(maxlim))
     minlim = 0;
     maxlim = 1;
 end

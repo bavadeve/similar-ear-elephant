@@ -387,7 +387,7 @@ if strcmpi(saveData, 'yes')
     end
     
 end
-
+end
 %%%%%% extra functions %%%%%%
 function connectivity = addRemovedChannels(connectivity, trueRmChannels)
 
@@ -416,3 +416,4 @@ indxSort = indxSort(any(indxSort,2));
 currSpctrm = currSpctrm(indxSort, indxSort,:,:);
 connectivity.label = connectivity.label(indxSort);
 connectivity.(fname2use) = currSpctrm;
+end

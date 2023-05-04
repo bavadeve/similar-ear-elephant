@@ -381,11 +381,11 @@ switch eventformat
         
         %%%%%%%%%% HACK ADDED BY BAUKE VAN DER VELDE 20160218 %%%%%%%%%%
         
-        ind = trigger > byte1;                      % find out which numbers need to be converted
-        trigger(ind) = abs( byte2 - trigger(ind) ); % convert, if necessary numbers from 16bit to 8bit
-        
-        flank_trigger = abs( flank_trigger );       % take the absolute value of flank_trigger to also register down-flanks
-        flank_trigger( trigger==0 ) = 0;            % ignore 0 trigger resets in trigger data
+%         ind = trigger > byte1;                      % find out which numbers need to be converted
+%         trigger(ind) = abs( byte2 - trigger(ind) ); % convert, if necessary numbers from 16bit to 8bit
+%         
+%         flank_trigger = abs( flank_trigger );       % take the absolute value of flank_trigger to also register down-flanks
+%         flank_trigger( trigger==0 ) = 0;            % ignore 0 trigger resets in trigger data
         
         %%%%%%%%%% HACK ADDED BY BAUKE VAN DER VELDE 20160218 %%%%%%%%%%
         

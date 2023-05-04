@@ -1,5 +1,23 @@
 function hout = bv_plotDataOnTopoplot(Ws, lay, propThr, globNorm, weighted, color, subplotlabels)
 
+% defaultHeight = 1;
+% defaultUnits = 'inches';
+% defaultShape = 'rectangle';
+% expectedShapes = {'square','rectangle','parallelogram'};
+% 
+% p = inputParser;
+% validScalarPosNum = @(x) isnumeric(x) && isscalar(x) && (x > 0);
+% addRequired(p,'Ws',validScalarPosNum);
+% addRequired(p,'lay',validScalarPosNum);
+% 
+% addOptional(p,'height',defaultHeight,validScalarPosNum);
+% addParameter(p,'units',defaultUnits,@isstring);
+% addParameter(p,'shape',defaultShape,...
+%     @(x) any(validatestring(x,expectedShapes)));
+% parse(p,width,varargin{:});
+% 
+% a = p.Results.width*p.Results.height;
+
 if nargin < 4
     globNorm = false;
 end
@@ -51,11 +69,9 @@ if weighted && globNorm
     nrmWs = abs(Ws ./ max(abs(Ws(:))));
 end
 
-
+figure;
 for currW = 1:size(Ws,3)
-    %     if globNorm
-    %         hout{currW} = figure;
-    %     end
+
     W = squeeze(Ws(:,:,currW));
     W(isnan(W)) = 0;
     
@@ -96,7 +112,7 @@ for currW = 1:size(Ws,3)
         nrmW = abs(W ./ max(W(:)));
     end
     
-    if size(Ws,3) > 1 %&& ~globNorm
+    if size(Ws,3) > 1 
         [subplotindx] = numSubplots(size(Ws,3));
         subplot(subplotindx(1), subplotindx(2), currW)
         cla;
@@ -105,7 +121,6 @@ for currW = 1:size(Ws,3)
     
     fprintf('creating topoplot %s...', num2str(currW))
     hold on
-    %     W = tril(W);
     
     if nansum(W(:))~=0
         counter = 0;
@@ -145,13 +160,7 @@ for currW = 1:size(Ws,3)
                     else
                         h(counter) = patch(x,y, W(i,j)*[1 1], 'edgecolor',...
                             'flat','linewidth', normdataWidth(i,j), 'edgealpha', ...
-                            normdataAlpha(i,j));
-                        %
-                        %                         p2 = [x(1) y(1)];
-                        %                         p1 = [x(2) y(2)];
-                        %                         dp = p2 - p1;
-                        %                         quiver(p1(1),p1(2),dp(1),dp(2),0, 'Color', [0 0 1])
-                        
+                            normdataAlpha(i,j));                        
                     end
                 end
             end
@@ -214,7 +223,6 @@ edgealpha = 0.3;
 if nargin < 6
     weighted = true;
 end
-
 
 % Check centre is vector with two points
 [m,n] = size(centre);

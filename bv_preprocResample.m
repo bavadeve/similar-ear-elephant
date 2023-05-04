@@ -128,6 +128,7 @@ interpolate         = ft_getopt(cfg, 'interpolate', 'no');
 maxbadchans         = ft_getopt(cfg, 'maxbadchans', 3);
 quiet               = ft_getopt(cfg, 'quiet', 'no');
 waveletThresh       = ft_getopt(cfg, 'waveletThresh', 'no');
+channels            = ft_getopt(cfg, 'channels');
 
 quiet = strcmpi(quiet, 'yes');
 
@@ -204,7 +205,7 @@ else
     if ~quiet; fprintf('done! \n'); end
 end
 
-hdr = ft_read_header(hdrfile);
+evalc('hdr = ft_read_header(hdrfile);');
 
 removingChans = strcmpi(removechans, 'yes');
 if removingChans && ~isempty(channels2remove)
@@ -261,13 +262,13 @@ if removingChans && isfield(subjectdata, 'channels2remove')
         if ~quiet; fprintf(['\n \t\t skipping following channel(s): ' ...
             repmat('%s, ', 1,length(subjectdata.channels2remove))], subjectdata.channels2remove{:}); end
         cfg = [];
-        cfg.channel = cat(2,'EEG', strcat('-',subjectdata.channels2remove'));
+        cfg.channel = cat(2, channels{:}, strcat('-',subjectdata.channels2remove'));
         
     else
-        cfg.channel = {'EEG'};
+        cfg.channel = channels;
     end
 else
-    cfg.channel = {'EEG'};
+    cfg.channel = channels;
 end
 
 cfg.dataset = dataset;
@@ -297,11 +298,11 @@ if strcmpi(interpolate, 'yes')
     end
 end
 
-if ~quiet
-    data = bv_sortBasedOnTopo(data); % sorting data based on actual place of the electrodes. See function for more detail.
-else
-    evalc('data = bv_sortBasedOnTopo(data);');
-end
+% if ~quiet
+%     data = bv_sortBasedOnTopo(data); % sorting data based on actual place of the electrodes. See function for more detail.
+% else
+%     evalc('data = bv_sortBasedOnTopo(data);');
+% end
 
 % *** Resampling (if a resampleFs is given)
 if ~isempty(resampleFs)
@@ -379,8 +380,6 @@ if ~isempty(trialfun)
     if ~quiet; fprintf('\t Redefining trialstructure based on %s ... \n', trialfun); end
     
     subjectdata.trialfun = trialfun;
-    
-    
     
     cfg = [];
     cfg.dataset = dataset;

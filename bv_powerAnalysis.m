@@ -7,7 +7,7 @@ optionsFcn  = ft_getopt(cfg, 'optionsFcn', 'setPaths');
 freqOutput  = ft_getopt(cfg, 'freqOutput','fourier');
 saveData    = ft_getopt(cfg, 'saveData');
 nTrials     = ft_getopt(cfg, 'nTrials','all');
-trigger     = ft_getopt(cfg, 'trigger')
+trigger     = ft_getopt(cfg, 'trigger');
 method      = ft_getopt(cfg, 'method');
 
 if nargin < 2

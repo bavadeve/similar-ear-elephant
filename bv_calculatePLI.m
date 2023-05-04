@@ -14,6 +14,11 @@ keeptrials      = ft_getopt(cfg, 'keeptrials', 'no');
 quiet           = ft_getopt(cfg, 'quiet');
 preprocOptions  = ft_getopt(cfg, 'preprocOptions', []);
 overwrite       = ft_getopt(cfg, 'overwrite', 'no');
+freqLabel       = ft_getopt(cfg, 'freqLabel',  ...
+    {'delta', 'theta', 'alpha1', 'alpha2','beta', 'gamma1', 'gamma2'});
+freqRng         = ft_getopt(cfg, 'freqRng', ...
+    {[0.2 2.9], [3 5.9], [6 8.9], [9 11.9], [12 25], [25 45], [55 70]});
+
 if strcmpi(quiet, 'yes')
     quiet = true;
 else
@@ -53,9 +58,6 @@ if nargin < 2
     subjectdata.cfgs.(outputName) = cfg;
     
 end
-
-freqLabel = {'delta', 'theta', 'alpha1', 'alpha2','beta', 'gamma1', 'gamma2'};
-freqRng = {[0.2 2.9], [3 5.9], [6 8.9], [9 11.9], [12 25], [25 45], [55 70]};
 
 if ~quiet; fprintf('\t loading in original data ...'); end
 cfg = preprocOptions;
