@@ -1,4 +1,4 @@
-function [SWPs, delta_Cs, delta_Ls] = gr_calculateSmallworldPropensityWs(As)
+function [rs] = gr_calculateAssortativity(As, flag)
 % Function to calculate small-worldness index on multiple adjecency
 % matrices.
 %
@@ -29,35 +29,22 @@ if ndims > 3
 end
 
 m = size(As, 3);
-
-SWPs = zeros(m, 1);
-delta_Cs = zeros(m, 1);
-delta_Ls = zeros(m, 1);
-
+rs = zeros(m, 1);
 counter = 0;
 for i = 1:m
     currW = As(:,:,i);
     if any(any(isnan(currW)))
-        SWPs(i) = NaN;
-        delta_Cs(i) = NaN;
-        delta_Ls(i) = NaN;
+        rs(i) = NaN;
         counter = counter + 1;
         continue
     end
     
     currW = gr_normalizeW(currW);
-    [SWPs(i),delta_Cs(i),delta_Ls(i)] = small_world_propensity(currW, 'O');
+    rs(i) = assortativity_wei(currW,flag);
         
 end
 
-sel = SWPs<0 |SWPs >1;
-SWPs(sel) = NaN;
-delta_Cs(sel) = NaN;
-delta_Ls(sel) = NaN;
-
 if ndims > 3
-    SWPs = reshape(SWPs, extraDims);
-    delta_Cs = reshape(delta_Cs, extraDims);
-    delta_Ls = reshape(delta_Ls, extraDims);
+    rs = reshape(rs, extraDims);
 end
 

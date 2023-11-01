@@ -20,8 +20,3 @@ for i = 1:m
     msts(:,:,i) = full(mst);
 end
 
-if ndims > 3
-    msts = reshape(msts, sz);
-end
-
-

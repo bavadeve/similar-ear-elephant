@@ -102,7 +102,7 @@ end
 
 %%%%%% start connectivity analysis based on given method %%%%%%
 switch(method)
-    case {'wpli_debiased', 'wpli', 'coh', 'granger'} % based on ft_connectivityanalysis with cfg.method = 'wpli_debiased'
+    case {'wpli_debiased', 'wpli', 'coh', 'granger', 'plv'} % based on ft_connectivityanalysis with cfg.method = 'wpli_debiased'
         
         % cut, if needed data into trials
         if ~isempty(triallength)

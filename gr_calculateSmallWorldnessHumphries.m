@@ -1,4 +1,5 @@
 function [Ss, Cs, Ls] = gr_calculateSmallWorldnessHumphries(As, threshold)
+addpath('~/MatlabToolboxes/SmallWorldNess/')
 
 m = size(As, 3);
 FLAG_Cws = 1;

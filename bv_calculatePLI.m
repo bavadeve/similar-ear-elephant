@@ -74,6 +74,7 @@ for iFreq = 1:length(freqLabel)
     cfg = [];
     cfg.lpfilter = 'yes';
     cfg.lpfreq = currFreqRng(2);
+    cfg.lpinstabilityfix = 'reduce';
     cfg.hpfilter = 'yes';
     cfg.hpfreq = currFreqRng(1);
     cfg.hpinstabilityfix = 'reduce';

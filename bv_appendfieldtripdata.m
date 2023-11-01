@@ -88,11 +88,17 @@ fsample = dataOld.fsample;
 triallength = size(dataOld.trial{1},2) ./ 512;
 startTrial = dataOld.sampleinfo(:,1);
 endTrial = dataOld.sampleinfo(:,2);
-trialinfo = dataOld.trialinfo;
 tmptrl(:,1) = startTrial(find([1; diff(startTrial) ~= length(dataOld.trial{1})]));
 tmptrl(:,2) = endTrial(find([diff(startTrial) ~= length(dataOld.trial{1}); 1]));
-tmptrialinfo = dataOld.trialinfo(ismember(dataOld.sampleinfo(:,1), tmptrl(:,1)));
-trl = [tmptrl zeros(length(tmptrialinfo),1) tmptrialinfo];
+
+if isfield(dataOld, 'trialinfo')
+    trialinfo = dataOld.trialinfo;
+    tmptrialinfo = dataOld.trialinfo(ismember(dataOld.sampleinfo(:,1), tmptrl(:,1)));
+    
+    trl = [tmptrl zeros(length(tmptrialinfo),1) tmptrialinfo];
+else
+    trl = [tmptrl zeros(length(tmptrl),1)];
+end
 
 %%%% redefining trials based on calculated trl %%%%
 cfg = [];

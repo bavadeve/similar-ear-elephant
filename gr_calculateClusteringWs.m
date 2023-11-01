@@ -1,48 +1,61 @@
-function [C] = gr_calculateClusteringWs(Ws, edgeType)
+function [C] = gr_calculateClusteringWs(As, edgeType)
 % Function to calculate clustering coefficient on multiple adjecency
 % matrices. 
 %
 % usage:
-%   [Cs] = gr_calculateClusteringWs(Ws, edgeType)
+%   [Cs] = gr_calculateClusteringAs(As, edgeType)
 %
 % inputs:
-%   Ws:         adjacency matrices with dim( nchans * nchans * nsubjects )
+%   As:         adjacency matrices with dim( nchans * nchans * nsubjects )
 %   edgeType:   type of edges ('weighted', 'binary', or 'mst' (for minimum
 %               spelling tree graphs))
 %
 % See also CLUSTERING_COEF_BU, CLUSTERING_COEF_WU
 %
 
-m = size(Ws, 3);
+sz = size(As);
+N = sz(1);
+ndims = length(sz);
+
+if ndims > 3
+    extraDims = sz(3:end);
+    nAsz = [sz(1) sz(2) prod(sz(3:end))];
+    As = reshape(As, nAsz);
+end
+
+m = size(As, 3);
 C = zeros(1, m);
 for i = 1:m
-    W = Ws(:,:,i);
+    A = As(:,:,i);
     
     % find removed channels
-    rmChannels = (nansum(W)==0);
+    rmChannels = (nansum(A)==0);
     if ~isempty(rmChannels)
         
-        W(rmChannels,:) = [];
-        W(:,rmChannels) = [];
+        A(rmChannels,:) = [];
+        A(:,rmChannels) = [];
         
     end
     
-    W(isnan(W)) = 0;
+    A(isnan(A)) = 0;
     
-    if isempty(W)
+    if isempty(A)
         C(i) = NaN;
         continue
     end
     
     switch edgeType
         case 'binary'
-            C(i) = mean(clustering_coef_bu(W));
+            C(i) = mean(clustering_coef_bu(A));
         case 'weighted'
-%             Wnrm = weight_conversion(W, 'normalize');
-            Wnrm = gr_normalizeW(W);
-            C(i) = mean(clustering_coef_wu(Wnrm));
+            Anrm = gr_normalizeW(A);
+            C(i) = mean(clustering_coef_wu(Anrm));
         case 'mst'
-            Wnrm = double(W>0);
-            C(i) = mean(clustering_coef_bu(Wnrm));
+            Anrm = double(A>0);
+            C(i) = mean(clustering_coef_bu(Anrm));
     end
+end
+
+if ndims > 3
+    C = reshape(C, [extraDims]);
 end

@@ -118,6 +118,7 @@ notchfreq           = ft_getopt(cfg, 'notchfreq');
 filttype            = ft_getopt(cfg, 'filttype');
 reref               = ft_getopt(cfg, 'reref', 'no');
 refelec             = ft_getopt(cfg, 'refelec', 'all');
+refmethod           = ft_getopt(cfg, 'refmethod', 'avg');
 removechans         = ft_getopt(cfg, 'removechans', 'no');
 channels2remove     = ft_getopt(cfg, 'channels2remove');
 mandatoryChans      = ft_getopt(cfg, 'mandatoryChans', {});
@@ -128,7 +129,8 @@ interpolate         = ft_getopt(cfg, 'interpolate', 'no');
 maxbadchans         = ft_getopt(cfg, 'maxbadchans', 3);
 quiet               = ft_getopt(cfg, 'quiet', 'no');
 waveletThresh       = ft_getopt(cfg, 'waveletThresh', 'no');
-channels            = ft_getopt(cfg, 'channels');
+channels            = ft_getopt(cfg, 'channels', {'EEG'});
+chanindx            = ft_getopt(cfg, 'chanindx');
 
 quiet = strcmpi(quiet, 'yes');
 
@@ -205,7 +207,14 @@ else
     if ~quiet; fprintf('done! \n'); end
 end
 
-evalc('hdr = ft_read_header(hdrfile);');
+if ~isempty(chanindx)
+    evalc('hdr = ft_read_header(hdrfile, ''chanindx'', chanindx);');
+else
+    evalc('hdr = ft_read_header(hdrfile);');
+    chanindx = 1:length(hdr.label);
+end
+
+layout = bv_getLayoutType(hdr);
 
 removingChans = strcmpi(removechans, 'yes');
 if removingChans && ~isempty(channels2remove)
@@ -220,25 +229,25 @@ end
 % If channels should be interpolated, but no channels are to be removed, no
 % new file will be created (compared to already existing file). Therefore,
 % skip this subject
-% if strcmpi(interpolate, 'yes')
-%     if isempty(subjectdata.channels2remove) & exist(subjectdata.PATHS.PREPROC, 'file')
-%         subjectdata.PATHS.(outputName) = subjectdata.PATHS.PREPROC;
-%         if ~quiet; fprintf('\t no channels found to remove, continueing...'); end
-%         evalc('[~,~, data] = bv_check4data(subjectdata.PATHS.SUBJECTDIR, ''PREPROC'');');
-%         
-%         if strcmpi(saveData, 'yes')
-%             
-%             if ~quiet
-%                 bv_saveData(subjectdata);              % save both data and subjectdata to the drive
-%                 bv_updateSubjectSummary([PATHS.SUMMARY filesep 'SubjectSummary'], subjectdata)
-%             else
-%                 evalc('bv_saveData(subjectdata);');
-%             end
-%         end
-%         
-%         return
-%     end
-% end
+if strcmpi(interpolate, 'yes')
+    if isempty(subjectdata.channels2remove) & exist(subjectdata.PATHS.PREPROC, 'file')
+        subjectdata.PATHS.(outputName) = subjectdata.PATHS.PREPROC;
+        if ~quiet; fprintf('\t no channels found to remove, continueing...'); end
+        evalc('[~,~, data] = bv_check4data(subjectdata.PATHS.SUBJECTDIR, ''PREPROC'');');
+        
+        if strcmpi(saveData, 'yes')
+            
+            if ~quiet
+                bv_saveData(subjectdata);              % save both data and subjectdata to the drive
+                bv_updateSubjectSummary([PATHS.SUMMARY filesep 'SubjectSummary'], subjectdata)
+            else
+                evalc('bv_saveData(subjectdata);');
+            end
+        end
+        
+        return
+    end
+end
 
 subjectdata.cfgs.(outputName) = cfg; % save used config file in subjectdata
 subjectdata.trialfun = trialfun;
@@ -255,8 +264,11 @@ if removingChans && isfield(subjectdata, 'channels2remove')
             data = [];
             return
         end
-        cfg.layout = 'biosemi32.lay';
+        
+        cfg.channel = channels;
+        cfg.layout = layout;
         cfg.method = 'triangulation';
+        cfg.feedback = 'no';
         evalc('neighbours = ft_prepare_neighbours(cfg);');
         
         if ~quiet; fprintf(['\n \t\t skipping following channel(s): ' ...
@@ -274,6 +286,7 @@ end
 cfg.dataset = dataset;
 cfg.headerfile = hdrfile;
 cfg.continuous = 'yes';
+cfg.chanindx = chanindx;
 
 evalc('data = ft_preprocessing(cfg);');
 
@@ -289,9 +302,9 @@ if strcmpi(interpolate, 'yes')
             
             cfg = [];
             cfg.missingchannel = subjectdata.channels2remove';
-            cfg.method = 'weighted';
+            cfg.method = 'average';
             cfg.neighbours = neighbours;
-            cfg.layout = 'biosemi32.lay';
+            cfg.layout = layout;
             evalc('data = ft_channelrepair(cfg, data);');
             if ~quiet; fprintf('done! \n'); end
         end
@@ -318,7 +331,7 @@ end
 
 % *** Filtering data (if a hpfreq, lpfreq, or notchfreq is given).
 % See BV_FILTEREEGDATA for more info
-if ~isempty(hpfreq) || isempty(lpfreq) || isempty(notchfreq)
+if ~(isempty(hpfreq) && isempty(lpfreq) && isempty(notchfreq))
     
     cfg.hpfreq      = hpfreq;
     cfg.lpfreq      = lpfreq;
@@ -339,6 +352,7 @@ if strcmpi(reref, 'yes')
     cfg = [];
     cfg.reref = 'yes';
     cfg.refchannel = refelec;
+    cfg.refmethod = refmethod;
     evalc('data = ft_preprocessing(cfg, data);');
     
     if ~quiet; fprintf('done!\n'); end

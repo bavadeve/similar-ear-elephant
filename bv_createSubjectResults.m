@@ -65,17 +65,20 @@ subjectdatasummary = struct2table(subjectdatasummary);
 
 if nargin > 0
     fprintf('\t loading results into subjectsummary ... ')
-    startIndx = 1;
+    counter = 0;
     while 1
-        for i = startIndx
+        counter = counter + 1;
+        disp(counter);
+        for i = 1:100
+            disp(i)
             subjectresultstmp = subjectdatasummary(i,:);
             
             evalc('[resultsStruct, succeed] = bv_quickloadData(subjectdatasummary.subjectName{i}, inputStr);');
             
             if ~succeed
-                fprintf(repmat('\b', 1, lng))
-                startIndx = startIndx + 1;
-                break
+%                 fprintf(repmat('\b', 1, lng))
+%                 startIndx = startIndx + 1;
+                continue
             end
             if keepstruct
                 subjectresultstmp.(inputStr) = resultsStruct;
@@ -94,32 +97,28 @@ if nargin > 0
                     end
                 end
             end
+            
+            if exist('subjectresultstmp', 'var')
+                break
+            end
         end
-        
         if exist('subjectresultstmp', 'var')
             break
         end
-        
     end
-    vartypes = varfun(@class,subjectresultstmp,'OutputFormat','cell');
-    [subjectresultstmp(1,ismember(vartypes, 'cell'))] = {''};
-    subjectresultstmp{1,ismember(vartypes, 'double')} = NaN;
-    [subjectresultstmp{1,ismember(vartypes, 'logical')}] = false;
+%     vartypes = varfun(@class,subjectresultstmp,'OutputFormat','cell');
+%     [subjectresultstmp(1,ismember(vartypes, 'cell'))] = deal({''});
+%     subjectresultstmp{1,ismember(vartypes, 'double')} = deal(NaN);
+%     [subjectresultstmp(1,ismember(vartypes, 'logical'))] = deal(false);
     
     
     updateWaitbar = waitbarParfor(height(subjectdatasummary), 'Adding to subjectsummary ...');
     parfor i = 1:height(subjectdatasummary)
-%         %         if subjectdatasummary(i,:).removed
-%         %             continue
-% %         %         end
-%         if i==58
-%             pause
-%         end
         subjectresults(i,:) = add2subjectresults(subjectdatasummary(i,:), subjectresultstmp, inputStr, keepstruct);
         updateWaitbar();
     end
     fprintf('done! \n')
-    subjectresults(ismissing(subjectresults.pseudo),:) =[];
+    subjectresults(cellfun(@isempty, subjectresults.pseudo),:) =[];
 else
     subjectresults = subjectdatasummary;
 end
@@ -129,62 +128,63 @@ function subjectresults = add2subjectresults(subjectdatasummary, subjectresults,
 subjectresultstmp = subjectdatasummary;
 
 if subjectdatasummary.removed
-    return
-end
-
-evalc('[resultsStruct, succeed] = bv_quickloadData(subjectdatasummary.subjectName, inputStr);');
-
-if ~(succeed)
-    % fprintf('\t inputStr not found, skipping \n')
-    return
-end
-if keepstruct
-    subjectresultstmp.(inputStr) = resultsStruct;
+    subjectresults.pseudo = subjectdatasummary.pseudo;
+    subjectresults.removed = 1;
 else
-    fnames = fieldnames(resultsStruct);
-    for j = 1:length(fnames)
-        switch class(subjectresults.(fnames{j}))
-            case 'double'
-                subjectresultstmp.(fnames{j})(1) = resultsStruct.(fnames{j});
-            otherwise
-                subjectresultstmp.(fnames{j}){1} = resultsStruct.(fnames{j});
-        end
+    evalc('[resultsStruct, succeed] = bv_quickloadData(subjectdatasummary.subjectName, inputStr);');
+    
+    if ~(succeed)
+        %     fprintf('\t inputStr not found, skipping \n')
+        return
     end
-    
-    fnamesSummary = fieldnames(subjectresults);
-    fnamesTmp = fieldnames(subjectresultstmp);
-    extraFieldsTmp = fnamesTmp(find(not(ismember(fnamesTmp, fnamesSummary))));
-    extraFieldsSummary = fnamesSummary(find(not(ismember(fnamesSummary, fnamesTmp))));
-    
-    for j = 1:length(extraFieldsTmp)
-        if isstruct(subjectresultstmp)
-            subjectresultstmp = rmfield(subjectresultstmp, extraFieldsTmp{j});
-        elseif istable(subjectresultstmp)
-            subjectresultstmp(:, ismember(subjectresultstmp.Properties.VariableNames, extraFieldsTmp{j})) = [];
+    if keepstruct
+        subjectresultstmp.(inputStr) = resultsStruct;
+    else
+        fnames = fieldnames(resultsStruct);
+        for j = 1:length(fnames)
+            switch class(subjectresults.(fnames{j}))
+                case 'double'
+                    subjectresultstmp.(fnames{j})(1) = resultsStruct.(fnames{j});
+                otherwise
+                    subjectresultstmp.(fnames{j}){1} = resultsStruct.(fnames{j});
+            end
         end
         
-    end
-    for j = 1:length(extraFieldsSummary)
-        if isstruct(subjectresultstmp)
-            subjectresultstmp = rmfield(subjectresultstmp, extraFieldsSummary{j});
-        elseif istable(subjectresultstmp)
+        fnamesSummary = fieldnames(subjectresults);
+        fnamesTmp = fieldnames(subjectresultstmp);
+        extraFieldsTmp = fnamesTmp(find(not(ismember(fnamesTmp, fnamesSummary))));
+        extraFieldsSummary = fnamesSummary(find(not(ismember(fnamesSummary, fnamesTmp))));
+        
+        for j = 1:length(extraFieldsTmp)
+            if isstruct(subjectresultstmp)
+                subjectresultstmp = rmfield(subjectresultstmp, extraFieldsTmp{j});
+            elseif istable(subjectresultstmp)
+                subjectresultstmp(:, ismember(subjectresultstmp.Properties.VariableNames, extraFieldsTmp{j})) = [];
+            end
             
-            switch class(subjectresults.(extraFieldsSummary{j}))
-                case 'double'
-                    subjectresultstmp.(extraFieldsSummary{j})(1) = subjectresults.(extraFieldsSummary{j});
-                otherwise
-                    subjectresultstmp.(extraFieldsSummary{j}){1} = subjectresults.(extraFieldsSummary{j});
+        end
+        for j = 1:length(extraFieldsSummary)
+            if isstruct(subjectresultstmp)
+                subjectresultstmp = rmfield(subjectresultstmp, extraFieldsSummary{j});
+            elseif istable(subjectresultstmp)
+                
+                switch class(subjectresults.(extraFieldsSummary{j}))
+                    case 'double'
+                        subjectresultstmp.(extraFieldsSummary{j})(1) = subjectresults.(extraFieldsSummary{j});
+                    otherwise
+                        subjectresultstmp.(extraFieldsSummary{j}){1} = subjectresults.(extraFieldsSummary{j});
+                end
+                
             end
             
         end
         
+        n1 = subjectresults.Properties.VariableNames;
+        n2 = subjectresultstmp.Properties.VariableNames;
+        [~,y] = ismember(n1, n2);
+        subjectresultstmp = subjectresultstmp(:,y);
+        
+        
     end
-    
-    n1 = subjectresults.Properties.VariableNames;
-    n2 = subjectresultstmp.Properties.VariableNames;    
-    [~,y] = ismember(n1, n2);
-    subjectresultstmp = subjectresultstmp(:,y);
-
-    
+    subjectresults = subjectresultstmp;
 end
-subjectresults = subjectresultstmp;

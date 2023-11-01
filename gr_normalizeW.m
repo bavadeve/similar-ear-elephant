@@ -7,8 +7,8 @@ Wsq = nansquareform(W);
 
 if ~all(ismember(unique(Wsq, 'sorted'), [0 1]))
     Wsqnrm = Wsq;
-    Wsqnrm(Wsqnrm > 0) = (Wsqnrm(Wsqnrm > 0) - min(Wsqnrm(Wsqnrm > 0))) / ...
-        (max(Wsqnrm(Wsqnrm > 0)) - min(Wsqnrm(Wsqnrm > 0)));
+    Wsqnrm = (Wsqnrm - min(Wsqnrm)) / ...
+        (max(Wsqnrm) - min(Wsqnrm));
     Wnrm = squareform(Wsqnrm);
 else
     Wnrm = W;

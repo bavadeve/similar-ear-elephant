@@ -125,7 +125,7 @@ for subjIndex = 1:length(fileNames)
             end
             
             
-        case {'edf', 'bdf'}
+        case {'edf', 'bdf', 'EDF', 'BDF'}
             israw = 1;
             
             dataFile = [PATHS.RAWS filesep cFile '.' dataType];

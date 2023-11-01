@@ -27,7 +27,6 @@ else
     T_all = T_EEG;
 end
 
-
 switch class(subjectdatasummary)
     case 'table'
         subjectdatasummary = joinbasedonfirst(subjectdatasummary, T_all, {'pseudo', 'wave'});
@@ -44,9 +43,9 @@ T1_sel = T1{:,contains(T1.Properties.VariableNames, Keys)};
 T2_sel = T2{:,contains(T2.Properties.VariableNames, Keys)};
 
 for i = 1:height(T1)
-    T2Indx = find(all(ismember(T2_sel, T1_sel(i,:)),2));
+    T2Indx = find(all(ismember(T2_sel, T1_sel(i,:)),2));        
     
-    if T2Indx ~= 0
+    if length(T2Indx) == 1
         T_join(i,:) = innerjoin(T1(i,:), T2(T2Indx,:), 'Keys', Keys);
     else
         emptyTable = T2(1,:);

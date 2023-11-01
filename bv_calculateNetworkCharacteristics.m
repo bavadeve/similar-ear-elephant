@@ -9,32 +9,74 @@ if range(cellfun(@(x) size(x,1), T.(spctrmvar))) ~=0 || ...
     error('Subjects do not have the same number of channels in their connectivity matrix')
 end
 
-spctrm = T.(spctrmvar);
-kepttrials = range(cellfun(@(x) size(x,3), spctrm))~=0;
+strengthfield = [spctrmvar '_strength'];
+swpfield = [spctrmvar '_SWP'];
+swfield = [spctrmvar '_SW'];
+cfield = [spctrmvar '_C'];
+lfield = [spctrmvar '_L'];
+qfield = [spctrmvar '_Q'];
+lnrmfield = [spctrmvar '_Lnrm'];
 
+spctrm = T.(spctrmvar);
+kepttrials = true;
+freqs = T.freq{1};
+thresholds = 0.1:0.1:1;
+nfreqs = size(spctrm{1},4);
 if kepttrials
     updateWaitbar = waitbarParfor(length(spctrm)*length(chars), "Calculate characteristics...");
-    strength = zeros(length(spctrm), length(T.freq{1}));
-    SWP = zeros(length(spctrm), length(T.freq{1}));
-    SW = zeros(length(spctrm), length(T.freq{1}));
+    strength = zeros(length(spctrm), nfreqs);
+    SWP = zeros(length(spctrm), nfreqs);
+    C = SWP;
+    L = SWP;
+    SW = zeros(length(spctrm), length(thresholds), length(T.freq{1}));
     parfor i = 1:length(spctrm)
-        if ismember('strength', chars)
-            strength(i,:) = nanmedian(nanmean(bv_multisquareform(spctrm{i}),1),3);
-            updateWaitbar()
-        end
-        if ismember('SWP', chars)
-            sz = size(spctrm{i});
-            SWP(i,:) = ...
-                nanmedian(reshape(gr_calculateSmallworldPropensityWs(...
-                reshape(spctrm{i}, [sz(1) sz(2) prod(sz(3:end))])), [sz(3:4)]));
-            updateWaitbar()
-        end
-        if ismember('SW', chars)
-            sz = size(spctrm{i});
-            SW(i,:) = ...
-                nanmedian(reshape(gr_calculateSmallWorldnessHumphries(...
-                reshape(spctrm{i}, [sz(1) sz(2) prod(sz(3:end))])), [sz(3:4)]));
-            updateWaitbar()
+        try
+            if isempty(spctrm{i})
+                continue
+            end
+            if ismember('strength', chars)
+                if nfreqs == 1
+                    strength(i,:) = nanmedian(nanmean(bv_multisquareform(spctrm{i})));
+                else
+                    strength(i,:) = nanmedian(nanmean(bv_multisquareform(spctrm{i}),1),3);
+                end
+                updateWaitbar()
+            end
+            if ismember('SWP', chars)
+                SWP(i,:) = nanmean(gr_calculateSmallworldPropensityWs(spctrm{i}));
+                updateWaitbar()
+            end
+            if ismember('Lnrm', chars)
+                lambdas(i,:) = nanmean(gr_calculateNormalizedPathLength(spctrm{i}, 'weighted'));
+                updateWaitbar()
+            end
+            if ismember('modularity', chars)
+                [~, Qout] = gr_calculateQModularity(spctrm{i}, 'weighted')
+                Q(i,:) = nanmean(Qout);
+                updateWaitbar()
+            end
+            if ismember('SW', chars)
+                sz = size(spctrm{i});
+                SWs = zeros(length(thresholds), length(freqs));
+                for j = 1:length(thresholds)
+                    SWs(j,:) = ...
+                        nanmedian(reshape(gr_calculateSmallWorldnessHumphries(...
+                        reshape(spctrm{i}, [sz(1) sz(2) prod(sz(3:end))]), thresholds(j)), sz(3:4)));
+                end
+                SW(i,:,:) = SWs;
+                updateWaitbar()
+                
+            end
+            if ismember('C', chars)
+                C(i,:) = nanmedian(gr_calculateClusteringWs(spctrm{i}, 'weighted'));
+                updateWaitbar()
+            end
+            if ismember('L', chars)
+                L(i,:) = nanmedian(gr_calculatePathlengthWs(spctrm{i}, 'weighted'));
+                updateWaitbar()
+            end
+        catch
+            error('%1.0f: %s', i, lasterr)
         end
         
     end
@@ -44,36 +86,44 @@ else
     SWP = zeros(length(spctrm), length(T.freq{1}));
     SW = zeros(length(spctrm), length(T.freq{1}));
     parfor i = 1:length(spctrm)
-        if ismember('strength', chars)
-            strength(i,:) = nanmedian(bv_multisquareform(spctrm{i}),2);
-            updateWaitbar()
+        try
+            if ismember('strength', chars)
+                strength(i,:) = nanmedian(bv_multisquareform(spctrm{i}),2);
+                updateWaitbar()
+            end
+            if ismember('SWP', chars)
+                SWP(i,:) = gr_calculateSmallworldPropensityWs(spctrm{i});
+                updateWaitbar()
+            end
+            if ismember('SW', chars)
+                SW(i,:) = gr_calculateSmallWorldnessHumphries(spctrm{i}, 1);
+                updateWaitbar()
+            end
+        catch
+            error('%1.0f: %s', i, lasterr)
         end
-        if ismember('SWP', chars)
-            SWP(i,:) = gr_calculateSmallworldPropensityWs(spctrm{i});
-            updateWaitbar()
-        end
-        if ismember('SW', chars)
-            SW(i,:) = gr_calculateSmallWorldnessHumphries(spctrm{i});
-            updateWaitbar()
-        end
+        
     end
 end
-
 
 if ismember('strength', chars)
-    if kepttrials
-        str = cellfun(@(x) squeeze(nanmean(nanmean(bv_multisquareform(x),1),3)), spctrm, 'Un', 0);
-        T.strength = cat(1,str{:});
-    else
-        maxDim = length(spctrm(out{1}));
-        T.strength = nanmean(bv_multisquareform(cat(maxDim+1, spctrm{:})),maxDim)';   
-    end
+    T.(strengthfield) = strength;
 end
 if ismember('SW', chars)
-    T.SW = SW;
+    T.(swfield) = SW;
 end
 if ismember('SWP', chars)
-    T.SWP = SWP;
+    T.(swpfield) = SWP;
 end
-
-        
+if ismember('C', chars)
+    T.(cfield) = C;
+end
+if ismember('L', chars)
+    T.(lfield) = L;
+end
+if ismember('modularity', chars)
+    T.(qfield) = Q;
+end
+if ismember('Lnrm', chars)
+    T.(lnrmfield) = lambdas;
+end

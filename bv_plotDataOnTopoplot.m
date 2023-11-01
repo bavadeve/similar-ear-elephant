@@ -69,7 +69,7 @@ if weighted && globNorm
     nrmWs = abs(Ws ./ max(abs(Ws(:))));
 end
 
-figure;
+% figure;
 for currW = 1:size(Ws,3)
 
     W = squeeze(Ws(:,:,currW));
@@ -82,8 +82,8 @@ for currW = 1:size(Ws,3)
     if weighted && ~globNorm
         I = find(W);
         absW = abs(W);
-        widthRange = [0.1 4];
-        alphaRange = [0.2 0.7];
+        widthRange = [0.1 2];
+        alphaRange = [1 1];
         
         
         if length(I) == 1
@@ -176,8 +176,11 @@ for currW = 1:size(Ws,3)
         end
     end
     
-    scatter(lay.pos(:,1), lay.pos(:,2), (sum(W)+1/10)*10, 'MarkerFaceColor', 'k', ...
-        'MarkerFaceAlpha', 0.5, 'MarkerEdgeAlpha', 0.2)
+%     scatter(lay.pos(:,1), lay.pos(:,2), (sum(W)+1/10)*20', 'MarkerFaceColor', 'k', ...
+%         'MarkerFaceAlpha', 0.7, 'MarkerEdgeAlpha', 0.2)
+    scatter(lay.pos(:,1), lay.pos(:,2), (sum(W)+1/10)*10', ...
+        'MarkerFaceColor', [.5 .5 .5], ...
+        'MarkerEdgeColor', [.5 .5 .5])
     line(lay.outline{1}(:,1), lay.outline{1}(:,2), 'LineWidth', 3, 'color', ...
         [0.5 0.5 0.5])
     
@@ -374,5 +377,3 @@ while p(2)/p(1)>2.5
     N=n+1;
     [p,n]=numSubplots(N); %Recursive!
 end
-
-

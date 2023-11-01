@@ -9,13 +9,15 @@ function Wrandomized = gr_randomizeWeightedMatrices(Ws, m)
 %  Ws:      adjacency matrices with dim(chan * chan * subject)
 %  m:       amount of randomized networks per adjacency matrix
 
+addpath('~/MyScripts/')
+
 n = size(Ws,3);
 Wrandomized = zeros([size(Ws,1) size(Ws,2) n m]);
 rng(100000)
 counter = 0;
-for iS = 1:n
+updateWaitbar = waitbarParfor(n, 'randomize matrices');
+parfor iS = 1:n
     currW = Ws(:,:,iS);
-    lng = printPercDone(n, counter);
 
     for iM = 1:m
         weights = squareform(currW);
@@ -26,9 +28,6 @@ for iS = 1:n
         end
         
         Wrandomized(:,:,iS,iM) = squareform(weights);
-
-%         Wrandomized(:,:,iS,iM) = null_model_und_sign(currW, 5, 0.1);
     end
-    counter = counter + 1;
-    fprintf(repmat('\b', 1, lng))
+    updateWaitbar()
 end

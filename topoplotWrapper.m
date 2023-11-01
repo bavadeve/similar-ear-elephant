@@ -22,8 +22,8 @@ opt = {'interpmethod','v4','interplim','mask','gridscale',1000,'outline',lay.out
 % [h,Zi] = topoplot(dat, chanlocs(order), 'colormap', colormap('parula'), 'plotdisk', 'on', 'style', 'both', 'conv', 'on', 'gridscale', 1000, 'electrodes','labelpoint', 'maplimits', lim );
 
 set(gca, 'CLim', lim)
-% colorbar
-% colormap plasma
-% 
-% axis equal
-% axis off
+colorbar
+colormap plasma
+
+axis equal
+axis off

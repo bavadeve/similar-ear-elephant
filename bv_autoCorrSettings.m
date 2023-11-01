@@ -11,11 +11,15 @@ function bv_autoCorrSettings(ax, labels)
 %
 % See also, SETAUTOLIMITS
 
+if nargin < 2
+    labels = [];
+end
+
 setAutoLimits(ax);
 colorbar
 axis square
 
-if nargin == 2
+if ~isempty(labels)
     set(gca, 'XTick', 1:length(labels), 'XTickLabel', labels);
     set(gca, 'YTick', 1:length(labels), 'YTickLabel', labels);
 end
