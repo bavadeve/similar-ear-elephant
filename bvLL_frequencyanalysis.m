@@ -25,7 +25,7 @@ end
 cfg = [];
 cfg.method      = 'mtmfft';
 cfg.taper       = 'hanning';
-cfg.tapsmofrq   = 1;
+cfg.tapsmofrq   = 2;
 cfg.output      = output;
 cfg.foilim     = freqrange;
 cfg.pad         ='nextpow2';

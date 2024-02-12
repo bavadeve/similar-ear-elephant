@@ -214,7 +214,6 @@ else
     chanindx = 1:length(hdr.label);
 end
 
-layout = bv_getLayoutType(hdr);
 
 removingChans = strcmpi(removechans, 'yes');
 if removingChans && ~isempty(channels2remove)
@@ -264,7 +263,8 @@ if removingChans && isfield(subjectdata, 'channels2remove')
             data = [];
             return
         end
-        
+        layout = bv_getLayoutType(hdr);
+
         cfg.channel = channels;
         cfg.layout = layout;
         cfg.method = 'triangulation';
@@ -299,7 +299,8 @@ if strcmpi(interpolate, 'yes')
                 fprintf(['\t the following channels will be interpolated ... ', ...
                     repmat('%s, ',1, length(subjectdata.channels2remove))], subjectdata.channels2remove{:})
             end
-            
+            layout = bv_getLayoutType(hdr);
+
             cfg = [];
             cfg.missingchannel = subjectdata.channels2remove';
             cfg.method = 'average';
