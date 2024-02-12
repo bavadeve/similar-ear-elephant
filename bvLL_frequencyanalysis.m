@@ -25,12 +25,12 @@ end
 cfg = [];
 cfg.method      = 'mtmfft';
 cfg.taper       = 'hanning';
-cfg.tapsmofrq   = 1;
+cfg.tapsmofrq   = 2;
 cfg.output      = output;
 cfg.foilim     = [freqrange];
 cfg.pad         ='nextpow2';
 cfg.keeptrials  = 'yes';
 cfg.keeptapers  = 'yes';
 freq = ft_freqanalysis(cfg, data);
-% fd = ft_freqdescriptives(cfg, freq);
+fd = ft_freqdescriptives(cfg, freq);
 
