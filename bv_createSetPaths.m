@@ -28,7 +28,7 @@ fprintf(fid,'if ~exist(PATHS.REMOVED, ''dir'')\n\tmkdir(PATHS.REMOVED)\nend\n');
 fprintf(fid,'if ~exist(PATHS.CONFIG, ''dir'')\n\tmkdir(PATHS.CONFIG)\nend\n');
 fprintf(fid,'if ~exist(PATHS.SUMMARY, ''dir'')\n\tmkdir(PATHS.SUMMARY)\nend\n');
 
-fprintf(fid, '\n%% add fieldtrip and the subfunctions to your matlab path\nPATHS.FTPATH = ''/Users/bauke/MatlabToolboxes/fieldtrip'';');
+fprintf(fid, '\n%% add fieldtrip and the subfunctions to your matlab path\nPATHS.FTPATH = ''~/MatlabToolboxes/fieldtrip'';');
 fprintf(fid, 'addpath(PATHS.FTPATH)\n');
 fprintf(fid, 'addpath(PATHS.SUBFUNCTIONS)\n');
 fprintf(fid, 'addpath(pwd)\n');

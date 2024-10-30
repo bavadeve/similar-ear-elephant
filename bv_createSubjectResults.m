@@ -105,16 +105,27 @@ if nargin > 0
         if exist('subjectresultstmp', 'var')
             break
         end
-    end
-%     vartypes = varfun(@class,subjectresultstmp,'OutputFormat','cell');
-%     [subjectresultstmp(1,ismember(vartypes, 'cell'))] = deal({''});
-%     subjectresultstmp{1,ismember(vartypes, 'double')} = deal(NaN);
-%     [subjectresultstmp(1,ismember(vartypes, 'logical'))] = deal(false);
-    
+    end    
     
     updateWaitbar = waitbarParfor(height(subjectdatasummary), 'Adding to subjectsummary ...');
-    parfor i = 1:height(subjectdatasummary)
-        subjectresults(i,:) = add2subjectresults(subjectdatasummary(i,:), subjectresultstmp, inputStr, keepstruct);
+    for i = 1:height(subjectdatasummary)
+        newSubjectresult = add2subjectresults(subjectdatasummary(i,:), subjectresultstmp, inputStr, keepstruct);
+        if ~isempty(newSubjectresult)
+            subjectresults(i,:) = newSubjectresult;
+        else
+            new_subj_indx = height(subjectresults) + 1;
+            subjectresults(new_subj_indx+1,:) = subjectresults(1,:);
+            subjectresults(end,:) = [];
+            subjectresults.subjectName(new_subj_indx) = subjectdatasummary(i,:).subjectName;
+            T1 = subjectresults(new_subj_indx,:);
+            T2 = subjectdatasummary(i,:);
+            T1 = T1(:,{'subjectName', T1.Properties.VariableNames{~ismember(T1.Properties.VariableNames, T2.Properties.VariableNames)}});
+            T1 = outerjoin(T1, T2, 'Keys', 'subjectName', 'MergeKeys', true);
+            [~,sorted] = ismember(subjectresults.Properties.VariableNames, T1.Properties.VariableNames);
+            T1 = T1(:,sorted);
+            subjectresults(i,:) = T1;
+            subjectresults(i,:).removed = 1;
+        end
         updateWaitbar();
     end
     fprintf('done! \n')
@@ -135,6 +146,7 @@ else
     
     if ~(succeed)
         %     fprintf('\t inputStr not found, skipping \n')
+        subjectresults = [];
         return
     end
     if keepstruct

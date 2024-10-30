@@ -56,7 +56,24 @@ if nargin < 2
     end
     
     subjectdata.cfgs.(outputName) = cfg;
-    
+elseif isfield(cfg, 'currSubject')
+
+    eval(pathsFcn)
+
+    subjectFolderPath = [PATHS.SUBJECTS filesep currSubject];
+
+    if ~quiet
+        [subjectdata, check] = bv_check4data(subjectFolderPath);
+        if ~check
+            error('%s: input data not found', currSubject)
+        end
+    else
+        evalc('[subjectdata, check] = bv_check4data(subjectFolderPath);');
+        if ~check
+            error('%s: input data not found', currSubject)
+        end
+    end
+
 end
 
 if ~quiet; fprintf('\t loading in original data ...'); end

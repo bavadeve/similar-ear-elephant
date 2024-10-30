@@ -1,4 +1,10 @@
-function T = bv_calculateNetworkCharacteristics(T, spctrmvar, chars)
+function T = bv_calculateNetworkCharacteristics(T, spctrmvar, chars, prop_threshold)
+
+if nargin < 4
+    threshold = 1;
+else
+    threshold = prop_threshold;
+end
 
 if strcmpi(chars, 'all')
     chars = {'SWP', 'SW', 'strength'};
@@ -20,7 +26,6 @@ lnrmfield = [spctrmvar '_Lnrm'];
 spctrm = T.(spctrmvar);
 kepttrials = true;
 freqs = T.freq{1};
-thresholds = 0.1:0.1:1;
 nfreqs = size(spctrm{1},4);
 if kepttrials
     updateWaitbar = waitbarParfor(length(spctrm)*length(chars), "Calculate characteristics...");
@@ -28,57 +33,55 @@ if kepttrials
     SWP = zeros(length(spctrm), nfreqs);
     C = SWP;
     L = SWP;
-    SW = zeros(length(spctrm), length(thresholds), length(T.freq{1}));
     parfor i = 1:length(spctrm)
-        try
-            if isempty(spctrm{i})
-                continue
-            end
-            if ismember('strength', chars)
-                if nfreqs == 1
-                    strength(i,:) = nanmedian(nanmean(bv_multisquareform(spctrm{i})));
-                else
-                    strength(i,:) = nanmedian(nanmean(bv_multisquareform(spctrm{i}),1),3);
-                end
-                updateWaitbar()
-            end
-            if ismember('SWP', chars)
-                SWP(i,:) = nanmean(gr_calculateSmallworldPropensityWs(spctrm{i}));
-                updateWaitbar()
-            end
-            if ismember('Lnrm', chars)
-                lambdas(i,:) = nanmean(gr_calculateNormalizedPathLength(spctrm{i}, 'weighted'));
-                updateWaitbar()
-            end
-            if ismember('modularity', chars)
-                [~, Qout] = gr_calculateQModularity(spctrm{i}, 'weighted')
-                Q(i,:) = nanmean(Qout);
-                updateWaitbar()
-            end
-            if ismember('SW', chars)
-                sz = size(spctrm{i});
-                SWs = zeros(length(thresholds), length(freqs));
-                for j = 1:length(thresholds)
-                    SWs(j,:) = ...
-                        nanmedian(reshape(gr_calculateSmallWorldnessHumphries(...
-                        reshape(spctrm{i}, [sz(1) sz(2) prod(sz(3:end))]), thresholds(j)), sz(3:4)));
-                end
-                SW(i,:,:) = SWs;
-                updateWaitbar()
-                
-            end
-            if ismember('C', chars)
-                C(i,:) = nanmedian(gr_calculateClusteringWs(spctrm{i}, 'weighted'));
-                updateWaitbar()
-            end
-            if ismember('L', chars)
-                L(i,:) = nanmedian(gr_calculatePathlengthWs(spctrm{i}, 'weighted'));
-                updateWaitbar()
-            end
-        catch
-            error('%1.0f: %s', i, lasterr)
+        if isempty(spctrm{i})
+            continue
         end
-        
+        thresh_spctrm = bv_thresholdMultipleWs(spctrm{i}, threshold)
+
+        if ismember('strength', chars)
+            if nfreqs == 1
+                strength(i,:) = nanmedian(nanmean(bv_multisquareform(thresh_spctrm)));
+            else
+                strength(i,:) = nanmedian(nanmean(bv_multisquareform(thresh_spctrm),1),3);
+            end
+            updateWaitbar()
+        end
+        if ismember('SWP', chars)
+            SWP(i,:) = nanmean(gr_calculateSmallworldPropensityWs(thresh_spctrm));
+            updateWaitbar()
+        end
+        if ismember('Lnrm', chars)
+            lambdas(i,:) = nanmean(gr_calculateNormalizedPathLength(thresh_spctrm, 'weighted'));
+            updateWaitbar()
+        end
+        if ismember('modularity', chars)
+            [~, Qout] = gr_calculateQModularity(thresh_spctrm, 'weighted');
+            Q(i,:) = nanmean(Qout);
+            updateWaitbar()
+        end
+        % if ismember('SW', chars)
+        %     sz = size(spctrm{i});
+        %     SWs = zeros(length(thresholds), length(freqs));
+        %     for j = 1:length(thresholds)
+        %         SWs(j,:) = ...
+        %             nanmedian(reshape(gr_calculateSmallWorldnessHumphries(...
+        %             reshape(spctrm{i}, [sz(1) sz(2) prod(sz(3:end))]), thresholds(j)), sz(3:4)));
+        %     end
+        %     SW(i,:,:) = SWs;
+        %     updateWaitbar()
+        % 
+        % end
+        if ismember('C', chars)
+            C(i,:) = nanmedian(gr_calculateClusteringWs(thresh_spctrm, 'weighted'));
+            updateWaitbar()
+        end
+        if ismember('L', chars)
+            L(i,:) = nanmedian(gr_calculatePathlengthWs(thresh_spctrm, 'weighted'));
+            updateWaitbar()
+        end
+
+
     end
 else
     updateWaitbar = waitbarParfor(length(spctrm)*length(chars), "Calculate characteristics...");
@@ -88,21 +91,21 @@ else
     parfor i = 1:length(spctrm)
         try
             if ismember('strength', chars)
-                strength(i,:) = nanmedian(bv_multisquareform(spctrm{i}),2);
+                strength(i,:) = nanmedian(bv_multisquareform(thresh_spctrm),2);
                 updateWaitbar()
             end
             if ismember('SWP', chars)
-                SWP(i,:) = gr_calculateSmallworldPropensityWs(spctrm{i});
+                SWP(i,:) = gr_calculateSmallworldPropensityWs(thresh_spctrm);
                 updateWaitbar()
             end
             if ismember('SW', chars)
-                SW(i,:) = gr_calculateSmallWorldnessHumphries(spctrm{i}, 1);
+                SW(i,:) = gr_calculateSmallWorldnessHumphries(thresh_spctrm, 1);
                 updateWaitbar()
             end
         catch
             error('%1.0f: %s', i, lasterr)
         end
-        
+
     end
 end
 

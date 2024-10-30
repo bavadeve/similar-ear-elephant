@@ -1,6 +1,6 @@
-function [L, eff, rad] = gr_calculatePathlengthWs(As, edgeType)
+function [L, eff, ecc_out, rad, diam] = gr_calculatePathlengthWs(As, edgeType)
 % Function to calculate characteristic path length on multiple adjecency
-% matrices. 
+% matrices.
 %
 % usage:
 %   [CPLs] = gr_calculatePathlengthAs(As, edgeType)
@@ -24,43 +24,41 @@ m = size(As, 3);
 
 L = zeros(1, size(As,3));
 updateWaitbar = waitbarParfor(m, 'calculating path lengths');
-parfor i = 1:m
+for i = 1:m
     A = As(:,:,i);
     % find removed channels
     rmChannels = sum(isnan(A)) == 31;
     if ~isempty(find(rmChannels))
-        
+
         A(rmChannels,:) = [];
         A(:,rmChannels) = [];
-        
+
     end
-    
+
     switch edgeType
         case 'binary'
             D = distance_bin( A );
-            [L(i), eff(i), ~, rad(i)] = charpath( D );
-            
+
+
         case 'weighted'
-            D = distance_wei_floyd(A, 'inv');
-            L(i) = mean( squareform(D) );
-            
-        case 'mst'
-            D = distance_wei( A );
-            [L(i), eff(i), ~, rad(i)] = charpath( D );
-            
+            lengths = weight_conversion(A, 'lengths');
+            D = distance_wei(lengths);
+
+
         otherwise
             error('unknown adjacency matrix type')
-            
+
+
     end
+    [L(i), eff(i), ecc, rad(i), diam(i)] = charpath( D );
+    ecc_out(i) = mean(ecc);
     updateWaitbar();
 end
 
 if ndims > 3
     L = reshape(L, extraDims);
-    switch edgeType
-        case {'binary', 'mst'}
-            L = reshape(L, [extraDims]);
-            eff = reshape(eff, [extraDims]);
-            rad = reshape(rad, [extraDims]);
-    end        
+    eff = reshape(eff, extraDims);
+    rad = reshape(rad, extraDims);
+    diam = reshape(diam, extraDims);
+    ecc_out = reshape(ecc_out, extraDims);
 end

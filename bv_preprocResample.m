@@ -121,15 +121,13 @@ refelec             = ft_getopt(cfg, 'refelec', 'all');
 refmethod           = ft_getopt(cfg, 'refmethod', 'avg');
 removechans         = ft_getopt(cfg, 'removechans', 'no');
 channels2remove     = ft_getopt(cfg, 'channels2remove');
-mandatoryChans      = ft_getopt(cfg, 'mandatoryChans', {});
 dataset             = ft_getopt(cfg, 'dataset');
 hdrfile             = ft_getopt(cfg, 'hdrfile');
 overwrite           = ft_getopt(cfg, 'overwrite', 'no');
 interpolate         = ft_getopt(cfg, 'interpolate', 'no');
-maxbadchans         = ft_getopt(cfg, 'maxbadchans', 3);
 quiet               = ft_getopt(cfg, 'quiet', 'no');
 waveletThresh       = ft_getopt(cfg, 'waveletThresh', 'no');
-channels            = ft_getopt(cfg, 'channels', {'EEG'});
+channels            = ft_getopt(cfg, 'channels');
 chanindx            = ft_getopt(cfg, 'chanindx');
 
 quiet = strcmpi(quiet, 'yes');
@@ -152,6 +150,7 @@ else
     end
     %     fprintf('running with subject.mat file of %s ', currSubject)
     hasdata = 0;
+    saveSubjectData = 'yes';
 end
 
 if ~hasdata % check whether data needs to be loaded from subject.mat file
@@ -209,11 +208,13 @@ end
 
 if ~isempty(chanindx)
     evalc('hdr = ft_read_header(hdrfile, ''chanindx'', chanindx);');
+elseif length(channels)>1
+    chanindx = bv_checkChannels(hdrfile, channels);
+    evalc('hdr = ft_read_header(hdrfile, ''chanindx'', chanindx);');
 else
     evalc('hdr = ft_read_header(hdrfile);');
     chanindx = 1:length(hdr.label);
 end
-
 
 removingChans = strcmpi(removechans, 'yes');
 if removingChans && ~isempty(channels2remove)
@@ -229,7 +230,7 @@ end
 % new file will be created (compared to already existing file). Therefore,
 % skip this subject
 if strcmpi(interpolate, 'yes')
-    if isempty(subjectdata.channels2remove) & exist(subjectdata.PATHS.PREPROC, 'file')
+    if isempty(subjectdata.channels2remove) & isfield(subjectdata.PATHS, 'PREPROC')
         subjectdata.PATHS.(outputName) = subjectdata.PATHS.PREPROC;
         if ~quiet; fprintf('\t no channels found to remove, continueing...'); end
         evalc('[~,~, data] = bv_check4data(subjectdata.PATHS.SUBJECTDIR, ''PREPROC'');');
@@ -258,11 +259,7 @@ cfg = [];
 % only read in EEG data (without possible removed channels)
 if removingChans && isfield(subjectdata, 'channels2remove')
     if ~isempty(subjectdata.channels2remove)
-        if length(subjectdata.channels2remove) > maxbadchans
-            removingSubjects([], currSubject, 'too many noisy channels')
-            data = [];
-            return
-        end
+
         layout = bv_getLayoutType(hdr);
 
         cfg.channel = channels;
@@ -438,12 +435,17 @@ if ~isempty(trialfun)
     
 end
 
-% **** saving data
+% saving data
 if strcmpi(saveData, 'yes')
-    
     if ~quiet
         bv_saveData(subjectdata, data, outputName);              % save both data and subjectdata to the drive
     else
         evalc('bv_saveData(subjectdata, data, outputName);');              % save both data and subjectdata to the drive
+    end
+elseif strcmpi(saveSubjectData, 'yes')
+    if ~quiet
+        bv_saveData(subjectdata);              % save subjectdata to the drive
+    else
+        evalc('bv_saveData(subjectdata);');              % save subjectdata to the drive
     end
 end

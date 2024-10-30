@@ -10,7 +10,7 @@ if ndims > 3
     msts = reshape(msts, nwsz);
 end
     
-LF = squeeze(sum(sum(msts)==1,2))./N;
+LF = squeeze(sum(sum(msts)==1,2))./(N-1);
 
 if ndims > 3
     LF = reshape(LF, extraDims);

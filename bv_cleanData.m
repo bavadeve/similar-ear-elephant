@@ -89,6 +89,7 @@ if isempty(lims)
     error('Please give cfg.lims struct as input')
 end
 
+saveSubjectData = 'no';
 if nargin < 2 % data loading
     if isempty(pathsFcn)
         error('please add options function cfg.optionsFcn')
@@ -114,6 +115,20 @@ if nargin < 2 % data loading
     end
     
     subjectdata.cfgs.(outputName) = cfg;
+elseif isfield(cfg, 'currSubject')
+    if isempty(pathsFcn)
+        error('please add options function cfg.optionsFcn')
+    else
+        eval(pathsFcn)
+    end
+    subjectFolderPath = [PATHS.SUBJECTS filesep currSubject];
+    if ~quiet
+        disp(currSubject);
+        [subjectdata] = bv_check4data(subjectFolderPath);
+    else
+        evalc('[subjectdata] = bv_check4data(subjectFolderPath);');
+    end
+    saveSubjectData = 'yes';
 else
     subjectdata = struct;
     saveData = 'no';
@@ -158,17 +173,15 @@ subjectdata.cleanSampleInfo = artefactdef.sampleinfo(goodTrialIndx,:);
 
 if strcmpi(saveData, 'yes')
     if ~quiet
-        if strcmpi(saveCleanData, 'yes')
-            bv_saveData(subjectdata, data, outputName);             % save both data and subjectdata to the drive
-        else
-            bv_saveData(subjectdata);                               % save only subjectdata to the drive
-        end
+        bv_saveData(subjectdata, data, outputName);             % save both data and subjectdata to the drive
     else
-        if strcmpi(saveCleanData, 'yes')
-            evalc('bv_saveData(subjectdata, data, outputName);');    
-        else
-            evalc('bv_saveData(subjectdata); ');                    
-        end
+        evalc('bv_saveData(subjectdata, data, outputName);');
+    end
+elseif strcmpi(saveSubjectData, 'yes')
+    if ~quiet
+        bv_saveData(subjectdata);                               % save only subjectdata to the drive
+    else
+        evalc('bv_saveData(subjectdata);');
     end
 end
 

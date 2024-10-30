@@ -125,6 +125,23 @@ if nargin < 2
     end
     
 else
+    if isfield(cfg, 'currSubject')
+        if isempty(pathsFcn)
+            error('please add options function cfg.pathsFcn')
+        else
+            eval(pathsFcn)
+        end
+
+        if ~quiet; disp(currSubject); end
+        subjectFolderPath = [PATHS.SUBJECTS filesep currSubject];
+        if ~quiet
+            [subjectdata] = bv_check4data(subjectFolderPath);
+        else
+            evalc('[subjectdata] = bv_check4data(subjectFolderPath);');
+        end
+
+        saveSubjectData = 'yes';
+    end
     saveData = 'no';
     overwrite = 'no';
 end
@@ -155,21 +172,21 @@ for i = 1:length(data.trial)
     end
 end
 
-if contains('jump', analyses)
-    artefactdef.jump.levels = zeros(length(data.label), length(data.trial));
-    counter = 0;
-    for i = 1:length(data.label)
-        cfg = [];
-        cfg.artfctdef.jump.channel = data.label{i};
-        cfg.continuous = 'no';
-        [tmp,artifact] = ft_artifact_jump(cfg, data);
-        for j = 1:size(artifact,1)
-            counter = counter + 1;
-            [~,sel] = min(abs(mean(data.sampleinfo(:,1:2),2) - mean(artifact(j,:))));
-            artefactdef.jump.levels(i,sel) = 1;
-        end
-    end
-end
+% if contains('jump', analyses)
+%     artefactdef.jump.levels = zeros(length(data.label), length(data.trial));
+%     counter = 0;
+%     for i = 1:length(data.label)
+%         cfg = [];
+%         cfg.artfctdef.jump.channel = data.label{i};
+%         cfg.continuous = 'no';
+%         [tmp,artifact] = ft_artifact_jump(cfg, data);
+%         for j = 1:size(artifact,1)
+%             counter = counter + 1;
+%             [~,sel] = min(abs(mean(data.sampleinfo(:,1:2),2) - mean(artifact(j,:))));
+%             artefactdef.jump.levels(i,sel) = 1;
+%         end
+%     end
+% end
 if ~quiet; fprintf('done! \n'); end
 
 artefactdef.sampleinfo = data.sampleinfo;
@@ -181,6 +198,10 @@ if strcmpi(saveData, 'yes')
     else
         evalc('bv_saveData(subjectdata, artefactdef, outputName);');
     end
-    
-    
+elseif strcmpi(saveSubjectData, 'yes')
+    if ~quiet
+        bv_saveData(subjectdata);
+    else
+        evalc('bv_saveData(subjectdata);');
+    end
 end

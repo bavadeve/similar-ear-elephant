@@ -1,6 +1,10 @@
-%% BEFORE WE START'
-% This is an overview script of all the preprocessing steps needed to be
-% taken before analyzing EEG data. 
+% This is an overview script of all the preprocessing steps needed taken to
+% calculate the networks in EEG data. This function uses parallel processing.
+% This is recommended to use if you run this function on DRE or on any
+% computer with multiple cores (to speed up the process). Note that due the
+% parallelization, outputs into the command line window are generally
+% limited. It is therefore not recommended to use this script if you are
+% new to this pipeline.
 %% setup subject folders
 clear OPTIONS; setOptions
 
@@ -25,6 +29,7 @@ parfor iSubjects = startSubject:endSubject
         updateWaitbar();
         
 end
+
 %% CALCULATE ARTEFACTS IN PREPROC DATA
 clear OPTIONS; setOptions
 

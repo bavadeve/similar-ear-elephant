@@ -1,11 +1,12 @@
 function bv_createNewAnalysis(str, overwrite)
-% creates folder structure for a new analysis in the YOUth-EEG-pipeline
+% creates folder structure for a new analysis in the EEG connectivity
+% pipeline
 %
 % use as:
 %   bv_createNewAnalysis(label, overwrite)
 %
 % with:
-%       label         = {string}, label to add to foldername
+%       label         = 'string', label to add to foldername
 %       overwrite     = bool, set to true if earlier analysis with similar
 %                           folder name should be overwritten
 %
@@ -41,7 +42,7 @@ function bv_createNewAnalysis(str, overwrite)
 %                                   correct (especially the fieldtrip
 %                                   path))
 %
-% Bauke van der Velde, Utrecht Universitym, 2019-2022
+% Bauke van der Velde, Utrecht University, 2019-2024
 %                       
 % see also bv_createSetPaths setOptions_default bv_createNewLog
 
@@ -114,7 +115,19 @@ if ~overwrite && exist([PATHS.CURRANALYSIS filesep 'setOptions.m'], 'file')
     setOptionsExist = true(1);
     fprintf('setOptions.m already exists, not overwriting \n')
 else
-    setOptionsExist = copyfile(which('setOptions_default'), [PATHS.CURRANALYSIS filesep 'setOptions.m']);
+    location = questdlg('Which EEG data are you using? (for default options)', 'Location', 'YOUth', 'NEO', 'None', 'None');
+
+    switch location
+        case 'YOUth'
+            setOptionsExist = copyfile(which('setOptions_YOUth'), [PATHS.CURRANALYSIS filesep 'setOptions.m']);
+        case 'NEO'
+            setOptionsExist = copyfile(which('setOptions_NEO'), [PATHS.CURRANALYSIS filesep 'setOptions.m']);
+        case 'None'
+            setOptionsExist = copyfile(which('setOptions_empty'), [PATHS.CURRANALYSIS filesep 'setOptions.m']);
+        otherwise
+            error('Unknkown option')
+    end
+
     if setOptionsExist
         fprintf('setOptions.m created \n')
     else
@@ -123,17 +136,40 @@ else
 end
 
 fprintf('\t')
+
 if ~overwrite && exist([PATHS.CURRANALYSIS filesep 'preprocessingData.m'], 'file')
     preprocessExist = true(1);
     fprintf('preprocessingData.m already exists, not overwriting \n')
 else
+    config = '';
     parprocess = questdlg('Will you use parallel processing?');
-    
+    saveIntermediate = questdlg('Do you need intermediate steps to be saved? (Not recommended if you have limited harddrive space)');
+
     if strcmpi(parprocess, 'yes')
-        [preprocessExist, msg] = copyfile(which('preprocessingData_standard_parfor'), [PATHS.CURRANALYSIS filesep 'preprocessingData.m']);
-    else
-        [preprocessExist, msg] = copyfile(which('preprocessingData_standard'), [PATHS.CURRANALYSIS filesep 'preprocessingData.m']);
+        config = [config, '-parprocess'];
+    end    
+    
+    if strcmpi(saveIntermediate, 'yes')
+        config = [config, '-saveintermediate'];
     end
+
+    switch config
+        case '-parprocess-saveintermediate'            
+            [preprocessExist, msg] = copyfile(which('preprocessingData_standard_parfor'), [PATHS.CURRANALYSIS filesep 'preprocessingData.m']);
+
+        case '-parprocess'            
+            [preprocessExist, msg] = copyfile(which('preprocessingData_standard_withoutSave_parfor'), [PATHS.CURRANALYSIS filesep 'preprocessingData.m']);
+
+        case '-saveintermediate'            
+            [preprocessExist, msg] = copyfile(which('preprocessingData_standard'), [PATHS.CURRANALYSIS filesep 'preprocessingData.m']);
+
+        case ''            
+            [preprocessExist, msg] = copyfile(which('preprocessingData_standard_withoutSave'), [PATHS.CURRANALYSIS filesep 'preprocessingData.m']);
+
+        otherwise
+            error('unknown configuration')
+    end
+                
     if  preprocessExist
         fprintf('preprocessingData.m created \n')
     else

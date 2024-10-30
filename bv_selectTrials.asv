@@ -1,0 +1,18 @@
+function T = bv_selectTrials(T, spctrmvar, ntrials)
+
+data = T.(spctrmvar);
+
+for i = 1:length(data)
+    dat = data{i};
+    trls = size(dat,3);
+    trl_sel = sort(randperm(trls, ntrials));
+    data{i} = dat(:,:,trl_sel,:);
+end
+
+T.plispctrm
+
+cfg = [];
+cfg.trials = sort(randperm(length(data.trial), ntrials));
+fprintf('\t selecting %1.0f cut trials ... ', length(cfg.trials))
+evalc('data = ft_selectdata(cfg, data);');
+

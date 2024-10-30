@@ -60,10 +60,10 @@ overwrite       = ft_getopt(cfg, 'overwrite', 'no');
 % load in standard options and paths
 eval(pathsFcn);
 
-if strcmpi(overwrite, 'no') && exist([PATHS.SUMMARY filesep 'SubjectSummary.mat'], 'file')
-    load([PATHS.SUMMARY filesep 'SubjectSummary.mat'], 'subjectdatasummary')
+if strcmpi(overwrite, 'no')
+    subjectdatasummary = table2struct(bv_createSubjectResults());
     
-    for i = 1:length(subjectdatasummary)
+    for i = 1:height(subjectdatasummary)
         dataFilePath = subjectdatasummary(i).PATHS.DATAFILE;
         [~, dataFile, ext] = fileparts(dataFilePath);
         allDatafiles{i} = strcat(dataFile,ext);
@@ -202,5 +202,5 @@ save([PATHS.SUMMARY filesep 'SubjectSummary'], 'subjectdatasummary')
 fprintf('done \n')
 
 logstrct.totalStartSubjects = nSubjects;
-bv_updateLog([PATHS.ROOT filesep 'log.txt'], logstrct);
+% bv_updateLog([PATHS.ROOT filesep 'log.txt'], logstrct);
 

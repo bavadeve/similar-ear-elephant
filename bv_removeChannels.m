@@ -1,4 +1,4 @@
-function data = bv_removeChannels(cfg, data, artefactdef)
+function [data, subjectdata] = bv_removeChannels(cfg, data, artefactdef)
 % bv_removeChannels removes and repairs channels 
 %
 % Use as
@@ -70,6 +70,7 @@ expectedtrials  = ft_getopt(cfg, 'maxtrials');
 repairchans     = ft_getopt(cfg, 'repairchans');
 overwrite       = ft_getopt(cfg, 'overwrite');
 quiet           = ft_getopt(cfg, 'quiet', false);
+maxbadchans     = ft_getopt(cfg, 'maxbadchans', 3);
 
 cfgIn = cfg;
 
@@ -118,6 +119,21 @@ if nargin < 2 % data loading
     end
     
     subjectdata.cfgs.(outputName) = cfg;
+elseif isfield(cfg, 'currSubject')
+    if isempty(pathsFcn)
+        error('please add paths function cfg.pathsFcn')
+    else
+        eval(pathsFcn)
+    end
+
+    if ~quiet; disp(currSubject); end
+    subjectFolderPath = [PATHS.SUBJECTS filesep currSubject];
+    if ~quiet
+        [subjectdata] = bv_check4data(subjectFolderPath);
+    else
+        evalc('[subjectdata] = bv_check4data(subjectFolderPath);');
+    end
+    saveData = 'no';
 else
     subjectdata = struct;
     repairchans = 'yes';
@@ -152,9 +168,22 @@ subjectdata.noisychannels = ...
     not(contains(limFields, 'flat'))),3)>0,2) / expectedtrials) * 100 ) > ...
     maxpercbad);
 
+if length(subjectdata.channels2remove) > maxbadchans
+    removingSubjects([], currSubject, 'too many noisy channels')
+    data = [];
+    return
+end
+
 if not(isempty(subjectdata.channels2remove))
     if ~quiet; fprintf(['\t \t bad channels detected: ' repmat('%s,', 1, length(badchans)) '\n'], badchans{:}); end
     
+    if length(subjectdata.channels2remove) > maxbadchans
+        removingSubjects([], currSubject, 'too many noisy channels')
+        data = [];
+        return
+    end
+
+
     % badchannel interpolation
     if strcmpi(repairchans, 'yes') 
         if ~quiet; fprintf('\t repairing ... '); end
@@ -182,16 +211,13 @@ if strcmpi(saveData, 'yes')
     if ~quiet
         if strcmpi(repairchans, 'yes')
             bv_saveData(subjectdata, data, outputName); % save both data and subjectdata to the drive
-        else
-            bv_saveData(subjectdata); % save only subjectdata to the drive
         end
     else
         if strcmpi(repairchans, 'yes')
             evalc('bv_saveData(subjectdata, data, outputName);'); % save both data and subjectdata to the drive
-        else
-            evalc('bv_saveData(subjectdata);'); % save only subjectdata to the drive
         end
     end
-    
+else
+    bv_saveData(subjectdata)
 end
 

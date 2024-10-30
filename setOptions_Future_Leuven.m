@@ -1,31 +1,31 @@
-% Empty options m-file for the analysis pipe line of baby connectivity 
-% data. This file should be added to your ROOT folder to keep track of all the 
-% settings set when the analysis was last ran.
+% Options file with default options for the EEG analysis of the FUTURE
+% study. Note this is only for the Utrecht data. If you want to analyze the
+% Leuven data please use setOptions_Future_Leuven
 
  %% General options
 % general options for the whole experiment
-OPTIONS.saveData                = 'yes'; % 'string': ('yes' or 'no') to determine whether data is saved 
+OPTIONS.saveData                = 'no'; % 'string': ('yes' or 'no') to determine whether data is saved 
 OPTIONS.triallength             = 3; % [ number ]: triallength used for analysis 
 OPTIONS.artifacttrllength       = 1;
 OPTIONS.pathsScript             = 'setPaths'; % 'string': pathScript name ('setPaths') 
-OPTIONS.sDirString              = 'B'; % 'string': unique search string for raw eeg files which will find all files when used as dir ( ['*' sDirString '*'] ) 
-OPTIONS.dataType                = 'bdf'; % 'string': ('bdf' or 'eeg') to determine which datatype will be used for the analyses 
-OPTIONS.maxbadchans             = 3;
+OPTIONS.sDirString              = '1200'; % 'string': unique search string for raw eeg files which will find all files when used as dir ( ['*' sDirString '*'] ) 
+OPTIONS.dataType                = 'EDF'; % 'string': ('bdf' or 'eeg') to determine which datatype will be used for the analyses 
+OPTIONS.maxbadchans             = 1;
 
 %% Create subject folders
 OPTIONS.CREATEFOLDERS.pathsFcn      = OPTIONS.pathsScript;
 OPTIONS.CREATEFOLDERS.inputName     = []; % only required when datatype = 'mat'
 OPTIONS.CREATEFOLDERS.rawdelim      = '_'; % delimiter found in raw eeg files
-OPTIONS.CREATEFOLDERS.rawlabel      = {'pseudo', 'wave'}; % label the seperate elements of eeg file name (with delimiters in between)
-OPTIONS.CREATEFOLDERS.sfoldername   = {'pseudo', 'wave'}; % how your subject folders should be labeled
-OPTIONS.CREATEFOLDERS.overwrite     = 'yes';
+OPTIONS.CREATEFOLDERS.rawlabel      = {'pseudo', 'week'}; % label the seperate elements of eeg file name (with delimiters in between)
+OPTIONS.CREATEFOLDERS.sfoldername   = {'pseudo', 'week'}; % how your subject folders should be labeled
+OPTIONS.CREATEFOLDERS.overwrite     = 'no';
 OPTIONS.CREATEFOLDERS.sDirString    = OPTIONS.sDirString; % match string to find bdf files 
-OPTIONS.CREATEFOLDERS.dataType      = 'bdf'; % data type (can be 'bdf, 'eeg', 'mat')
+OPTIONS.CREATEFOLDERS.dataType      = 'EDF'; % data type (can be 'bdf, 'eeg', 'mat')
 
 %% Preprocessing options
 % options only used for the preprocessing of the data 
-OPTIONS.PREPROC.resampleFs      = 512; % [ number ]: resampling frequency. 
-OPTIONS.PREPROC.trialfun        = 'trialfun_YOUth_connectivity'; % 'string': filename of trialfun to be used (please add trialfun to your path) 
+OPTIONS.PREPROC.resampleFs      = 256; % [ number ]: resampling frequency. 
+OPTIONS.PREPROC.trialfun        = ''; % 'string': filename of trialfun to be used (please add trialfun to your path) 
 OPTIONS.PREPROC.hpfreq          = 0.16; % [ number ]: high-pass filter frequency cut-off 
 OPTIONS.PREPROC.lpfreq          = []; % [ number ]: low-pass filter frequency cut-off 
 OPTIONS.PREPROC.notchfreq       = 50; % [ number ]: notch filter frequency 
@@ -41,6 +41,7 @@ OPTIONS.PREPROC.overwrite       = 'yes';
 OPTIONS.PREPROC.waveletThresh   = 'no';  
 OPTIONS.PREPROC.removechans     = 'no';
 OPTIONS.PREPROC.interpolate     = 'no';  
+OPTIONS.PREPROC.channels        = bv_getNEOChannels('regular');
 
 %% Calculate artifact values after preprocessing
 OPTIONS.ARTFCTPREPROC.inputName       = 'PREPROC';
@@ -50,7 +51,7 @@ OPTIONS.ARTFCTPREPROC.pathsFcn        = 'setPaths';
 OPTIONS.ARTFCTPREPROC.cutintrials     = 'yes';
 OPTIONS.ARTFCTPREPROC.triallength     = OPTIONS.artifacttrllength;
 OPTIONS.ARTFCTPREPROC.overwrite       = 'yes';
-OPTIONS.ARTFCTPREPROC.analyses        = {'kurtosis','variance', 'flatline', 'abs', 'jump'};
+OPTIONS.ARTFCTPREPROC.analyses        = {'kurtosis','variance', 'flatline', 'abs'};
 
 %% Remove channels options 
 % set options for the removal of complete channels. It is recommended to 
@@ -68,36 +69,33 @@ OPTIONS.RMCHANNELS.inputName       = 'PREPROC';
 OPTIONS.RMCHANNELS.outputName      = 'PREPROCRMCHANNELS';
 OPTIONS.RMCHANNELS.artefactData    = 'ARTFCTBEFORE';
 OPTIONS.RMCHANNELS.saveData        = 'yes';
-OPTIONS.RMCHANNELS.maxpercbad      = 40;
-OPTIONS.RMCHANNELS.expectedtrials  = 360./OPTIONS.artifacttrllength;
+OPTIONS.RMCHANNELS.maxpercbad      = 90;
+OPTIONS.RMCHANNELS.expectedtrials  = [];
 OPTIONS.RMCHANNELS.repairchans     = 'no';
+OPTIONS.RMCHANNELS.maxbadchans     = OPTIONS.maxbadchans;
 
 %% Preprocessing + reref options without removed channels
 % options only used for the preprocessing of the data 
-OPTIONS.REREF.resampleFs      = 512; % [ number ]: resampling frequency. 
-OPTIONS.REREF.trialfun        = 'trialfun_YOUth_connectivity'; % 'string': filename of trialfun to be used (please add trialfun to your path) 
-OPTIONS.REREF.hpfreq          = 0.16; % [ number ]: high-pass filter frequency cut-off 
-OPTIONS.REREF.lpfreq          = []; % [ number ]: low-pass filter frequency cut-off 
-OPTIONS.REREF.notchfreq       = 50; % [ number ]: notch filter frequency 
-OPTIONS.REREF.pathsFcn        = OPTIONS.pathsScript; 
-OPTIONS.REREF.saveData        = OPTIONS.saveData; 
-OPTIONS.REREF.outputName      = 'PREPROCRMCHANNELS'; % 'string': addition to filename when saving, so that the output filename becomes [currSubject outputName .mat] 
+OPTIONS.REREF = OPTIONS.PREPROC;
+OPTIONS.REREF.outputName      = 'REREF'; % 'string': addition to filename when saving, so that the output filename becomes [currSubject outputName .mat] 
 OPTIONS.REREF.overwrite       = 1; % [ number ]: set to 1 to overwrite existing data 
-OPTIONS.REREF.reref           = 'yes'; % 'string': 'yes' to rereference data (default: 'no') 
+OPTIONS.REREF.reref           = 'yes'; % 's360tring': 'yes' to rereference data (default: 'no') 
 OPTIONS.REREF.refelec         = 'all'; % rereference electrode (string / number / cell of strings) 
-OPTIONS.REREF.removechans     = 'yes';
+OPTIONS.REREF.overwrite       = 'yes';
 OPTIONS.REREF.waveletThresh   = 'no';  
+OPTIONS.REREF.removechans     = 'yes';
 OPTIONS.REREF.interpolate     = 'yes';  
 
 
 %% Calculate artifact values after preprocessing
 OPTIONS.ARTFCTRMCHANNELS.inputName       = 'PREPROCRMCHANNELS';
 OPTIONS.ARTFCTRMCHANNELS.outputName      = 'ARTFCTRMCHANS';
-OPTIONS.ARTFCTRMCHANNELS.saveData        = 'yes';
+OPTIONS.ARTFCTRMCHANNELS.saveData        = OPTIONS.saveData;
 OPTIONS.ARTFCTRMCHANNELS.pathsFcn        = 'setPaths';
 OPTIONS.ARTFCTRMCHANNELS.cutintrials     = 'yes';
 OPTIONS.ARTFCTRMCHANNELS.triallength     = OPTIONS.artifacttrllength;
 OPTIONS.ARTFCTRMCHANNELS.overwrite       = 'yes';
+OPTIONS.ARTFCTRMCHANNELS.analyses        = {'kurtosis','variance', 'flatline', 'abs'};
 
 
 %% Data loss options
@@ -105,7 +103,6 @@ OPTIONS.ARTFCTRMCHANNELS.overwrite       = 'yes';
 % only remove channels that are flatlining of are extremely noisy, so much 
 % so that they will influence the average rereference grossly. 
 lims = struct;
-lims.jump = 0;
 lims.abs = 250;
 lims.flatline = 0.1;
 lims.kurtosis = 10;
@@ -116,7 +113,7 @@ OPTIONS.CLEANED.pathsFcn        = OPTIONS.pathsScript;
 OPTIONS.CLEANED.inputName       = 'PREPROCRMCHANNELS';
 OPTIONS.CLEANED.outputName      = 'CLEANED';
 OPTIONS.CLEANED.artfctdefStr    = 'ARTFCTRMCHANS';
-OPTIONS.CLEANED.saveData        = 'yes';
+OPTIONS.CLEANED.saveData        = OPTIONS.saveData;
 OPTIONS.CLEANED.expectedtrials  = 360./OPTIONS.artifacttrllength;
 OPTIONS.CLEANED.repairchans     = 'no';
 OPTIONS.CLEANED.cleanDatafile   = 'yes';
@@ -139,3 +136,4 @@ OPTIONS.PLICONNECTIVITY.outputName  = ['PLI_', num2str(OPTIONS.triallength) ,'s'
 OPTIONS.PLICONNECTIVITY.saveData    = OPTIONS.saveData; 
 OPTIONS.PLICONNECTIVITY.optionsFcn  = OPTIONS.pathsScript;
 OPTIONS.PLICONNECTIVITY.keeptrials  = 'yes';
+OPTIONS.PLICONNECTIVITY.preprocOptions  = OPTIONS.REREF;

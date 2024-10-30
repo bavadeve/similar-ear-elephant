@@ -1,9 +1,23 @@
-function [ WsTrh ] = bv_thresholdMultipleWs(Ws, propThr)
+function [ AsTrh ] = bv_thresholdMultipleWs(As, propThr)
 
-for i = 1:size(Ws,3)
-    currW = Ws(:,:,i);
-    if sum(isnan(currW(:))) == numel(currW)
-        WsTrh(:,:,i) = currW;
+sz = size(As);
+N = sz(1);
+ndims = length(sz);
+
+if ndims > 3
+    extraDims = sz(3:end);
+    nAsz = [sz(1) sz(2) prod(sz(3:end))];
+    As = reshape(As, nAsz);
+end
+
+for i = 1:size(As,3)
+    currA = As(:,:,i);
+    if sum(isnan(currA(:))) == numel(currA)
+        AsTrh(:,:,i) = currA;
     end
-    WsTrh(:,:,i) = threshold_proportional(currW, propThr);
+    AsTrh(:,:,i) = threshold_proportional(currA, propThr);
+end
+
+if ndims > 3
+    AsTrh = reshape(AsTrh, sz);
 end
